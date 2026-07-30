@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arytmi — kommer snart</title>
+<meta name="description" content="Arytmi. En ny måde at planlægge de små, spontane ture på. Kommer snart.">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+<style>
+  @charset "UTF-8";
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    position:relative;
+    overflow:hidden;
+    padding:24px;
+  }
+  .bil{
+    position:absolute;
+    bottom:-30px;
+    right:-40px;
+    width:min(70vw,520px);
+    opacity:.14;
+    filter:grayscale(1);
+    pointer-events:none;
+  }
+  .indhold{
+    position:relative;
+    z-index:1;
+    text-align:center;
+    max-width:420px;
+  }
+  .logo{
+    width:min(230px,60vw);
+    height:auto;
+    margin:0 auto 32px;
+    display:block;
+  }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  p.lead{
+    font-size:16px;
+    line-height:1.6;
+    color:var(--fjord);
+    margin-bottom:34px;
+  }
+  .etiket{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:2.4px;
+    text-transform:uppercase;
+    color:var(--rav);
+    font-weight:600;
+    border:1px solid var(--linje);
+    border-radius:20px;
+    padding:8px 18px;
+    background:var(--flade);
+  }
+  footer{
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:13px;
+    color:var(--dæmpet);
+  }
+  footer a{
+    color:var(--gran);
+    text-decoration:none;
+    border-bottom:1px solid var(--linje);
+  }
+</style>
+</head>
+<body>
+  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+  <div class="indhold">
+    <h1 class="sr-only">Arytmi</h1>
+    <img class="logo" src="logo.png" alt="Arytmi">
+    <p class="lead">En ny måde at planlægge de små, spontane ture på — væk fra hverdagen, uden at det kræver en hel ferie.</p>
+    <span class="etiket">Kommer snart</span>
+  </div>
+  <footer>Spørgsmål? Skriv til <a href="mailto:olivia@arytmi.com">olivia@arytmi.com</a></footer>
+</body>
+</html>
