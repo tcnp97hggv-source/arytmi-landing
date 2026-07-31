@@ -1,6 +1,6 @@
 /* Service worker — holder selve appen i live uden net.
    Korttiles gemmes IKKE her; de ligger i IndexedDB, styret af app.js. */
-const CACHE = 'arytmi-recon-20260731e';
+const CACHE = 'arytmi-recon-20260731f';
 const SKAL = [
   './', './index.html', './app.css', './app.js', './rute.js',
   './turplan.html',

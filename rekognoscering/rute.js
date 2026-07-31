@@ -1,5 +1,5 @@
 const RUTE = {
- "undervejs": [
+ "fredag": [
   {
    "id": "u1",
    "navn": "P-plads, Anebjerg skov, Virringvej",
@@ -29,7 +29,8 @@ const RUTE = {
      "navn": "Skanderborg Fælled",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u2",
@@ -65,7 +66,8 @@ const RUTE = {
      "navn": "Skanderborg Fælled",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u3",
@@ -91,7 +93,8 @@ const RUTE = {
      "navn": "Skimminghøj Bådhus og Teltplads - en unik plads ved Gudenåen",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u4",
@@ -127,7 +130,8 @@ const RUTE = {
      "navn": "Østre Gåsekær",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u5",
@@ -163,7 +167,8 @@ const RUTE = {
      "navn": "Nordskov, Korsdalshus pladsen",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u6",
@@ -194,7 +199,8 @@ const RUTE = {
      "navn": "Sølystparken",
      "type": "Badestrand/-sted"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u7",
@@ -220,7 +226,8 @@ const RUTE = {
      "navn": "Hvinningdal grusgrav",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u8",
@@ -256,7 +263,8 @@ const RUTE = {
      "navn": "Primitiv overnatningsplads ved Dværgebakken",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u9",
@@ -292,7 +300,8 @@ const RUTE = {
      "navn": "Løvbakkerne shelterplads",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u10",
@@ -328,7 +337,8 @@ const RUTE = {
      "navn": "Primitiv overnatning i Løvbakke Skov",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u11",
@@ -354,7 +364,8 @@ const RUTE = {
      "navn": "Udsigtspunkt -  Herborg Bakker på Gilbakke",
      "type": "Udsigtspunkt"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "u12",
@@ -390,10 +401,9 @@ const RUTE = {
      "navn": "Husby shelterplads - shelter 3",
      "type": "Shelter"
     }
-   }
-  }
- ],
- "weekend1": [
+   },
+   "dag": "fredag"
+  },
   {
    "id": "k1",
    "navn": "P-plads på Fugleøen - Thorsminde",
@@ -420,7 +430,8 @@ const RUTE = {
      "m": 955,
      "navn": "Thorsminde badestrand"
     }
-   }
+   },
+   "dag": "fredag"
   },
   {
    "id": "k2",
@@ -449,8 +460,11 @@ const RUTE = {
      "navn": "Shelterplads ved Spidsbjergvej - shelter 3",
      "type": "Shelter"
     }
-   }
-  },
+   },
+   "dag": "fredag"
+  }
+ ],
+ "lørdag": [
   {
    "id": "k3",
    "navn": "P-plads ved Fjand Skovlegeplads",
@@ -478,7 +492,8 @@ const RUTE = {
      "navn": "Shelterplads ved Spidsbjergvej - shelter 2",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "lørdag"
   },
   {
    "id": "k4",
@@ -511,7 +526,8 @@ const RUTE = {
      "navn": "Shelterplads ved Spidsbjergvej - shelter 1",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "lørdag"
   },
   {
    "id": "k5",
@@ -544,7 +560,8 @@ const RUTE = {
      "navn": "Shelter ved Husby Badesø - shelter 1",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "lørdag"
   },
   {
    "id": "k6",
@@ -577,7 +594,8 @@ const RUTE = {
      "navn": "Shelter ved Husby Badesø - shelter 1",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "lørdag"
   },
   {
    "id": "k7",
@@ -610,7 +628,8 @@ const RUTE = {
      "navn": "Shelter Alrum Strand",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "lørdag"
   },
   {
    "id": "k8",
@@ -629,8 +648,11 @@ const RUTE = {
      "m": 12,
      "navn": "Toilet - Søndervig Landevej 25 6950 Ringkøbing"
     }
-   }
-  },
+   },
+   "dag": "lørdag"
+  }
+ ],
+ "søndag": [
   {
    "id": "k9",
    "navn": "Holdeplads -  ved Roklubben Ringkøbing",
@@ -653,7 +675,8 @@ const RUTE = {
      "navn": "Shelter 3 Vonå Ringkøbing",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "søndag"
   },
   {
    "id": "k10",
@@ -678,7 +701,8 @@ const RUTE = {
      "navn": "Shelter 1 Lyngvig havn",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "søndag"
   },
   {
    "id": "k11",
@@ -703,7 +727,8 @@ const RUTE = {
      "navn": "Shelter 2 Lyngvig Havn",
      "type": "Shelter"
     }
-   }
+   },
+   "dag": "søndag"
   },
   {
    "id": "k12",
@@ -732,7 +757,8 @@ const RUTE = {
      "navn": "Nyminde - Skydebanehuset",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "søndag"
   },
   {
    "id": "k13",
@@ -761,7 +787,8 @@ const RUTE = {
      "navn": "Nyminde - Skydebanehuset",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "søndag"
   },
   {
    "id": "k14",
@@ -790,7 +817,8 @@ const RUTE = {
      "navn": "Blochsgård, lejrplads",
      "type": "Teltplads"
     }
-   }
+   },
+   "dag": "søndag"
   }
  ],
  "weekend2": [

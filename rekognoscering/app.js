@@ -66,7 +66,7 @@ const TOM = id => ({
 
 function katalog(){
   const ud = [];
-  for(const wk of ['undervejs','weekend1','weekend2'])
+  for(const wk of ['fredag','lørdag','søndag','weekend2'])
     for(const s of RUTE[wk] || []) ud.push({...s, weekend: wk});
   for(const id in steder)
     if(steder[id].egetSted) ud.push({...steder[id].egetSted, id, weekend:'eget'});
@@ -250,8 +250,9 @@ function tegnRute(){
   const stop = katalog();
   const rørte = stop.filter(s => erRørt(steder[s.id])).length;
   const grupper = [
-    ['undervejs','Undervejs · Hou → Thorsminde','Ø-V langs ruten · ca. 2 t 15 min ren kørsel'],
-    ['weekend1','Weekend 1 · Hvide Sande-korridoren','Fredag 31/7 – søndag 2/8'],
+    ['fredag','Fredag · Hou → Thorsminde','12 stop undervejs + ankomst · ca. 2 t 15 min ren kørsel'],
+    ['lørdag','Lørdag · Thorsminde → Søndervig','Sydpå langs kysten'],
+    ['søndag','Søndag · Ringkøbing → Filsø','Videre sydpå, og så hjemad'],
     ['weekend2','Weekend 2 · Thy og nordvest','Fredag 7/8 – søndag 9/8'],
     ['eget','Egne fund','Steder I selv faldt over undervejs']
   ];
