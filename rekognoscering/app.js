@@ -66,8 +66,8 @@ const TOM = id => ({
 
 function katalog(){
   const ud = [];
-  for(const wk of ['weekend1','weekend2'])
-    for(const s of RUTE[wk]) ud.push({...s, weekend: wk});
+  for(const wk of ['undervejs','weekend1','weekend2'])
+    for(const s of RUTE[wk] || []) ud.push({...s, weekend: wk});
   for(const id in steder)
     if(steder[id].egetSted) ud.push({...steder[id].egetSted, id, weekend:'eget'});
   return ud;
@@ -250,6 +250,7 @@ function tegnRute(){
   const stop = katalog();
   const rørte = stop.filter(s => erRørt(steder[s.id])).length;
   const grupper = [
+    ['undervejs','Undervejs · Hou → Thorsminde','Ø-V langs ruten · ca. 2 t 15 min ren kørsel'],
     ['weekend1','Weekend 1 · Hvide Sande-korridoren','Fredag 31/7 – søndag 2/8'],
     ['weekend2','Weekend 2 · Thy og nordvest','Fredag 7/8 – søndag 9/8'],
     ['eget','Egne fund','Steder I selv faldt over undervejs']
@@ -266,10 +267,12 @@ function tegnRute(){
       const [kl, tekst] = MÆRKE[r?.dom] || ['m-ny','Ikke set'];
       const n = s.naer || {};
       const dele = [];
+      if(s.element) dele.push(s.element === 'vand' ? 'ved vand' : 'på land');
       if(n.toilet)  dele.push(`toilet ${n.toilet.m} m`);
       if(n.udsigt)  dele.push(`udsigt ${n.udsigt.m} m`);
-      if(n.vand)    dele.push(`vand ${n.vand.m} m`);
-      if(s.kyst_km != null) dele.push(`${s.kyst_km} km fra havet`);
+      if(n.vand && !s.element) dele.push(`vand ${n.vand.m} m`);
+      if(s.omvej_km != null) dele.push(`${s.omvej_km} km fra ruten`);
+      else if(s.kyst_km != null) dele.push(`${s.kyst_km} km fra havet`);
       h += `<button class="stop" data-gå="${esc(s.id)}" ${r?.dom ? `data-dom="${r.dom}"` : ''}>
         <div class="krop">
           <div class="navn">${esc(s.navn)}</div>

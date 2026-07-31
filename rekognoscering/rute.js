@@ -1,4 +1,398 @@
 const RUTE = {
+ "undervejs": [
+  {
+   "id": "u1",
+   "navn": "P-plads, Anebjerg skov, Virringvej",
+   "lat": 56.038624,
+   "lon": 10.009058,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "",
+   "org": "Naturstyrelsen Søhøjlandet",
+   "kontakt": "SHL@nst.dk, 72 54 39 51",
+   "point": 62,
+   "omvej_km": 2.6,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 2701,
+     "navn": "Stilling Søbad",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 332,
+     "navn": "Låddenhøj",
+     "type": "Udsigtspunkt"
+    },
+    "overnat": {
+     "m": 2941,
+     "navn": "Skanderborg Fælled",
+     "type": "Shelter"
+    }
+   }
+  },
+  {
+   "id": "u2",
+   "navn": "Vestermølle",
+   "lat": 56.028901,
+   "lon": 9.957687,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "",
+   "org": "Skanderborg Kommune",
+   "kontakt": "vtd@skanderborg.dk, 8794 7000",
+   "point": 140,
+   "omvej_km": 0.1,
+   "element": "vand",
+   "naer": {
+    "toilet": {
+     "m": 34,
+     "navn": "Vestermølle",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 101,
+     "navn": "Vestermølle",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 101,
+     "navn": "Vestermølle",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 2485,
+     "navn": "Skanderborg Fælled",
+     "type": "Shelter"
+    }
+   }
+  },
+  {
+   "id": "u3",
+   "navn": "Ry Marina",
+   "lat": 56.092888,
+   "lon": 9.754033,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "",
+   "org": "Skanderborg Kommune",
+   "kontakt": "vtd@skanderborg.dk, 8794 7000",
+   "point": 100,
+   "omvej_km": 0.6,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 59,
+     "navn": "Siimtoften",
+     "type": "Toilet"
+    },
+    "overnat": {
+     "m": 448,
+     "navn": "Skimminghøj Bådhus og Teltplads - en unik plads ved Gudenåen",
+     "type": "Teltplads"
+    }
+   }
+  },
+  {
+   "id": "u4",
+   "navn": "Parkering Ludvigslyst",
+   "lat": 56.130567,
+   "lon": 9.642442,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "P-plads ved Ludvigslyst",
+   "org": "Silkeborg Kommune",
+   "kontakt": "natur@silkeborg.dk, 89701000",
+   "point": 140,
+   "omvej_km": 0.7,
+   "element": "vand",
+   "naer": {
+    "toilet": {
+     "m": 66,
+     "navn": "Toilet, Ludvigslyst",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 134,
+     "navn": "Ludvigslyst",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 134,
+     "navn": "Ludvigslyst",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 1114,
+     "navn": "Østre Gåsekær",
+     "type": "Teltplads"
+    }
+   }
+  },
+  {
+   "id": "u5",
+   "navn": "Indelukket, p-plads",
+   "lat": 56.160001,
+   "lon": 9.561721,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "Åhave alle 9b, 8600 Silkeborg",
+   "org": "Silkeborg Kommune",
+   "kontakt": "kulturogfritid@silkeborg.dk, 89701000",
+   "point": 127,
+   "omvej_km": 0.6,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 47,
+     "navn": "Indelukket",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 399,
+     "navn": "Dronningestolen",
+     "type": "Udsigtspunkt"
+    },
+    "vand": {
+     "m": 1408,
+     "navn": "Østre Søbad",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 1869,
+     "navn": "Nordskov, Korsdalshus pladsen",
+     "type": "Teltplads"
+    }
+   }
+  },
+  {
+   "id": "u6",
+   "navn": "Søsportens hus",
+   "lat": 56.175982,
+   "lon": 9.532046,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "Sølystvej 115, 8600 Silkeborg",
+   "org": "Silkeborg Kommune",
+   "kontakt": "natur@silkeborg.dk, 89701000",
+   "point": 125,
+   "omvej_km": 0.9,
+   "element": "vand",
+   "naer": {
+    "toilet": {
+     "m": 23,
+     "navn": "Toilet, Søsportens hus",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 62,
+     "navn": "Sølystparken",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 62,
+     "navn": "Sølystparken",
+     "type": "Badestrand/-sted"
+    }
+   }
+  },
+  {
+   "id": "u7",
+   "navn": "Hvinningdal Grusgrav",
+   "lat": 56.171709,
+   "lon": 9.481698,
+   "type": "Holdeplads",
+   "betaling": "ukendt",
+   "beskrivelse": "Lille p-plads til max 2 biler",
+   "org": "Naturstyrelsen - Søhøjlandet",
+   "kontakt": "shl@nst.dk, 72 54 30 00",
+   "point": 75,
+   "omvej_km": 1.2,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 75,
+     "navn": "Hvinningdal Grusgrav",
+     "type": "Toilet"
+    },
+    "overnat": {
+     "m": 73,
+     "navn": "Hvinningdal grusgrav",
+     "type": "Shelter"
+    }
+   }
+  },
+  {
+   "id": "u8",
+   "navn": "Bølling Sø, p-plads ved Dværgbakke/Kragelundvej",
+   "lat": 56.178471,
+   "lon": 9.343476,
+   "type": "Holdeplads",
+   "betaling": "ukendt",
+   "beskrivelse": "P-plads ved Kragelundvej",
+   "org": "Naturstyrelsen - Søhøjlandet",
+   "kontakt": "shl@nst.dk, 72 54 30 00",
+   "point": 112,
+   "omvej_km": 3.8,
+   "element": "vand",
+   "naer": {
+    "toilet": {
+     "m": 66,
+     "navn": "Toilet ved Dværgebakken",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 364,
+     "navn": "Bølling Sø, badning",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 364,
+     "navn": "Bølling Sø, badning",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 63,
+     "navn": "Primitiv overnatningsplads ved Dværgebakken",
+     "type": "Teltplads"
+    }
+   }
+  },
+  {
+   "id": "u9",
+   "navn": "Fuglsang Sø parkering",
+   "lat": 56.156856,
+   "lon": 8.954951,
+   "type": "Parkeringsplads",
+   "betaling": "Nej",
+   "beskrivelse": "Parkering til vandreruten Fuglsang Sø. Handicapparkering er muligt helt oppe ved Det Blå Rum.",
+   "org": "Herning Kommune",
+   "kontakt": "parkognatur@herning.dk, 96282828",
+   "point": 107,
+   "omvej_km": 2.1,
+   "element": "vand",
+   "naer": {
+    "toilet": {
+     "m": 44,
+     "navn": "Handicaptoilet ved Fuglsang Sø (Det Blå Rum)",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 202,
+     "navn": "Badested v. Fuglsangsø",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 202,
+     "navn": "Badested v. Fuglsangsø",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 2288,
+     "navn": "Løvbakkerne shelterplads",
+     "type": "Shelter"
+    }
+   }
+  },
+  {
+   "id": "u10",
+   "navn": "P-plads i Løvbakke Skov",
+   "lat": 56.177409,
+   "lon": 8.952418,
+   "type": "Holdeplads",
+   "betaling": "ukendt",
+   "beskrivelse": "P-plads midt i Løvbakke Skov. I umiddelbar nærhed findes skovlegeplads og hundeskov",
+   "org": "Naturstyrelsen - Vestjylland",
+   "kontakt": "vjy@nst.dk, 7254 3000",
+   "point": 70,
+   "omvej_km": 4.4,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 211,
+     "navn": "Toilet v. Løvbakkerne P2",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 1186,
+     "navn": "Badested v. Holing sø",
+     "type": "Badestrand/-sted"
+    },
+    "vand": {
+     "m": 1186,
+     "navn": "Badested v. Holing sø",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 283,
+     "navn": "Primitiv overnatning i Løvbakke Skov",
+     "type": "Teltplads"
+    }
+   }
+  },
+  {
+   "id": "u11",
+   "navn": "Holdeplads -  Gilbakke",
+   "lat": 56.083053,
+   "lon": 8.612831,
+   "type": "Holdeplads",
+   "betaling": "Nej",
+   "beskrivelse": "Mulighed for parkering af ca. 5 biler.",
+   "org": "Land, By og Kultur, Ringkøbing-Skjern Kommune",
+   "kontakt": "+45 9974 1515, land.by.kultur@rksk.dk",
+   "point": 95,
+   "omvej_km": 0.8,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 1448,
+     "navn": "Toilet - Bredgade 29 6920 Videbæk",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 92,
+     "navn": "Udsigtspunkt -  Herborg Bakker på Gilbakke",
+     "type": "Udsigtspunkt"
+    }
+   }
+  },
+  {
+   "id": "u12",
+   "navn": "P-plads ved Husby shelterplads - shelter 3",
+   "lat": 56.283591,
+   "lon": 8.172486,
+   "type": "Holdeplads",
+   "betaling": "ukendt",
+   "beskrivelse": "",
+   "org": "Naturstyrelsen - Vestjylland",
+   "kontakt": "vjy@nst.dk, 7254 3000",
+   "point": 65,
+   "omvej_km": 1.0,
+   "element": "land",
+   "naer": {
+    "toilet": {
+     "m": 626,
+     "navn": "Toilet",
+     "type": "Toilet"
+    },
+    "udsigt": {
+     "m": 1917,
+     "navn": "\"Nøgenbjerg\" Husby Klitplantage",
+     "type": "Udsigtspunkt"
+    },
+    "vand": {
+     "m": 2395,
+     "navn": "Skavemosen/Husby badesø",
+     "type": "Badestrand/-sted"
+    },
+    "overnat": {
+     "m": 183,
+     "navn": "Husby shelterplads - shelter 3",
+     "type": "Shelter"
+    }
+   }
+  }
+ ],
  "weekend1": [
   {
    "id": "k1",
