@@ -323,6 +323,9 @@ function tegnSted(){
       <span class="noejagtig">${p ? (p.sat === 'gps' ? `GPS ±${Math.round(p.nøjagtighed || 0)} m` : 'sat på kortet') : ''}</span>
     </div>
     <div class="kort-hjælp">Tryk på kortet dér hvor bilen skal holde — eller træk prikken. Det er punktet der ryger i databanken, ikke hvor du står.</div>
+    ${!p ? `<div class="advarsel"><b>Punktet mangler</b>${s.kilde === 'eget'
+      ? 'Kortet står midt på ruten, ikke hvor I er. Find stedet og tryk på det — eller prøv "Brug min position" igen.'
+      : 'Sæt punktet dér hvor bilen holder, så koordinaten passer med virkeligheden.'}</div>` : ''}
     <div class="knap-rk">
       <button class="knap sekundær" data-handling="gps">Brug min position</button>
       <a class="knap sekundær" href="https://maps.apple.com/?daddr=${s.lat},${s.lon}&dirflg=d" target="_blank" rel="noopener">Naviger hertil</a>
@@ -428,19 +431,38 @@ function sætPunkt(lat, lon, sat, nøjagtighed){
     <span class="noejagtig">${sat === 'gps' ? `GPS ±${Math.round(nøjagtighed || 0)} m` : 'sat på kortet'}</span>`;
 }
 
-function brugGPS(){
-  if(!navigator.geolocation){ flash('Telefonen giver ikke adgang til position'); return; }
-  flash('Finder din position …', 1600);
-  navigator.geolocation.getCurrentPosition(
-    p => {
-      const {latitude:lat, longitude:lon, accuracy:nøj} = p.coords;
-      sætPunkt(lat, lon, 'gps', nøj);
-      if(kort && markør){ markør.setLatLng([lat, lon]); kort.setView([lat, lon], 17); }
-      flash(`Position sat — nøjagtighed ±${Math.round(nøj)} m`);
-    },
-    e => flash(e.code === 1 ? 'Du skal give adgang til position i Indstillinger' : 'Kunne ikke finde positionen'),
-    {enableHighAccuracy:true, timeout:15000, maximumAge:0}
-  );
+/* GPS i to forsøg. Høj nøjagtighed først; timer den ud (indendørs, eller når iOS
+   strømbesparing struber positionstjenesten), prøves der igen med lavere krav,
+   længere frist og en accepteret cachet position. Ét stramt forsøg var årsagen
+   til "Kunne ikke finde positionen" på en telefon med tændt GPS. */
+function findPosition(){
+  return new Promise((ok, fejl) => {
+    if(!navigator.geolocation){ fejl({code:0}); return; }
+    navigator.geolocation.getCurrentPosition(ok, første => {
+      if(første.code === 1){ fejl(første); return; }   // afvist — flere forsøg hjælper ikke
+      navigator.geolocation.getCurrentPosition(ok, fejl,
+        {enableHighAccuracy:false, timeout:30000, maximumAge:120000});
+    }, {enableHighAccuracy:true, timeout:12000, maximumAge:0});
+  });
+}
+
+const gpsFejlTekst = e =>
+  e.code === 1 ? 'Safari har ikke adgang til din position. Indstillinger → Safari → Placering' :
+  e.code === 3 ? 'Positionen tog for lang tid. Prøv udenfor, eller slå strømbesparing fra' :
+  e.code === 0 ? 'Telefonen giver ikke adgang til position' :
+                 'Positionen er ikke tilgængelig lige nu';
+
+async function brugGPS(){
+  flash('Finder din position …', 2500);
+  try{
+    const p = await findPosition();
+    const {latitude:lat, longitude:lon, accuracy:nøj} = p.coords;
+    sætPunkt(lat, lon, 'gps', nøj);
+    if(kort && markør){ markør.setLatLng([lat, lon]); kort.setView([lat, lon], 17); }
+    flash(`Position sat — nøjagtighed ±${Math.round(nøj)} m`);
+  }catch(e){
+    flash(gpsFejlTekst(e) + '. Du kan sætte punktet på kortet i stedet.', 6000);
+  }
 }
 
 async function visBilleder(){
@@ -529,22 +551,39 @@ document.addEventListener('change', e => {
   }
 });
 
-function opretEget(){
+/* Midt i kandidatfeltet — bruges kun som startudsnit, når GPS ikke svarer,
+   så kortet åbner et sted man kan genkende i stedet for midt i Atlanterhavet. */
+function ruteMidte(){
+  const alle = [...RUTE.weekend1, ...RUTE.weekend2];
+  return { lat: alle.reduce((s,x)=>s+x.lat,0)/alle.length,
+           lon: alle.reduce((s,x)=>s+x.lon,0)/alle.length };
+}
+
+/* GPS er en bekvemmelighed, ikke en betingelse. Stedet oprettes uanset —
+   ellers kan en telefon uden signal spærre for at registrere det fund,
+   man står midt i. Punktet kan altid sættes på kortet bagefter. */
+async function opretEget(){
   const navn = ($('#nytnavn')?.value || '').trim();
   if(!navn){ flash('Giv stedet et navn først'); return; }
-  if(!navigator.geolocation){ flash('Telefonen giver ikke adgang til position'); return; }
-  flash('Finder din position …', 1600);
-  navigator.geolocation.getCurrentPosition(async p => {
-    const id = `eget-${Date.now()}`;
-    const r = reg(id);
-    r.egetSted = {id, navn, lat:p.coords.latitude, lon:p.coords.longitude, kilde:'eget'};
-    r.punkt = {lat:p.coords.latitude, lon:p.coords.longitude, sat:'gps',
-               nøjagtighed:p.coords.accuracy, tid:new Date().toISOString()};
+
+  const id = `eget-${Date.now()}`;
+  const r = reg(id);
+  flash('Finder din position …', 2500);
+  try{
+    const p = await findPosition();
+    const {latitude:lat, longitude:lon, accuracy:nøj} = p.coords;
+    r.egetSted = {id, navn, lat, lon, kilde:'eget'};
+    r.punkt = {lat, lon, sat:'gps', nøjagtighed:nøj, tid:new Date().toISOString()};
     await gem(id);
     gåTil('sted', id);
-    flash('Stedet er oprettet');
-  }, () => flash('Kunne ikke finde positionen — prøv igen udenfor'),
-     {enableHighAccuracy:true, timeout:15000, maximumAge:0});
+    flash(`Stedet er oprettet — nøjagtighed ±${Math.round(nøj)} m`);
+  }catch(e){
+    const m = ruteMidte();
+    r.egetSted = {id, navn, lat:m.lat, lon:m.lon, kilde:'eget', udenGPS:true};
+    await gem(id);
+    gåTil('sted', id);
+    flash(gpsFejlTekst(e) + '. Stedet er oprettet — tryk på kortet dér hvor I står.', 7000);
+  }
 }
 
 /* ---------------- start ---------------- */
@@ -553,6 +592,15 @@ function opretEget(){
   navigator.storage?.persist?.();          // bed iOS om ikke at smide data væk
   for(const s of await alle('steder')) steder[s.id] = s;
   tegn();
-  if('serviceWorker' in navigator)
+  if('serviceWorker' in navigator){
+    // Når en ny udgave overtager, genindlæs ÉN gang — ellers ville man se den
+    // gamle app indtil næste åbning, og det er svært at gennemskue i felten.
+    let genindlæser = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(genindlæser) return;
+      genindlæser = true;
+      location.reload();
+    });
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 })();
