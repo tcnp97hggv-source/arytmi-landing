@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>To weekender på vestkysten · Arytmi</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#3a3227">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+</head>
+<body>
+<p style="max-width:760px;margin:18px auto 0;padding:0 22px;font:14px/1.5 -apple-system,sans-serif">
+  <a href="./" style="color:#b0794e">&larr; Tilbage til rekognosceringen</a>
+</p>
+<style>
+:root{
+  --bark:#3a3227; --bark-dyb:#241f18; --fjord:#5f6353; --fjord-lys:#8b8d7a;
+  --rav:#b0794e; --rav-lys:#d2a97e; --gratis:#5f7a52;
+  --grund:#eceae3; --flade:#faf9f5; --linje:#ddd8cb;
+  --ink:#2e2a24; --ink-dæmp:#7d7970;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --grund:#1c1813; --flade:#262019; --linje:#3b332a;
+    --ink:#ece7dc; --ink-dæmp:#9d968a;
+    --bark:#e8e2d5; --bark-dyb:#f2ede2; --fjord:#a8ab96;
+    --rav:#d2a97e; --rav-lys:#e3c3a0; --gratis:#8fae7e; --fjord-lys:#7d8070;
+  }
+}
+:root[data-theme="dark"]{
+  --grund:#1c1813; --flade:#262019; --linje:#3b332a;
+  --ink:#ece7dc; --ink-dæmp:#9d968a;
+  --bark:#e8e2d5; --bark-dyb:#f2ede2; --fjord:#a8ab96;
+  --rav:#d2a97e; --rav-lys:#e3c3a0; --gratis:#8fae7e; --fjord-lys:#7d8070;
+}
+:root[data-theme="light"]{
+  --grund:#eceae3; --flade:#faf9f5; --linje:#ddd8cb;
+  --ink:#2e2a24; --ink-dæmp:#7d7970;
+  --bark:#3a3227; --bark-dyb:#241f18; --fjord:#5f6353;
+  --rav:#b0794e; --rav-lys:#d2a97e; --gratis:#5f7a52; --fjord-lys:#8b8d7a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--grund);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px 80px}
+h1,h2,h3{font-family:var(--serif);color:var(--bark);font-weight:600;
+  text-wrap:balance;letter-spacing:.2px;margin:0}
+h1{font-size:clamp(34px,7vw,52px);line-height:1.08;margin:14px 0 0}
+h2{font-size:clamp(23px,3.6vw,29px);line-height:1.2}
+h3{font-size:18px;line-height:1.3}
+p{margin:0}
+code{font-family:var(--mono);font-size:.88em;background:var(--flade);
+  border:1px solid var(--linje);border-radius:5px;padding:1px 5px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rav);margin:0}
+
+/* --- top --- */
+.top{padding:64px 0 40px;display:flex;flex-direction:column;gap:20px}
+.ingress{font-size:19px;line-height:1.6;color:var(--ink-dæmp);max-width:60ch}
+.fakta{display:flex;flex-wrap:wrap;gap:0;margin:8px 0 0;
+  border-top:1px solid var(--linje);border-bottom:1px solid var(--linje)}
+.fakta > div{flex:1 1 190px;padding:14px 18px 14px 0}
+.fakta dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fjord-lys)}
+.fakta dd{margin:3px 0 0;font-size:15px;color:var(--ink)}
+
+/* --- sektioner --- */
+section{padding:44px 0;border-top:1px solid var(--linje)}
+section > h2{margin-bottom:18px}
+section p + p{margin-top:14px}
+
+.regel{position:relative}
+.regel .fordel{margin-top:18px;padding:16px 18px;background:var(--flade);
+  border-left:3px solid var(--rav);border-radius:0 10px 10px 0;font-size:15.5px}
+.tjekliste{list-style:none;margin:22px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:9px}
+.tjekliste li{position:relative;padding-left:26px;font-size:15.5px;color:var(--ink-dæmp)}
+.tjekliste li::before{content:"";position:absolute;left:6px;top:.68em;width:7px;height:7px;
+  border:1.5px solid var(--rav);border-radius:50%}
+
+.trin{list-style:none;counter-reset:t;margin:22px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:16px}
+.trin li{counter-increment:t;position:relative;padding-left:46px;font-size:15.5px;
+  color:var(--ink-dæmp)}
+.trin li::before{content:counter(t);position:absolute;left:0;top:0;width:30px;height:30px;
+  display:grid;place-items:center;font-family:var(--mono);font-size:12.5px;
+  color:var(--rav);border:1px solid var(--linje);border-radius:50%;background:var(--flade)}
+.trin span{display:block;font-family:var(--serif);font-size:17px;color:var(--bark);
+  margin-bottom:1px}
+
+/* --- kyst-rail --- */
+.wk-top{max-width:62ch}
+.wk-top p{margin-top:12px;color:var(--ink-dæmp);font-size:15.5px}
+.wk-top .note{margin-top:14px;font-size:14.5px;padding-left:14px;
+  border-left:2px solid var(--linje)}
+.rail{margin-top:34px;position:relative;padding-left:34px}
+.rail::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:1px;
+  background:linear-gradient(var(--linje),var(--fjord-lys),var(--linje))}
+.stop{position:relative;padding-bottom:18px}
+.led{position:relative;height:26px;display:flex;align-items:center}
+.led::before{content:"";position:absolute;left:-30px;width:9px;height:1px;background:var(--fjord-lys)}
+.led::after{content:"";position:absolute;left:-29px;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--grund);border:1px solid var(--fjord-lys)}
+.km{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--fjord-lys);
+  text-transform:uppercase}
+.kort{background:var(--flade);border:1px solid var(--linje);border-radius:3px 14px 14px 3px;
+  padding:16px 18px;border-left:2px solid var(--fjord-lys)}
+.sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sh h3{flex:1 1 auto;min-width:0}
+.nr{font-family:var(--mono);font-size:12px;color:var(--rav);flex-shrink:0}
+.pil{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.pil-ja{color:var(--gratis);border:1px solid var(--gratis)}
+.pil-nej{color:var(--fjord-lys);border:1px solid var(--linje)}
+.besk{margin-top:9px;font-size:14.5px;color:var(--ink-dæmp)}
+.naer{list-style:none;margin:13px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.naer li{display:flex;align-items:baseline;gap:10px;font-size:13.5px}
+.nk{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fjord-lys);width:66px;flex-shrink:0}
+.nm{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--rav);
+  width:58px;flex-shrink:0}
+.nn{color:var(--ink-dæmp);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sf{margin-top:14px;padding-top:11px;border-top:1px solid var(--linje);
+  display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px;
+  color:var(--fjord-lys)}
+.sf code{font-size:11.5px;background:transparent;border:0;padding:0;color:var(--ink-dæmp);
+  font-variant-numeric:tabular-nums}
+.hav{font-family:var(--mono);font-size:11px}
+.org{margin-left:auto;font-size:11.5px;text-align:right}
+
+.forbehold .moat{margin-top:18px;padding:16px 18px;background:var(--flade);
+  border-left:3px solid var(--gratis);border-radius:0 10px 10px 0;font-size:15.5px}
+.bund{padding:32px 0 0;border-top:1px solid var(--linje);font-size:12.5px;
+  color:var(--fjord-lys);font-family:var(--mono);line-height:1.7}
+
+@media (max-width:560px){
+  .rail{padding-left:24px}
+  .rail::before{left:5px}
+  .led::before{left:-20px;width:7px}
+  .led::after{left:-19px}
+  .org{margin-left:0;text-align:left;width:100%}
+  .nn{white-space:normal}
+}
+@media (prefers-reduced-motion:no-preference){
+  .kort{transition:border-color .18s ease}
+}
+</style>
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">Arytmi · dataindsamling nr. 1</p>
+  <h1>To weekender på vestkysten</h1>
+  <p class="ingress">28 kandidatpladser, alle gratis eller uden registreret betaling, alle
+  med parkering og de fleste med toilet inden for gåafstand. Ingen af dem er testet endnu.
+  Det er hele pointen med at køre derud.</p>
+  <dl class="fakta">
+    <div><dt>Weekend 1</dt><dd>fredag 31/7 – søndag 2/8</dd></div>
+    <div><dt>Weekend 2</dt><dd>fredag 7/8 – søndag 9/8</dd></div>
+    <div><dt>Kilde</dt><dd>GeoFA · Naturstyrelsen og kommunerne</dd></div>
+  </dl>
+</header>
+
+<section class="regel">
+  <h2>Reglen, kort</h2>
+  <p><strong>Bilen skal bruges som bil — ikke som campingplads.</strong> Der findes ingen lov
+  mod at sove i sin bil i Danmark. Holder I lovligt parkeret, og bliver inde i bilen, er I
+  på sikker grund de fleste steder.</p>
+  <p>Det I <em>ikke</em> må: stille bord, stole eller markise op udenfor. Så bliver det
+  camping, og så gælder helt andre regler. Naturbeskyttelsesloven forbyder desuden
+  motorkøretøj i naturområder — derfor er alle 28 etablerede P-pladser, ikke klitter
+  og skovveje.</p>
+  <p class="fordel">Det her er grunden til at Arytmi virker som koncept: en personbil med
+  Camp Mode rammes ikke af de kommunale forbud mod natparkering, som autocampere kæmper
+  med. I ligner en parkeret bil, fordi I <em>er</em> en parkeret bil.</p>
+  <ul class="tjekliste">
+    <li>Kig efter skilte om natparkering — de er det eneste der reelt kan stoppe jer</li>
+    <li>Kig efter bomme, der lukker om aftenen</li>
+    <li>Vær væk om morgenen, før stedet fyldes af dagsgæster</li>
+  </ul>
+</section>
+
+<section class="metode">
+  <h2>Sådan finder I ud af, om et sted duer</h2>
+  <p>Alt registreres i rekognosceringsværktøjet undervejs —
+  <code>arytmi.com/rekognoscering</code>. Det vigtigste er, at I sætter punktet præcis
+  dér hvor bilen skal holde, ikke dér hvor I tilfældigvis står med telefonen. Det punkt
+  er det, appen sender folk hen til bagefter.</p>
+  <ol class="trin">
+    <li><span>Skilte og bomme</span> Er der noget, der forbyder det? Det afgør alt andet.</li>
+    <li><span>Står bilen plant?</span> Man sover elendigt på skrå. Prøv det.</li>
+    <li><span>Hvad ser I ud på?</span> Udsigten er det, der gør stedet luksuriøst — ikke faciliteterne.</li>
+    <li><span>Hvordan lyder det klokken 23?</span> Vej, havn og natlig trafik hører man først, når det er stille.</li>
+    <li><span>Toilet, morgenkaffe, indkøb</span> De fire felter appen viser. Er de tomme, er stedet stadig brugbart — bare anderledes.</li>
+  </ol>
+</section>
+
+<section class="weekend">
+  <div class="wk-top">
+    <h2>Weekend 1 · Hvide Sande-korridoren</h2>
+    <p>Fra Thorsminde i nord til Filsø i syd. Kører I fra Odder over Herning, rammer I kysten
+    omkring <strong>nr. 8–11</strong> ved Søndervig og Nørre Lyngvig — start dér fredag aften,
+    og arbejd jer nordpå lørdag. Stop 3–6 ligger så tæt, at I kan se fire pladser på en time.
+    De sydlige (12–14) er alternativet, hvis vinden står forkert.</p>
+  </div>
+  <div class="rail"><article class="stop">
+  <div class="led"><span class="km">132 km fra Odder</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">1</span>
+      <h3>P-plads på Fugleøen - Thorsminde</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">745 m</span><span class="nn">Strandingsmuseet - Thorsminde, Vesterg</span></li><li><span class="nk">Udsigt</span><span class="nm">955 m</span><span class="nn">Thorsminde badestrand</span></li><li><span class="nk">Vand</span><span class="nm">955 m</span><span class="nn">Thorsminde badestrand</span></li></ul>
+    <footer class="sf">
+      <code>56.37075, 8.13057</code>
+      <span class="hav">1.0 km fra havet</span>
+      <span class="org">Holstebro Kommune</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">5 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">2</span>
+      <h3>Parkering ved Bjerghuse</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Parkerinsplads tæt på Vesterhavet ved Bjerghuse</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">57 m</span><span class="nn">Toilet Bjerghuse 13a, 6990 Ulfborg</span></li><li><span class="nk">Udsigt</span><span class="nm">2196 m</span><span class="nn">Marens Maw</span></li><li><span class="nk">Shelter</span><span class="nm">752 m</span><span class="nn">Shelterplads ved Spidsbjergvej - shelt</span></li></ul>
+    <footer class="sf">
+      <code>56.32307, 8.12415</code>
+      <span class="hav">0.6 km fra havet</span>
+      <span class="org">Holstebro Kommune</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">3</span>
+      <h3>P-plads ved Fjand Skovlegeplads</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">25 m</span><span class="nn">Toilet ved Fjand Skovlegeplads</span></li><li><span class="nk">Udsigt</span><span class="nm">1688 m</span><span class="nn">Marens Maw</span></li><li><span class="nk">Shelter</span><span class="nm">114 m</span><span class="nn">Shelterplads ved Spidsbjergvej - shelt</span></li></ul>
+    <footer class="sf">
+      <code>56.31876, 8.13624</code>
+      <span class="hav">1.3 km fra havet</span>
+      <span class="org">Naturstyrelsen - Vestjylland</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">4</span>
+      <h3>P-plads ved plads ved Spidsbjergvej - shelter 1</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">47 m</span><span class="nn">Toilet</span></li><li><span class="nk">Udsigt</span><span class="nm">1416 m</span><span class="nn">Marens Maw</span></li><li><span class="nk">Vand</span><span class="nm">2952 m</span><span class="nn">Skavemosen/Husby badesø</span></li><li><span class="nk">Shelter</span><span class="nm">758 m</span><span class="nn">Shelterplads ved Spidsbjergvej - shelt</span></li></ul>
+    <footer class="sf">
+      <code>56.31566, 8.12355</code>
+      <span class="hav">0.5 km fra havet</span>
+      <span class="org">Naturstyrelsen - Vestjylland</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">3 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">5</span>
+      <h3>P-plads ved Skavemose</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">P-plads ved Skavemose</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">69 m</span><span class="nn">Toilet ved p-plads, Skavemose, Græmvej</span></li><li><span class="nk">Udsigt</span><span class="nm">142 m</span><span class="nn">Skavemosen/Husby badesø</span></li><li><span class="nk">Vand</span><span class="nm">142 m</span><span class="nn">Skavemosen/Husby badesø</span></li><li><span class="nk">Shelter</span><span class="nm">139 m</span><span class="nn">Shelter ved Husby Badesø - shelter 1</span></li></ul>
+    <footer class="sf">
+      <code>56.28974, 8.13313</code>
+      <span class="hav">1.1 km fra havet</span>
+      <span class="org">Naturstyrelsen - Vestjylland</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">6</span>
+      <h3>P-plads ved Husby Badesø - shelter 1</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">75 m</span><span class="nn">Toilet</span></li><li><span class="nk">Udsigt</span><span class="nm">357 m</span><span class="nn">Skavemosen/Husby badesø</span></li><li><span class="nk">Vand</span><span class="nm">357 m</span><span class="nn">Skavemosen/Husby badesø</span></li><li><span class="nk">Shelter</span><span class="nm">355 m</span><span class="nn">Shelter ved Husby Badesø - shelter 1</span></li></ul>
+    <footer class="sf">
+      <code>56.28961, 8.12964</code>
+      <span class="hav">0.9 km fra havet</span>
+      <span class="org">Naturstyrelsen - Vestjylland</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">15 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">7</span>
+      <h3>Parkeringsplads ved Alrum Shelter</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">Hold tæt på vandet og nyd udsigten</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">142 m</span><span class="nn">Toilet - Alrum Strand. Alrum Strand, S</span></li><li><span class="nk">Udsigt</span><span class="nm">47 m</span><span class="nn">Badestrand - Alrum Strand</span></li><li><span class="nk">Vand</span><span class="nm">47 m</span><span class="nn">Badestrand - Alrum Strand</span></li><li><span class="nk">Shelter</span><span class="nm">142 m</span><span class="nn">Shelter Alrum Strand</span></li></ul>
+    <footer class="sf">
+      <code>56.17181, 8.23989</code>
+      <span class="hav">7.8 km fra havet</span>
+      <span class="org">Land, By og Kultur, Ringkøbing-Skj</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">9 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">8</span>
+      <h3>Parkeringsplads Sdr. Vig Landevej</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Parkering for ca. 5 biler. Der findes toilet.</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">12 m</span><span class="nn">Toilet - Søndervig Landevej 25 6950 Ri</span></li></ul>
+    <footer class="sf">
+      <code>56.12029, 8.13234</code>
+      <span class="hav">1.2 km fra havet</span>
+      <span class="org">Land, By og Kultur, Ringkøbing-Skj</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">7 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">9</span>
+      <h3>Holdeplads -  ved Roklubben Ringkøbing</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Parkering for ca. 10 biler.</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">23 m</span><span class="nn">Toilet - Vonå, V Strandsbjerg 31 6950 </span></li><li><span class="nk">Shelter</span><span class="nm">26 m</span><span class="nn">Shelter 3 Vonå Ringkøbing</span></li></ul>
+    <footer class="sf">
+      <code>56.09329, 8.23192</code>
+      <span class="hav">7.4 km fra havet</span>
+      <span class="org">Land, By og Kultur, Ringkøbing-Skj</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">8 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">10</span>
+      <h3>Nørre Lyngvig rasteplads</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Rastepladsen ligge ved Holmsland Klitvej</p>
+    <ul class="naer"><li><span class="nk">Udsigt</span><span class="nm">1725 m</span><span class="nn">Udsigtspunkt -  Lyngvig Fyr</span></li><li><span class="nk">Shelter</span><span class="nm">872 m</span><span class="nn">Shelter 1 Lyngvig havn</span></li></ul>
+    <footer class="sf">
+      <code>56.06146, 8.12180</code>
+      <span class="hav">0.5 km fra havet</span>
+      <span class="org">Naturstyrelsen Blåvandshuk</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">1 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">11</span>
+      <h3>Nørre Lyngvig klit</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">P-pladsen ligge mod nord helt ude ved havklitten</p>
+    <ul class="naer"><li><span class="nk">Udsigt</span><span class="nm">1177 m</span><span class="nn">Udsigtspunkt -  Lyngvig Fyr</span></li><li><span class="nk">Shelter</span><span class="nm">1611 m</span><span class="nn">Shelter 2 Lyngvig Havn</span></li></ul>
+    <footer class="sf">
+      <code>56.06025, 8.10170</code>
+      <span class="hav">0.8 km fra havet</span>
+      <span class="org">Naturstyrelsen Blåvandshuk</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">27 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">12</span>
+      <h3>Nymindegab Strand</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Stor P-plads nedenfor Nymindegab</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">176 m</span><span class="nn">Vesterhavsvej 329, 6830 Nr. Nebel</span></li><li><span class="nk">Udsigt</span><span class="nm">1732 m</span><span class="nn">Hattebjerget</span></li><li><span class="nk">Shelter</span><span class="nm">2937 m</span><span class="nn">Nyminde - Skydebanehuset</span></li></ul>
+    <footer class="sf">
+      <code>55.81750, 8.17804</code>
+      <span class="hav">1.3 km fra havet</span>
+      <span class="org">Naturstyrelsen Blåvandshuk</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">2 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">13</span>
+      <h3>Nyminde ved Hundeskoven</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">En god lille P-plads ved Hundeskoven i Nyminde Plantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">963 m</span><span class="nn">Toilet i Nymindegab Museum</span></li><li><span class="nk">Udsigt</span><span class="nm">1582 m</span><span class="nn">Hattebjerget</span></li><li><span class="nk">Shelter</span><span class="nm">1695 m</span><span class="nn">Nyminde - Skydebanehuset</span></li></ul>
+    <footer class="sf">
+      <code>55.81326, 8.21134</code>
+      <span class="hav">0.8 km fra havet</span>
+      <span class="org">Naturstyrelsen Blåvandshuk</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">12 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">14</span>
+      <h3>Parkeringsplads ved Filsø</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Stor parkeringsplads med skiltet handicapparkering</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">34 m</span><span class="nn">Toilet ved Filsø Naturrum</span></li><li><span class="nk">Udsigt</span><span class="nm">2656 m</span><span class="nn">Gråmulebjerg</span></li><li><span class="nk">Shelter</span><span class="nm">2667 m</span><span class="nn">Blochsgård, lejrplads</span></li></ul>
+    <footer class="sf">
+      <code>55.70266, 8.20762</code>
+      <span class="hav">2.6 km fra havet</span>
+      <span class="org">Aage V. Jensen Naturfond</span>
+    </footer>
+  </div>
+</article></div>
+</section>
+
+<section class="weekend">
+  <div class="wk-top">
+    <h2>Weekend 2 · Thy og nordvest</h2>
+    <p>Fortsættelsen nordpå: fra Agger Tange op gennem Lodbjerg, Vorupør og Klitmøller til
+    Hanstholm. Det er den vildeste del af kysten og den bedste prøve på, hvad
+    &bdquo;naturlig luksus&ldquo; egentlig betyder.</p>
+    <p class="note">Betragt denne uge som en pulje, ikke en plan. Weekend 1 er
+    kalibreringsturen — først bagefter ved vi, hvilke signaler i data der rent faktisk
+    forudsiger en god plads. Så lægger vi weekend 2 skarpt.</p>
+  </div>
+  <div class="rail"><article class="stop">
+  <div class="led"><span class="km">157 km fra Odder</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">1</span>
+      <h3>P-plads ved Hawskoven</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">126 m</span><span class="nn">Hawskoven, Hanstholm Byplantage</span></li><li><span class="nk">Shelter</span><span class="nm">203 m</span><span class="nn">Hawskoven 6</span></li></ul>
+    <footer class="sf">
+      <code>57.11672, 8.63649</code>
+      <span class="hav">2.2 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">4 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">2</span>
+      <h3>P-plads ved Sårup</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Tved Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">192 m</span><span class="nn">Toilet - Sårup</span></li><li><span class="nk">Udsigt</span><span class="nm">369 m</span><span class="nn">Udsigtsplatform ved Sårup</span></li><li><span class="nk">Shelter</span><span class="nm">313 m</span><span class="nn"></span></li></ul>
+    <footer class="sf">
+      <code>57.08122, 8.63084</code>
+      <span class="hav">4.2 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">5 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">3</span>
+      <h3>P-plads ved Isbjerget</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Tved Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">128 m</span><span class="nn">Handicapvenlig toilet ved p-pladsen ve</span></li><li><span class="nk">Udsigt</span><span class="nm">583 m</span><span class="nn">Nors Sø, Udsigtspunkt</span></li><li><span class="nk">Vand</span><span class="nm">1845 m</span><span class="nn">Badepladsen ved Nors Sø</span></li><li><span class="nk">Shelter</span><span class="nm">2108 m</span><span class="nn"></span></li></ul>
+    <footer class="sf">
+      <code>57.04096, 8.61625</code>
+      <span class="hav">6.4 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">9 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">4</span>
+      <h3>P-plads ved Klitmøller/Trøjborg</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">39 m</span><span class="nn">Klitmøller ved Trøjborg</span></li><li><span class="nk">Shelter</span><span class="nm">1124 m</span><span class="nn">Trøjborg shelterplads</span></li></ul>
+    <footer class="sf">
+      <code>57.03574, 8.46853</code>
+      <span class="hav">0.1 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">8 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">5</span>
+      <h3>P-plads ved badepladsen ved Nors Sø</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">123 m</span><span class="nn">Vilsbøl ved Nors Sø</span></li><li><span class="nk">Udsigt</span><span class="nm">84 m</span><span class="nn">Badepladsen ved Nors Sø</span></li><li><span class="nk">Vand</span><span class="nm">176 m</span><span class="nn">Badepladsen ved Nors Sø</span></li><li><span class="nk">Shelter</span><span class="nm">660 m</span><span class="nn"></span></li></ul>
+    <footer class="sf">
+      <code>57.02806, 8.59272</code>
+      <span class="hav">6.3 km fra havet</span>
+      <span class="org">Naturstyrelsen Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">6 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">6</span>
+      <h3>Nystrup P-vest</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">parkeringsplads til 10 biler</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">446 m</span><span class="nn">Trøjborg</span></li><li><span class="nk">Shelter</span><span class="nm">392 m</span><span class="nn">Trøjborg</span></li></ul>
+    <footer class="sf">
+      <code>57.02675, 8.48720</code>
+      <span class="hav">1.5 km fra havet</span>
+      <span class="org">Naturstyrelsen Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">4 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">7</span>
+      <h3>P-plads ved Vandet Sø</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">Handicapvenligt opholdsområde</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">204 m</span><span class="nn">Vilsbøl ved skovlegeplads</span></li><li><span class="nk">Udsigt</span><span class="nm">41 m</span><span class="nn">Badebro ved Vandet Sø</span></li><li><span class="nk">Vand</span><span class="nm">41 m</span><span class="nn">Badebro ved Vandet Sø</span></li><li><span class="nk">Shelter</span><span class="nm">2509 m</span><span class="nn"></span></li></ul>
+    <footer class="sf">
+      <code>57.02316, 8.55925</code>
+      <span class="hav">5.1 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">8</span>
+      <h3>P-plads Klitmøllervej</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">Beliggende ved Vilsbøl Plantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">85 m</span><span class="nn">Vilsbøl ved skovlegeplads</span></li><li><span class="nk">Udsigt</span><span class="nm">298 m</span><span class="nn">Badebro ved Vandet Sø</span></li><li><span class="nk">Vand</span><span class="nm">298 m</span><span class="nn">Badebro ved Vandet Sø</span></li><li><span class="nk">Shelter</span><span class="nm">2239 m</span><span class="nn"></span></li></ul>
+    <footer class="sf">
+      <code>57.02281, 8.56375</code>
+      <span class="hav">5.3 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">2 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">9</span>
+      <h3>P-plads  ved Søvej</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">Vandet Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">730 m</span><span class="nn"></span></li><li><span class="nk">Udsigt</span><span class="nm">84 m</span><span class="nn">Badested ved Vandet Sø</span></li><li><span class="nk">Vand</span><span class="nm">84 m</span><span class="nn">Badested ved Vandet Sø</span></li></ul>
+    <footer class="sf">
+      <code>57.00866, 8.53766</code>
+      <span class="hav">5.1 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">8 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">10</span>
+      <h3>P-plads ved Bøgsted Rende</h3>
+      <span class="pil pil-nej">Betaling ukendt</span>
+    </header>
+    <p class="besk">Tvorup Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">23 m</span><span class="nn">Tvorup ved Bøgsted Rende</span></li><li><span class="nk">Udsigt</span><span class="nm">58 m</span><span class="nn">Bøgstedrende i Tvorup klitplantage</span></li><li><span class="nk">Shelter</span><span class="nm">1644 m</span><span class="nn">Tvorup vest shelterplads</span></li></ul>
+    <footer class="sf">
+      <code>56.98002, 8.40907</code>
+      <span class="hav">1.0 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">20 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">11</span>
+      <h3>P-plads ved Lodbjerg fyr</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Stor p-plads ved Lodbjergfyr</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">101 m</span><span class="nn">Toilet Lodbjergfyr</span></li><li><span class="nk">Shelter</span><span class="nm">180 m</span><span class="nn">Stort Shelter - Lodbjerg Fyr</span></li></ul>
+    <footer class="sf">
+      <code>56.82282, 8.26398</code>
+      <span class="hav">0.4 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">12</span>
+      <h3>P-plads ved Lodbjergsti</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">P-plads - Lodbjerg Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">334 m</span><span class="nn">Toilet Lodbjergfyr</span></li><li><span class="nk">Shelter</span><span class="nm">405 m</span><span class="nn">Stort Shelter - Lodbjerg Fyr</span></li></ul>
+    <footer class="sf">
+      <code>56.82133, 8.26668</code>
+      <span class="hav">0.2 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">samme klynge</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">13</span>
+      <h3>P-plads ved Lodbjerg/Vestre Kongevej</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Lodbjerg Klitplantage</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">924 m</span><span class="nn">Toilet Lodbjergfyr</span></li><li><span class="nk">Shelter</span><span class="nm">987 m</span><span class="nn">Stort Shelter - Lodbjerg Fyr</span></li></ul>
+    <footer class="sf">
+      <code>56.81799, 8.27427</code>
+      <span class="hav">0.5 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article>
+<article class="stop">
+  <div class="led"><span class="km">11 km</span></div>
+  <div class="kort">
+    <header class="sh">
+      <span class="nr">14</span>
+      <h3>P-plads ved Lange Mole Vej</h3>
+      <span class="pil pil-ja">Gratis bekræftet</span>
+    </header>
+    <p class="besk">Agger Tange - Lange Mole</p>
+    <ul class="naer"><li><span class="nk">Toilet</span><span class="nm">56 m</span><span class="nn">Toilet - Lange Mole</span></li><li><span class="nk">Shelter</span><span class="nm">1952 m</span><span class="nn">Shelter v/Thyborøn Kanal</span></li></ul>
+    <footer class="sf">
+      <code>56.72351, 8.23123</code>
+      <span class="hav">0.4 km fra havet</span>
+      <span class="org">Naturstyrelsen - Thy</span>
+    </footer>
+  </div>
+</article></div>
+</section>
+
+<section class="forbehold">
+  <h2>Hvad data ikke ved</h2>
+  <p>GeoFA er myndighedsdata og ved præcis hvor parkering, toiletter, shelters og
+  badesteder ligger — og feltet <code>betaling</code> fortæller, om stedet er gratis.
+  Det er derfor listen her kan lade sig gøre, hvor både websøgning og park4night gav nul
+  brugbare resultater: gratis pladser markedsføres ikke af nogen, så de findes kun i
+  infrastrukturdata.</p>
+  <p><strong>Men GeoFA ved ikke, om man må sove der.</strong> Skiltning findes ikke i
+  datasættet. Derfor står alle 28 som kandidater, og derfor kan ingen af dem bære mærket
+  &bdquo;★ Testet af Arytmi&ldquo;, før I har stået på stedet.</p>
+  <p class="moat">Det er ikke en svaghed ved metoden. Det er forretningen: kan ingen database
+  svare på det her, kan ingen konkurrent kopiere jer uden at køre de samme 1.800 km.</p>
+</section>
+
+<footer class="bund">
+  <p>Bygget 31. juli 2026 · data hentet samme dag fra
+  <code>geofa.geodanmark.dk</code>, lag <code>fkg:t_5800_fac_pkt</code></p>
+</footer>
+</div>
+</body>
+</html>
