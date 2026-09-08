@@ -225,6 +225,12 @@
     <h1 class="sr-only">Aktivér din Arytmi-konto</h1>
     <img class="logo" src="logo.png" alt="Arytmi">
 
+    <!-- 0 · vi spørger serveren, om linket stadig kan bruges -->
+    <section class="flade" id="trin-tjekker" hidden>
+      <h2>Et øjeblik</h2>
+      <p>Vi tjekker dit link.</p>
+    </section>
+
     <!-- 1 · hun kom fra linket: vælg et kodeord -->
     <section class="flade" id="trin-kodeord" hidden>
       <h2>Vælg dit kodeord</h2>
@@ -291,7 +297,7 @@
   var token = tokenFraAdressen();
 
   function vis(trin) {
-    ['trin-kodeord', 'trin-faerdig', 'trin-intet'].forEach(function (id) {
+    ['trin-tjekker', 'trin-kodeord', 'trin-faerdig', 'trin-intet'].forEach(function (id) {
       el(id).hidden = (id !== trin);
     });
   }
@@ -302,8 +308,42 @@
   }
 
   if (!token) { vis('trin-intet'); return; }
-  vis('trin-kodeord');
-  try { felt.focus({ preventScroll: true }); } catch (e) { felt.focus(); }
+
+  function visDoedtLink(tekst) {
+    el('intet-overskrift').textContent = 'Linket kan ikke bruges mere';
+    el('intet-tekst').textContent = (tekst || 'Linket virker ikke længere.') +
+      ' Et aktiveringslink kan kun bruges én gang og udløber efter 14 dage.';
+    vis('trin-intet');
+  }
+
+  function visFormular() {
+    vis('trin-kodeord');
+    try { felt.focus({ preventScroll: true }); } catch (e) { felt.focus(); }
+  }
+
+  /* Spørg FØRST, om linket stadig kan bruges. Uden det her fik man en pæn
+     kodeordsformular på et link, der forlængst var brugt op, og opdagede
+     det først efter at have skrevet et kodeord og trykket. Det fik det til
+     at ligne et hul, hvor enhver kunne sætte et nyt kodeord — og sådan
+     læste Kennet det med det samme den 8/9. Linket VAR dødt; siden sagde
+     det bare ikke.
+
+     Går tjekket galt, viser vi formularen alligevel. Serveren siger nej,
+     hvis linket er dødt, og et fladt netværk må ikke kunne spærre en
+     betalende kunde ude af den app, hun lige har købt. */
+  vis('trin-tjekker');
+  fetch(PROJEKT_URL + '/functions/v1/aktiver-konto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: ANON },
+    body: JSON.stringify({ token: token, tjek: true })
+  }).then(function (r) {
+    return r.ok ? r.json() : null;
+  }).then(function (svar) {
+    if (svar && svar.brugbar === false) visDoedtLink();
+    else visFormular();
+  }).catch(function () {
+    visFormular();
+  });
 
   /* Vis/skjul. En, der ikke kan se, hvad hun skriver, vælger et kortere
      kodeord — så knappen her gør reelt kodeordet stærkere. */
@@ -363,12 +403,7 @@
            En generel besked her ville overskrive en præcis, og det er
            præcis den fejl, værktøjskassen lærte os den 6/9. */
         var t = res.svar && res.svar.error ? res.svar.error : 'Kontoen kunne ikke aktiveres. Prøv igen.';
-        if (/linket virker ikke/i.test(t)) {
-          el('intet-overskrift').textContent = 'Linket kan ikke bruges mere';
-          el('intet-tekst').textContent = t + ' Et aktiveringslink kan kun bruges én gang og udløber efter 14 dage.';
-          vis('trin-intet');
-          return;
-        }
+        if (/linket virker ikke/i.test(t)) { visDoedtLink(t); return; }
         visFejl(t);
         send.disabled = false;
         send.textContent = 'Aktivér min konto';
