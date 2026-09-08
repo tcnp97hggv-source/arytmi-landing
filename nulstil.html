@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyt kodeord til Arytmi</title>
+<meta name="description" content="Bed om et nyt kodeord til din Arytmi-konto.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+<!--
+  ARYTMI — nulstil.html. Vejen tilbage, når kodeordet er glemt.
+
+  Bygget 8/9 efter Kennets besked: "Der skal laves en
+  kodeordsnulstillingsmulighed." Indtil da var der ingen — havde en kunde
+  glemt sit kodeord, skulle Kennet selv i gang.
+
+  Siden har to indgange, og den vælger selv:
+    uden token i adressen  → skriv din mail, så sender vi et link
+    med token i adressen   → vælg det nye kodeord
+
+  Den kan ikke noget selv. Alt afgøres af Edge-funktionen
+  `nulstil-kodeord`: om adressen findes, om loftet er nået, om linket
+  stadig virker, om kodeordet er langt nok og ikke står i et kendt læk.
+  En regel, der kun findes i en browser, er en anbefaling.
+
+  Læg mærke til kvitteringen: den er DEN SAMME, uanset om mailadressen
+  findes eller ej. Ellers ville formularen være et opslagsværk over, hvem
+  der er kunde hos Arytmi — man kunne prøve adresser af, én ad gangen, og
+  læse svaret.
+
+  Systemskrift som forsiden. Repoet har ingen fonts/-mappe.
+
+  NØGLEN HERUNDER ER OFFENTLIG. Det er anon-nøglen, lavet til at stå i
+  klientkode. Service-nøglen er en helt anden ting og må aldrig herind.
+-->
+<style>
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+    --fejl:#9c4221;
+    --god:#4f6b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    position:relative;
+    padding:24px 20px 90px;
+    overflow-x:hidden;
+  }
+  .bil{
+    position:fixed;
+    bottom:-30px;
+    right:-40px;
+    width:min(70vw,520px);
+    opacity:.14;
+    filter:grayscale(1);
+    pointer-events:none;
+  }
+  .kort{ position:relative; z-index:1; width:100%; max-width:420px; }
+  .logo{ width:min(190px,52vw); height:auto; margin:0 auto 28px; display:block; }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .flade{
+    background:var(--flade);
+    border:1px solid var(--linje);
+    border-radius:16px;
+    padding:26px 22px;
+  }
+  h2{ font-size:21px; line-height:1.3; font-weight:600; margin-bottom:10px; }
+  p{ font-size:15px; line-height:1.6; color:var(--fjord); }
+  p + p{ margin-top:12px; }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--gran);
+    margin:22px 0 8px;
+  }
+  .felt{ position:relative; }
+  input{
+    width:100%;
+    font-family:inherit;
+    font-size:16px;            /* 16px: mindre får iOS til at zoome ind */
+    color:var(--tekst);
+    background:#fff;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:14px;
+  }
+  input[type=password], input[type=text].kode{ padding-right:76px; }
+  input:focus{
+    outline:2px solid var(--rav);
+    outline-offset:1px;
+    border-color:var(--rav);
+  }
+  .vis{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:0;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--fjord);
+    padding:8px 10px;
+    cursor:pointer;
+    border-radius:8px;
+  }
+  .vis:hover{ color:var(--gran); }
+  .maaler{
+    font-size:13px;
+    line-height:1.5;
+    margin-top:8px;
+    color:var(--dæmpet);
+    min-height:20px;
+  }
+  .maaler.god{ color:var(--god); }
+  button.send{
+    width:100%;
+    margin-top:20px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:var(--gran);
+    border:0;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+  }
+  button.send:hover{ background:var(--gran-mørk); }
+  button.send[disabled]{ background:var(--dæmpet); cursor:default; }
+  .besked{
+    margin-top:18px;
+    font-size:14px;
+    line-height:1.6;
+    border-radius:10px;
+    padding:13px 15px;
+  }
+  .besked.fejl{ color:var(--fejl); background:#f7ece7; border:1px solid #e6cfc4; }
+  .besked.ok{ color:var(--god); background:#eef2ea; border:1px solid #d5ddd0; }
+  .hjaelp{ margin-top:18px; font-size:13px; line-height:1.6; color:var(--dæmpet); }
+  .hjaelp a{ color:var(--gran); }
+  footer{
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:13px;
+    color:var(--dæmpet);
+  }
+  footer a{ color:var(--gran); text-decoration:none; border-bottom:1px solid var(--linje); }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+
+  <main class="kort">
+    <h1 class="sr-only">Nyt kodeord til Arytmi</h1>
+    <img class="logo" src="logo.png" alt="Arytmi">
+
+    <!-- 0 · vi spørger serveren, om linket stadig kan bruges -->
+    <section class="flade" id="trin-tjekker" hidden>
+      <h2>Et øjeblik</h2>
+      <p>Vi tjekker dit link.</p>
+    </section>
+
+    <!-- 1 · hun er kommet hertil uden link: bed om et -->
+    <section class="flade" id="trin-bed" hidden>
+      <h2>Glemt dit kodeord?</h2>
+      <p>Skriv den mailadresse, du bruger til Arytmi, så sender vi dig et link, hvor du vælger et nyt.</p>
+
+      <form id="bed-form" novalidate>
+        <label for="email">Mailadresse</label>
+        <input id="email" name="email" type="email" inputmode="email"
+               autocomplete="username" autocapitalize="off" spellcheck="false"
+               placeholder="dig@eksempel.dk" required>
+        <button type="submit" class="send" id="bed-send">Send mig et link</button>
+      </form>
+
+      <div class="besked fejl" id="bed-fejl" role="alert" hidden></div>
+      <p class="hjaelp">Har du aldrig valgt et kodeord, skal du i stedet bruge linket i din ordrebekræftelse.</p>
+    </section>
+
+    <!-- 2 · kvitteringen. Den samme, uanset om adressen findes -->
+    <section class="flade" id="trin-sendt" hidden>
+      <h2>Så er den sendt</h2>
+      <div class="besked ok" role="status" id="sendt-besked">Findes der en konto på den adresse, ligger der nu en mail med et link.</div>
+      <p>Linket virker én gang og gælder i en time.</p>
+      <p class="hjaelp">Kommer der ingen mail, så kig i spam. Ellers skriver du til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a>.</p>
+    </section>
+
+    <!-- 3 · hun kom fra linket: vælg det nye kodeord -->
+    <section class="flade" id="trin-kodeord" hidden>
+      <h2>Vælg dit nye kodeord</h2>
+      <p>Du logger ind med din mailadresse og det kodeord, du vælger her.</p>
+
+      <form id="kode-form" novalidate>
+        <label for="kodeord">Nyt kodeord</label>
+        <div class="felt">
+          <input id="kodeord" name="kodeord" type="password" class="kode"
+                 autocomplete="new-password" autocapitalize="off" spellcheck="false"
+                 aria-describedby="maaler" required>
+          <button type="button" class="vis" id="vis" aria-label="Vis kodeordet">Vis</button>
+        </div>
+        <p class="maaler" id="maaler" role="status" aria-live="polite">Mindst 12 tegn.</p>
+        <button type="submit" class="send" id="kode-send">Gem mit nye kodeord</button>
+      </form>
+
+      <div class="besked fejl" id="kode-fejl" role="alert" hidden></div>
+
+      <!-- Ingen krav om specialtegn. Besluttet af Kennet 7/9: tvungne
+           tegnkrav producerer Sommer2026! og genbrug på tværs af tjenester.
+           Længden gør arbejdet, og serveren tjekker mod kendte datalæk. -->
+      <p class="hjaelp">Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+    </section>
+
+    <!-- 4 · færdig -->
+    <section class="flade" id="trin-faerdig" hidden>
+      <h2>Kodeordet er skiftet</h2>
+      <div class="besked ok" id="faerdig-besked" role="status">Dit nye kodeord er gemt.</div>
+      <p>Åbn Arytmi og log ind med din mailadresse og det nye kodeord.</p>
+      <p class="hjaelp">Linket er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
+    </section>
+
+    <!-- 5 · linket kan ikke bruges -->
+    <section class="flade" id="trin-doedt" hidden>
+      <h2>Linket kan ikke bruges mere</h2>
+      <p>Et nulstillingslink virker én gang og gælder i en time. Bed om et nyt, så sender vi det med det samme.</p>
+      <button type="button" class="send" id="igen">Bed om et nyt link</button>
+    </section>
+  </main>
+
+  <footer>Spørgsmål? Skriv til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
+  var ENDEPUNKT = PROJEKT_URL + '/functions/v1/nulstil-kodeord';
+  var MIN_KODEORD = 12;
+
+  var el = function (id) { return document.getElementById(id); };
+  var TRIN = ['trin-tjekker', 'trin-bed', 'trin-sendt', 'trin-kodeord', 'trin-faerdig', 'trin-doedt'];
+
+  function vis(trin) {
+    TRIN.forEach(function (id) { el(id).hidden = (id !== trin); });
+  }
+
+  function kald(krop) {
+    return fetch(ENDEPUNKT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON },
+      body: JSON.stringify(krop)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (svar) {
+        return { ok: r.ok, svar: svar };
+      });
+    });
+  }
+
+  /* Tokenet står i FRAGMENTET, ikke i en forespørgselsstreng. Fragmentet
+     sendes aldrig til en server og havner derfor hverken i serverlogs
+     eller i en henvisende adresse. Samme valg som aktiveringslinket. */
+  function tokenFraAdressen() {
+    var h = String(location.hash || '').replace(/^#/, '').trim();
+    return /^[0-9a-f]{32,128}$/i.test(h) ? h : null;
+  }
+
+  var token = tokenFraAdressen();
+
+  // ---------- 1 · bed om et link ----------
+  var bedForm = el('bed-form'), bedFelt = el('email'), bedSend = el('bed-send'), bedFejl = el('bed-fejl');
+
+  function visBed() {
+    vis('trin-bed');
+    try { bedFelt.focus({ preventScroll: true }); } catch (e) { bedFelt.focus(); }
+  }
+
+  bedFelt.addEventListener('input', function () { bedFejl.hidden = true; });
+
+  bedForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    bedFejl.hidden = true;
+    var email = bedFelt.value.trim();
+    if (!email) { bedFejl.textContent = 'Skriv din mailadresse.'; bedFejl.hidden = false; bedFelt.focus(); return; }
+
+    bedSend.disabled = true;
+    bedSend.textContent = 'Sender …';
+    kald({ email: email }).then(function (res) {
+      if (!res.ok) {
+        bedFejl.textContent = (res.svar && res.svar.error) || 'Der gik noget galt. Prøv igen.';
+        bedFejl.hidden = false;
+        bedSend.disabled = false;
+        bedSend.textContent = 'Send mig et link';
+        return;
+      }
+      /* Serveren svarer det SAMME, uanset om adressen findes. Vi må derfor
+         heller ikke sige noget andet her — det ville gøre siden til et
+         opslagsværk over, hvem der er kunde. */
+      if (res.svar && res.svar.besked) el('sendt-besked').textContent = res.svar.besked;
+      vis('trin-sendt');
+    }).catch(function () {
+      bedFejl.textContent = 'Ingen forbindelse. Tjek nettet, og prøv igen.';
+      bedFejl.hidden = false;
+      bedSend.disabled = false;
+      bedSend.textContent = 'Send mig et link';
+    });
+  });
+
+  el('igen').addEventListener('click', function () {
+    /* Tokenet ud af adressen først. Ellers ville en genindlæsning sende
+       hende tilbage til det døde link, hun lige kom fra. */
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    bedSend.disabled = false;
+    bedSend.textContent = 'Send mig et link';
+    visBed();
+  });
+
+  // ---------- 2 · vælg det nye kodeord ----------
+  var kodeForm = el('kode-form'), felt = el('kodeord'), kodeSend = el('kode-send');
+  var maaler = el('maaler'), kodeFejl = el('kode-fejl');
+
+  el('vis').addEventListener('click', function () {
+    var skjult = felt.type === 'password';
+    felt.type = skjult ? 'text' : 'password';
+    this.textContent = skjult ? 'Skjul' : 'Vis';
+    this.setAttribute('aria-label', skjult ? 'Skjul kodeordet' : 'Vis kodeordet');
+    felt.focus();
+  });
+
+  function opdater() {
+    var n = felt.value.length;
+    if (n === 0) { maaler.textContent = 'Mindst ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
+    else if (n < MIN_KODEORD) { maaler.textContent = n + ' af ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
+    else { maaler.textContent = 'Langt nok — ' + n + ' tegn.'; maaler.className = 'maaler god'; }
+  }
+  felt.addEventListener('input', function () { opdater(); kodeFejl.hidden = true; });
+  opdater();
+
+  kodeForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    kodeFejl.hidden = true;
+    var kodeord = felt.value;
+    if (kodeord.length < MIN_KODEORD) {
+      kodeFejl.textContent = 'Kodeordet skal være mindst ' + MIN_KODEORD + ' tegn. Du har ' + kodeord.length + '.';
+      kodeFejl.hidden = false;
+      felt.focus();
+      return;
+    }
+
+    kodeSend.disabled = true;
+    kodeSend.textContent = 'Gemmer …';
+    kald({ token: token, kodeord: kodeord }).then(function (res) {
+      if (!res.ok) {
+        var t = (res.svar && res.svar.error) || 'Kodeordet kunne ikke gemmes. Prøv igen.';
+        /* Serverens tekster er skrevet til et menneske — "Det kodeord er
+           set i et datalæk". En generel besked må aldrig overskrive en
+           præcis; det er den fejl, værktøjskassen lærte os 6/9. */
+        if (/linket virker ikke/i.test(t)) { vis('trin-doedt'); return; }
+        kodeFejl.textContent = t;
+        kodeFejl.hidden = false;
+        kodeSend.disabled = false;
+        kodeSend.textContent = 'Gem mit nye kodeord';
+        felt.focus();
+        return;
+      }
+      var email = res.svar && res.svar.email;
+      if (email) el('faerdig-besked').textContent = 'Dit nye kodeord er gemt. Du logger ind som ' + email + '.';
+      /* Tokenet ud af adresselinjen, nu hvor det er brugt op. */
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      felt.value = '';
+      vis('trin-faerdig');
+    }).catch(function () {
+      kodeFejl.textContent = 'Ingen forbindelse. Tjek nettet, og prøv igen.';
+      kodeFejl.hidden = false;
+      kodeSend.disabled = false;
+      kodeSend.textContent = 'Gem mit nye kodeord';
+    });
+  });
+
+  // ---------- hvilken indgang? ----------
+  if (!token) { visBed(); return; }
+
+  /* Spørg FØRST, om linket stadig kan bruges, så hun ikke inviteres til at
+     skrive et kodeord ind i et link, der er dødt. Går tjekket galt, viser
+     vi formularen alligevel: serveren siger nej, hvis linket er dødt, og
+     et fladt netværk må ikke spærre hende ude af hendes egen konto. */
+  vis('trin-tjekker');
+  kald({ token: token, tjek: true }).then(function (res) {
+    if (res.ok && res.svar && res.svar.brugbar === false) { vis('trin-doedt'); return; }
+    vis('trin-kodeord');
+    try { felt.focus({ preventScroll: true }); } catch (e) { felt.focus(); }
+  }).catch(function () {
+    vis('trin-kodeord');
+  });
+})();
+</script>
+</body>
+</html>
