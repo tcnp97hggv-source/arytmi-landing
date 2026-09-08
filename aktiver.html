@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aktivér din Arytmi</title>
+<meta name="description" content="Vælg et kodeord, og din Arytmi-konto er klar.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+<!--
+  ARYTMI — aktiver.html. Trin 5-6 i kunderejsen.
+
+  DENNE FIL HØRER I `arytmi-landing`, ikke i app-repoet. Den ligger her som
+  kilde og til lokal afprøvning; arytmi.com udgives fra det andet repo.
+  Filnavnet er `aktiver.html`, og GitHub Pages serverer den på `/aktiver`
+  uden omdirigering — præcis den adresse, `opret-kunde` sender ud.
+
+  Hvorfor en side og ikke bare appen: `arytmi.com` er ét GitHub Pages-sted,
+  og det er landingssidens. Appen kan altså ikke ligge på den adresse.
+  Til gengæld skal denne side ikke kunne noget selv: den viser en formular
+  og lader `aktiver-konto` afgøre alt. Længden, kendte datalæk, om tokenet
+  er brugt eller udløbet — det ligger på serveren, hvor det ikke kan
+  omgås. En regel, der kun findes i en browser, er en anbefaling.
+
+  Siden er selvbærende med vilje. `arytmi-landing` har hverken `auth.js`
+  eller supabase-biblioteket, og en kopi af dem derovre ville drive fra
+  originalen. Det er ikke et tænkt problem: den 8/9 stod der to
+  forskellige mailadresser i de to udgaver af forsiden.
+
+  NØGLEN HERUNDER ER OFFENTLIG. Det er anon-nøglen, lavet til at stå i
+  klientkode. Service-nøglen er en helt anden ting og må aldrig herind.
+-->
+<style>
+  /* Systemskrift, ikke Inter. Det er ikke et designvalg, det er en
+     kontrol: `arytmi-landing` har ingen `fonts/`-mappe, og den live
+     forside kører derfor på systemskrift. En @font-face her ville pege
+     på en fil, der ikke findes, og aktiveringssiden ville se ud som et
+     andet brand end den forside, kunden lige kom fra.
+     (App-repoets `landingsside/index.html` HAR en Inter-udgave, men den
+     er aldrig blevet udgivet. To forsider, to design — se status.) */
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+    --fejl:#9c4221;
+    --god:#4f6b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    position:relative;
+    padding:24px 20px 90px;
+    overflow-x:hidden;
+  }
+  .bil{
+    position:fixed;
+    bottom:-30px;
+    right:-40px;
+    width:min(70vw,520px);
+    opacity:.14;
+    filter:grayscale(1);
+    pointer-events:none;
+  }
+  .kort{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:420px;
+  }
+  .logo{
+    width:min(190px,52vw);
+    height:auto;
+    margin:0 auto 28px;
+    display:block;
+  }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .flade{
+    background:var(--flade);
+    border:1px solid var(--linje);
+    border-radius:16px;
+    padding:26px 22px;
+  }
+  h2{
+    font-size:21px;
+    line-height:1.3;
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  p{
+    font-size:15px;
+    line-height:1.6;
+    color:var(--fjord);
+  }
+  p + p{ margin-top:12px; }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--gran);
+    margin:22px 0 8px;
+  }
+  .felt{
+    position:relative;
+  }
+  input[type=password], input[type=text]{
+    width:100%;
+    font-family:inherit;
+    font-size:16px;            /* 16px: mindre får iOS til at zoome ind */
+    color:var(--tekst);
+    background:#fff;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:14px 76px 14px 14px;
+  }
+  input:focus{
+    outline:2px solid var(--rav);
+    outline-offset:1px;
+    border-color:var(--rav);
+  }
+  .vis{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:0;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--fjord);
+    padding:8px 10px;
+    cursor:pointer;
+    border-radius:8px;
+  }
+  .vis:hover{ color:var(--gran); }
+  .maaler{
+    font-size:13px;
+    line-height:1.5;
+    margin-top:8px;
+    color:var(--dæmpet);
+    min-height:20px;
+  }
+  .maaler.god{ color:var(--god); }
+  button.send{
+    width:100%;
+    margin-top:20px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:var(--gran);
+    border:0;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+  }
+  button.send:hover{ background:var(--gran-mørk); }
+  button.send[disabled]{
+    background:var(--dæmpet);
+    cursor:default;
+  }
+  .besked{
+    margin-top:18px;
+    font-size:14px;
+    line-height:1.6;
+    border-radius:10px;
+    padding:13px 15px;
+  }
+  .besked.fejl{
+    color:var(--fejl);
+    background:#f7ece7;
+    border:1px solid #e6cfc4;
+  }
+  .besked.ok{
+    color:var(--god);
+    background:#eef2ea;
+    border:1px solid #d5ddd0;
+  }
+  .hjaelp{
+    margin-top:18px;
+    font-size:13px;
+    line-height:1.6;
+    color:var(--dæmpet);
+  }
+  .hjaelp a{ color:var(--gran); }
+  footer{
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:13px;
+    color:var(--dæmpet);
+  }
+  footer a{
+    color:var(--gran);
+    text-decoration:none;
+    border-bottom:1px solid var(--linje);
+  }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+
+  <main class="kort">
+    <h1 class="sr-only">Aktivér din Arytmi-konto</h1>
+    <img class="logo" src="logo.png" alt="Arytmi">
+
+    <!-- 1 · hun kom fra linket: vælg et kodeord -->
+    <section class="flade" id="trin-kodeord" hidden>
+      <h2>Vælg dit kodeord</h2>
+      <p>Så er din konto din. Du logger ind med din mailadresse og det kodeord, du vælger her.</p>
+
+      <form id="form" novalidate>
+        <label for="kodeord">Kodeord</label>
+        <div class="felt">
+          <input id="kodeord" name="kodeord" type="password"
+                 autocomplete="new-password" autocapitalize="off" spellcheck="false"
+                 aria-describedby="maaler" required>
+          <button type="button" class="vis" id="vis" aria-label="Vis kodeordet">Vis</button>
+        </div>
+        <p class="maaler" id="maaler" role="status" aria-live="polite">Mindst 12 tegn.</p>
+        <button type="submit" class="send" id="send">Aktivér min konto</button>
+      </form>
+
+      <div class="besked fejl" id="fejl" role="alert" hidden></div>
+
+      <!-- Ingen krav om specialtegn. Besluttet af Kennet 7/9: tvungne
+           tegnkrav producerer Sommer2026! og genbrug på tværs af tjenester.
+           Længden gør arbejdet, og serveren tjekker mod kendte datalæk. -->
+      <p class="hjaelp">Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+    </section>
+
+    <!-- 2 · færdig -->
+    <section class="flade" id="trin-faerdig" hidden>
+      <h2>Din konto er klar</h2>
+      <div class="besked ok" id="faerdig-besked" role="status">Kodeordet er gemt.</div>
+      <p>Åbn Arytmi og log ind med din mailadresse og dit nye kodeord.</p>
+      <p class="hjaelp">Linket i din ordrebekræftelse er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
+    </section>
+
+    <!-- 3 · hun kom uden et link, eller med et, der er slidt op -->
+    <section class="flade" id="trin-intet" hidden>
+      <h2 id="intet-overskrift">Brug linket i din ordrebekræftelse</h2>
+      <p id="intet-tekst">Denne side åbnes fra det link, du fik i mailen, da du købte Arytmi. Linket beviser, at det er dig, der er køberen — derfor kan kontoen ikke aktiveres uden det.</p>
+      <p class="hjaelp">Kan du ikke finde mailen, så kig i spam. Ellers skriver du til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a>, så sender vi et nyt link.</p>
+    </section>
+  </main>
+
+  <footer>Spørgsmål? Skriv til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
+  var MIN_KODEORD = 12;
+
+  var el = function (id) { return document.getElementById(id); };
+  var form = el('form'), felt = el('kodeord'), send = el('send');
+  var maaler = el('maaler'), fejl = el('fejl');
+
+  /* Tokenet står i FRAGMENTET, ikke i en forespørgselsstreng. Fragmentet
+     sendes aldrig til en server og havner derfor hverken i serverlogs
+     eller i en henvisende adresse. Samme valg som gæstelinket i fase 3. */
+  function tokenFraAdressen() {
+    var h = String(location.hash || '').replace(/^#/, '').trim();
+    return /^[0-9a-f]{32,128}$/i.test(h) ? h : null;
+  }
+
+  var token = tokenFraAdressen();
+
+  function vis(trin) {
+    ['trin-kodeord', 'trin-faerdig', 'trin-intet'].forEach(function (id) {
+      el(id).hidden = (id !== trin);
+    });
+  }
+
+  function visFejl(tekst) {
+    fejl.textContent = tekst;
+    fejl.hidden = false;
+  }
+
+  if (!token) { vis('trin-intet'); return; }
+  vis('trin-kodeord');
+  try { felt.focus({ preventScroll: true }); } catch (e) { felt.focus(); }
+
+  /* Vis/skjul. En, der ikke kan se, hvad hun skriver, vælger et kortere
+     kodeord — så knappen her gør reelt kodeordet stærkere. */
+  el('vis').addEventListener('click', function () {
+    var skjult = felt.type === 'password';
+    felt.type = skjult ? 'text' : 'password';
+    this.textContent = skjult ? 'Skjul' : 'Vis';
+    this.setAttribute('aria-label', skjult ? 'Skjul kodeordet' : 'Vis kodeordet');
+    felt.focus();
+  });
+
+  /* Tælleren fortæller, hvor langt hun er, MENS hun skriver. Serveren siger
+     nej alligevel, hvis hun ikke lytter — men et nej efter et klik er en
+     dårligere oplevelse end et tal, der tæller op. */
+  function opdater() {
+    var n = felt.value.length;
+    if (n === 0) {
+      maaler.textContent = 'Mindst ' + MIN_KODEORD + ' tegn.';
+      maaler.className = 'maaler';
+    } else if (n < MIN_KODEORD) {
+      maaler.textContent = n + ' af ' + MIN_KODEORD + ' tegn.';
+      maaler.className = 'maaler';
+    } else {
+      maaler.textContent = 'Langt nok — ' + n + ' tegn.';
+      maaler.className = 'maaler god';
+    }
+  }
+  felt.addEventListener('input', function () { opdater(); fejl.hidden = true; });
+  opdater();
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    fejl.hidden = true;
+
+    var kodeord = felt.value;
+    if (kodeord.length < MIN_KODEORD) {
+      visFejl('Kodeordet skal være mindst ' + MIN_KODEORD + ' tegn. Du har ' + kodeord.length + '.');
+      felt.focus();
+      return;
+    }
+
+    send.disabled = true;
+    send.textContent = 'Aktiverer …';
+
+    fetch(PROJEKT_URL + '/functions/v1/aktiver-konto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON },
+      body: JSON.stringify({ token: token, kodeord: kodeord })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (svar) {
+        return { ok: r.ok, svar: svar };
+      });
+    }).then(function (res) {
+      if (!res.ok) {
+        /* Serverens tekster er allerede skrevet til et menneske — "Det
+           kodeord er set i et datalæk", "Linket virker ikke længere".
+           En generel besked her ville overskrive en præcis, og det er
+           præcis den fejl, værktøjskassen lærte os den 6/9. */
+        var t = res.svar && res.svar.error ? res.svar.error : 'Kontoen kunne ikke aktiveres. Prøv igen.';
+        if (/linket virker ikke/i.test(t)) {
+          el('intet-overskrift').textContent = 'Linket kan ikke bruges mere';
+          el('intet-tekst').textContent = t + ' Et aktiveringslink kan kun bruges én gang og udløber efter 14 dage.';
+          vis('trin-intet');
+          return;
+        }
+        visFejl(t);
+        send.disabled = false;
+        send.textContent = 'Aktivér min konto';
+        felt.focus();
+        return;
+      }
+
+      var email = res.svar && res.svar.email;
+      if (email) {
+        el('faerdig-besked').textContent = 'Kodeordet er gemt. Du logger ind som ' + email + '.';
+      }
+      /* Tokenet ud af adresselinjen, nu hvor det er brugt op. Det skal
+         ikke stå og lyse i browserhistorikken eller følge med, hvis hun
+         deler skærmen. */
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      felt.value = '';
+      vis('trin-faerdig');
+    }).catch(function () {
+      visFejl('Ingen forbindelse. Tjek nettet, og prøv igen.');
+      send.disabled = false;
+      send.textContent = 'Aktivér min konto';
+    });
+  });
+})();
+</script>
+</body>
+</html>
