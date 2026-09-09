@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kom med i Arytmi</title>
+<meta name="description" content="Tag imod invitationen til at dele Arytmi med din rejsemakker.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+<!--
+  ARYTMI — os.html. Den anden ende af partnerinvitationen.
+
+  Bygget 9/9 som første del af fase 3. Den, der lander her, har fået en SMS
+  fra en, der allerede bruger Arytmi, og har måske aldrig hørt om appen.
+  Siden skal derfor kunne stå alene: hvem har inviteret, hvad siger man ja
+  til, og hvad sker der bagefter.
+
+  KENNET 8/9: invitationen OPRETTER kontoen. Det er ikke selvbetjent
+  oprettelse — den kræver et link fra en betalende kunde. Reglen om at man
+  aldrig opretter sig selv i Arytmi står ved magt.
+
+  TO IDENTITETER, TO ROLLER, og det er derfor der spørges om en mail her:
+  SMS'en gik til et TELEFONNUMMER, fordi det er det, afsenderen kender. Men
+  i Arytmi er man sin MAILADRESSE (beslutningen fra 7/9). Nummeret er
+  leveringsvej, ikke identitet.
+
+  Siden kan ikke noget selv. Alt afgøres af Edge-funktionen
+  `accepter-partner`: om linket lever, om kodeordet er langt nok og ikke
+  står i et kendt læk, om mailen allerede har en konto, og om nogen af de
+  to allerede har haft en fast rejsemakker. En regel, der kun findes i en
+  browser, er en anbefaling.
+
+  Læg mærke til, hvor lidt vi viser: kun afsenderens FORNAVN. Ikke mail,
+  ikke telefonnummer. Et link, der er faldet i de forkerte hænder, skal
+  ikke kunne bruges som opslagsværk over, hvem der er kunde hos Arytmi.
+
+  Systemskrift som forsiden. Repoet har ingen fonts/-mappe.
+
+  NØGLEN HERUNDER ER OFFENTLIG. Det er den publicerbare nøgle, lavet til at
+  stå i klientkode. Service-nøglen er en helt anden ting og må aldrig herind.
+-->
+<style>
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+    --fejl:#9c4221;
+    --god:#4f6b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    position:relative;
+    padding:24px 20px 90px;
+    overflow-x:hidden;
+  }
+  .bil{
+    position:fixed;
+    bottom:-30px;
+    right:-40px;
+    width:min(70vw,520px);
+    opacity:.14;
+    filter:grayscale(1);
+    pointer-events:none;
+  }
+  .kort{ position:relative; z-index:1; width:100%; max-width:420px; }
+  .logo{ width:min(190px,52vw); height:auto; margin:0 auto 28px; display:block; }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .flade{
+    background:var(--flade);
+    border:1px solid var(--linje);
+    border-radius:16px;
+    padding:26px 22px;
+  }
+  h2{ font-size:21px; line-height:1.3; font-weight:600; margin-bottom:10px; }
+  p{ font-size:15px; line-height:1.6; color:var(--fjord); }
+  p + p{ margin-top:12px; }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--gran);
+    margin:22px 0 8px;
+  }
+  .felt{ position:relative; }
+  input{
+    width:100%;
+    font-family:inherit;
+    font-size:16px;            /* 16px: mindre får iOS til at zoome ind */
+    color:var(--tekst);
+    background:#fff;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:14px;
+  }
+  input[type=password], input[type=text].kode{ padding-right:76px; }
+  input:focus{
+    outline:2px solid var(--rav);
+    outline-offset:1px;
+    border-color:var(--rav);
+  }
+  .vis{
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:0;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--fjord);
+    padding:8px 10px;
+    cursor:pointer;
+    border-radius:8px;
+  }
+  .vis:hover{ color:var(--gran); }
+  .maaler{
+    font-size:13px;
+    line-height:1.5;
+    margin-top:8px;
+    color:var(--dæmpet);
+    min-height:20px;
+  }
+  .maaler.god{ color:var(--god); }
+  button.send{
+    width:100%;
+    margin-top:20px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:var(--gran);
+    border:0;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+  }
+  button.send:hover{ background:var(--gran-mørk); }
+  button.send[disabled]{ background:var(--dæmpet); cursor:default; }
+  .besked{
+    margin-top:18px;
+    font-size:14px;
+    line-height:1.6;
+    border-radius:10px;
+    padding:13px 15px;
+  }
+  .besked.fejl{ color:var(--fejl); background:#f7ece7; border:1px solid #e6cfc4; }
+  .besked.ok{ color:var(--god); background:#eef2ea; border:1px solid #d5ddd0; }
+  .hjaelp{ margin-top:18px; font-size:13px; line-height:1.6; color:var(--dæmpet); }
+  .hjaelp a{ color:var(--gran); }
+  .deler{
+    margin-top:16px;
+    padding-left:18px;
+    font-size:14px;
+    line-height:1.7;
+    color:var(--fjord);
+  }
+  .deler li{ margin-bottom:2px; }
+  footer{
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:13px;
+    color:var(--dæmpet);
+  }
+  footer a{ color:var(--gran); text-decoration:none; border-bottom:1px solid var(--linje); }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+
+  <main class="kort">
+    <h1 class="sr-only">Kom med i Arytmi</h1>
+    <img class="logo" src="logo.png" alt="Arytmi">
+
+    <!-- 0 · vi spørger serveren, om invitationen stadig gælder -->
+    <section class="flade" id="trin-tjekker" hidden>
+      <h2>Et øjeblik</h2>
+      <p>Vi tjekker din invitation.</p>
+    </section>
+
+    <!-- 1 · her uden et link. Siden kan ikke hjælpe. -->
+    <section class="flade" id="trin-intet" hidden>
+      <h2>Her mangler et link</h2>
+      <p>Den her side åbnes fra invitationen i den SMS, du har fået. Åbn linket i beskeden, så kommer du det rigtige sted hen.</p>
+      <p class="hjaelp">Har du selv købt Arytmi, skal du i stedet bruge linket i din ordrebekræftelse.</p>
+    </section>
+
+    <!-- 2 · tag imod -->
+    <section class="flade" id="trin-vaelg" hidden>
+      <h2 id="overskrift">Du er inviteret med</h2>
+      <p id="indledning">Du er inviteret til at dele Arytmi som fast rejsemakker.</p>
+
+      <ul class="deler">
+        <li>I ser de samme ture</li>
+        <li>I deler pakkelister og planer</li>
+        <li>Retter den ene noget, står det hos den anden</li>
+      </ul>
+
+      <form id="tag-imod" novalidate>
+        <label for="email">Din mailadresse</label>
+        <input id="email" name="email" type="email" inputmode="email"
+               autocomplete="username" autocapitalize="off" spellcheck="false"
+               placeholder="dig@eksempel.dk" required>
+
+        <label for="kodeord">Vælg et kodeord</label>
+        <div class="felt">
+          <input id="kodeord" name="kodeord" type="password" class="kode"
+                 autocomplete="new-password" autocapitalize="off" spellcheck="false"
+                 aria-describedby="maaler" required>
+          <button type="button" class="vis" id="vis" aria-label="Vis kodeordet">Vis</button>
+        </div>
+        <p class="maaler" id="maaler" role="status" aria-live="polite">Mindst 12 tegn.</p>
+
+        <button type="submit" class="send" id="send">Tag imod invitationen</button>
+      </form>
+
+      <div class="besked fejl" id="fejl" role="alert" hidden></div>
+
+      <!-- Ingen krav om specialtegn. Besluttet af Kennet 7/9: tvungne
+           tegnkrav producerer Sommer2026! og genbrug på tværs af tjenester.
+           Længden gør arbejdet, og serveren tjekker mod kendte datalæk. -->
+      <p class="hjaelp">Du logger ind i appen med din mailadresse og det kodeord, du vælger her. Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+    </section>
+
+    <!-- 3 · færdig -->
+    <section class="flade" id="trin-faerdig" hidden>
+      <h2>Så er I to om det</h2>
+      <div class="besked ok" id="faerdig-besked" role="status">Din konto er klar.</div>
+      <p>Hent Arytmi, og log ind med din mailadresse og dit nye kodeord. Turene er der allerede.</p>
+      <p class="hjaelp">Linket er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
+    </section>
+
+    <!-- 4 · linket kan ikke bruges -->
+    <section class="flade" id="trin-doedt" hidden>
+      <h2>Invitationen gælder ikke længere</h2>
+      <p id="doedt-tekst">En invitation virker én gang og gælder i 14 dage. Bed din rejsemakker om at sende en ny.</p>
+      <p class="hjaelp">Er I allerede koblet sammen, skal du bare åbne appen og logge ind.</p>
+    </section>
+  </main>
+
+  <footer>Spørgsmål? Skriv til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
+  var ENDEPUNKT = PROJEKT_URL + '/functions/v1/accepter-partner';
+  var MIN_KODEORD = 12;
+
+  var el = function (id) { return document.getElementById(id); };
+  var TRIN = ['trin-tjekker', 'trin-intet', 'trin-vaelg', 'trin-faerdig', 'trin-doedt'];
+
+  function vis(trin) {
+    TRIN.forEach(function (id) { el(id).hidden = (id !== trin); });
+  }
+
+  function kald(krop) {
+    return fetch(ENDEPUNKT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON },
+      body: JSON.stringify(krop)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (svar) {
+        return { ok: r.ok, status: r.status, svar: svar };
+      });
+    });
+  }
+
+  /* Tokenet står i FRAGMENTET, ikke i en forespørgselsstreng. Fragmentet
+     sendes aldrig til en server og havner derfor hverken i serverlogs eller
+     i en henvisende adresse. Samme valg som aktiverings- og
+     nulstillingslinket. */
+  function tokenFraAdressen() {
+    var h = String(location.hash || '').replace(/^#/, '').trim();
+    return /^[0-9a-f]{32,128}$/i.test(h) ? h : null;
+  }
+
+  var token = tokenFraAdressen();
+
+  var form = el('tag-imod'), mail = el('email'), felt = el('kodeord');
+  var send = el('send'), maaler = el('maaler'), fejl = el('fejl');
+
+  el('vis').addEventListener('click', function () {
+    var skjult = felt.type === 'password';
+    felt.type = skjult ? 'text' : 'password';
+    this.textContent = skjult ? 'Skjul' : 'Vis';
+    this.setAttribute('aria-label', skjult ? 'Skjul kodeordet' : 'Vis kodeordet');
+    felt.focus();
+  });
+
+  function opdater() {
+    var n = felt.value.length;
+    if (n === 0) { maaler.textContent = 'Mindst ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
+    else if (n < MIN_KODEORD) { maaler.textContent = n + ' af ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
+    else { maaler.textContent = 'Langt nok — ' + n + ' tegn.'; maaler.className = 'maaler god'; }
+  }
+  felt.addEventListener('input', function () { opdater(); fejl.hidden = true; });
+  mail.addEventListener('input', function () { fejl.hidden = true; });
+  opdater();
+
+  function nulstilKnap() {
+    send.disabled = false;
+    send.textContent = 'Tag imod invitationen';
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    fejl.hidden = true;
+
+    var email = mail.value.trim();
+    if (!email) { fejl.textContent = 'Skriv din mailadresse.'; fejl.hidden = false; mail.focus(); return; }
+    if (felt.value.length < MIN_KODEORD) {
+      fejl.textContent = 'Kodeordet skal være mindst ' + MIN_KODEORD + ' tegn. Du har ' + felt.value.length + '.';
+      fejl.hidden = false;
+      felt.focus();
+      return;
+    }
+
+    send.disabled = true;
+    send.textContent = 'Et øjeblik …';
+
+    kald({ token: token, email: email, kodeord: felt.value }).then(function (res) {
+      if (!res.ok) {
+        var t = (res.svar && res.svar.error) || 'Det kunne ikke lade sig gøre. Prøv igen.';
+        /* Serverens tekster er skrevet til et menneske — "Det kodeord står
+           på listen over kendte lækkede kodeord". En generel besked må
+           aldrig overskrive en præcis; det er den fejl, værktøjskassen
+           lærte os 6/9. */
+        if (res.status === 410) { el('doedt-tekst').textContent = t; vis('trin-doedt'); return; }
+        fejl.textContent = t;
+        fejl.hidden = false;
+        nulstilKnap();
+        return;
+      }
+      var fra = res.svar && res.svar.fra;
+      var nyKonto = !(res.svar && res.svar.nyKonto === false);
+      el('faerdig-besked').textContent = nyKonto
+        ? ('Din konto er klar' + (fra ? ', og du deler nu Arytmi med ' + fra : '') + '.')
+        : ('Du deler nu Arytmi med ' + (fra || 'din rejsemakker') + '. Log ind med det kodeord, du havde i forvejen.');
+      /* Tokenet ud af adresselinjen, nu hvor det er brugt op. */
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      felt.value = '';
+      vis('trin-faerdig');
+    }).catch(function () {
+      fejl.textContent = 'Ingen forbindelse. Tjek nettet, og prøv igen.';
+      fejl.hidden = false;
+      nulstilKnap();
+    });
+  });
+
+  // ---------- hvilken indgang? ----------
+  if (!token) { vis('trin-intet'); return; }
+
+  /* Spørg FØRST, om invitationen stadig gælder, så hun ikke inviteres til
+     at vælge et kodeord i et link, der er dødt. Går tjekket galt på
+     netværket, viser vi formularen alligevel: serveren siger nej, hvis
+     linket er dødt, og et fladt net må ikke spærre hende ude. */
+  vis('trin-tjekker');
+  kald({ token: token, tjek: true }).then(function (res) {
+    if (!res.ok) {
+      var t = (res.svar && res.svar.error) || '';
+      if (t) el('doedt-tekst').textContent = t;
+      vis('trin-doedt');
+      return;
+    }
+    var fra = res.svar && res.svar.fra;
+    var dig = res.svar && res.svar.dig;
+    if (fra) {
+      el('overskrift').textContent = fra + ' har inviteret dig';
+      el('indledning').textContent = (dig ? dig + ', du' : 'Du') +
+        ' er inviteret til at dele Arytmi med ' + fra + ' som fast rejsemakker.';
+    }
+    vis('trin-vaelg');
+    try { mail.focus({ preventScroll: true }); } catch (e) { mail.focus(); }
+  }).catch(function () {
+    vis('trin-vaelg');
+  });
+})();
+</script>
+</body>
+</html>
