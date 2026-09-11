@@ -223,6 +223,9 @@
     font-size:13px; color:var(--dæmpet); margin-top:7px;
     padding-left:11px; border-left:2px solid var(--linje);
   }
+  .rk .oprind::before{
+    content:"Står i koden: "; font-weight:600; color:var(--fjord);
+  }
   .rk textarea{ margin-top:10px; min-height:52px; }
   .rk .bund{
     display:flex; align-items:center; gap:9px; margin-top:10px;
@@ -789,7 +792,9 @@
     if(t.tekst !== null) hoved.appendChild(lav('span','mærkat','rettet'));
     rk.appendChild(hoved);
 
-    rk.appendChild(lav('div','oprind', t.faldbak));
+    var oprind = lav('div','oprind', t.faldbak);
+    oprind.hidden = (t.tekst === null);
+    rk.appendChild(oprind);
 
     var felt = document.createElement('textarea');
     felt.rows = Math.min(6, Math.max(2, Math.ceil((t.tekst || t.faldbak).length / 62)));
@@ -870,6 +875,7 @@
 
     function rk_klasse(){
       rk.className = 'rk' + (t.tekst !== null ? ' rettet' : '');
+      oprind.hidden = (t.tekst === null);
       nulstil.hidden = (t.tekst === null);
       var m = hoved.querySelector('.mærkat');
       if(t.tekst !== null && !m) hoved.appendChild(lav('span','mærkat','rettet'));
