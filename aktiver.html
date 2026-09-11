@@ -2,6 +2,44 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
+<!--
+  INDHOLDSPOLITIK (CSP). Tilføjet 11. september 2026.
+
+  Den siger, hvad browseren OVERHOVEDET må hente på den her side. Alt er
+  `none` som udgangspunkt, og så åbnes der præcis det, siden bruger:
+
+    script-src 'self' 'unsafe-inline'   sidens eget script, som står inline.
+    style-src 'self' 'unsafe-inline'    sidens eget <style>, som står inline.
+    img-src 'self'                      logo, bil og favicons. Alle herfra.
+    connect-src <projektet>             Edge-funktionerne. Intet andet.
+    base-uri 'none'      ingen kan skyde et <base>-tag ind og flytte
+                         alle relative adresser et andet sted hen.
+    form-action 'none'   formularerne herinde sendes af JavaScript, som
+                         altid kalder preventDefault(). Uden den linje
+                         ville en formular uden JavaScript submitte til
+                         sig selv med GET - og på aktiver- og
+                         nulstil-siderne ville kodeordet så stå i
+                         adresselinjen og i browserhistorikken.
+
+  HVORFOR ET <meta>-TAG OG IKKE EN HTTP-HEADER: siderne udgives af GitHub
+  Pages, som ikke kan sætte headers. Prisen er, at `frame-ancestors` og
+  `report-uri` IKKE virker i et meta-tag - de ignoreres. Siderne kan
+  altså stadig lægges i en iframe af en fremmed. Skal det lukkes, kræver
+  det en vært, der kan sætte headers (Cloudflare Pages, Netlify).
+
+  HVORFOR 'unsafe-inline' OG IKKE HASHES: al CSS og JavaScript står inline
+  i filen, og hashes ville være strengere. De ville også betyde, at siden
+  holder op med at virke, hver gang nogen retter et komma i scriptet og
+  glemmer at regne hashen om - lydløst, uden fejl på skærmen. På en side,
+  hvor en kunde aktiverer sin konto, er det den dyreste slags fælde.
+  Beskyttelsen mod indsprøjtet HTML ligger et andet sted, og den er reel:
+  siderne skriver ALTID med textContent, aldrig innerHTML.
+
+  ⚠️ `connect-src` peger på Supabase-projektets adresse. Skiftes projektet
+  - fx ved en genskabelse fra backup - skal den her linje med. Ellers kan
+  siden ikke tale med serveren, og fejlen står kun i browserkonsollen.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aktivér din Arytmi</title>
 <meta name="description" content="Vælg et kodeord, og din Arytmi-konto er klar.">
