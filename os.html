@@ -166,6 +166,18 @@
   .besked.fejl{ color:var(--fejl); background:#f7ece7; border:1px solid #e6cfc4; }
   .besked.ok{ color:var(--god); background:#eef2ea; border:1px solid #d5ddd0; }
   .hjaelp{ margin-top:18px; font-size:13px; line-height:1.6; color:var(--dæmpet); }
+  /* Rådet står OVER feltet, ikke under. Under havde det været en
+     forklaring på en fejl, man allerede havde lavet. */
+  .mail-raad{
+    font-size:13px;
+    line-height:1.55;
+    color:var(--fjord);
+    background:#f3efe6;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:11px 13px;
+    margin:0 0 10px;
+  }
   .hjaelp a{ color:var(--gran); }
   .deler{
     margin-top:16px;
@@ -221,6 +233,7 @@
 
       <form id="tag-imod" novalidate>
         <label for="email">Din mailadresse</label>
+        <p class="mail-raad">Har du <b>allerede</b> en Arytmi-konto, så skriv den mailadresse — så bliver I bare koblet sammen, og du beholder dine ture. Skriver du en anden, får du en ny, tom konto.</p>
         <input id="email" name="email" type="email" inputmode="email"
                autocomplete="username" autocapitalize="off" spellcheck="false"
                placeholder="dig@eksempel.dk" required>
@@ -242,7 +255,8 @@
       <!-- Ingen krav om specialtegn. Besluttet af Kennet 7/9: tvungne
            tegnkrav producerer Sommer2026! og genbrug på tværs af tjenester.
            Længden gør arbejdet, og serveren tjekker mod kendte datalæk. -->
-      <p class="hjaelp">Du logger ind i appen med din mailadresse og det kodeord, du vælger her. Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+      <p class="hjaelp"><b>Er det din første Arytmi-konto</b>, logger du ind i appen med din mailadresse og det kodeord, du vælger her. Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+      <p class="hjaelp"><b>Har du en konto i forvejen</b>, beholder du dit nuværende kodeord. Vi ændrer det ikke herfra: den, der har linket, har en telefon — ikke nødvendigvis kontoen.</p>
     </section>
 
     <!-- 3 · færdig -->
