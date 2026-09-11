@@ -166,6 +166,49 @@
   .besked.fejl{ color:var(--fejl); background:#f7ece7; border:1px solid #e6cfc4; }
   .besked.ok{ color:var(--god); background:#eef2ea; border:1px solid #d5ddd0; }
   .hjaelp{ margin-top:18px; font-size:13px; line-height:1.6; color:var(--dæmpet); }
+  .mail-raad{
+    font-size:13px;
+    line-height:1.55;
+    color:var(--fjord);
+    background:#f3efe6;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:11px 13px;
+    margin:0 0 10px;
+  }
+  /* Mailen bliver stående, når man er gået videre — ellers ved man ikke,
+     hvad kodeordet hører til. Og den skal kunne rettes uden at hente
+     siden forfra. */
+  .valgt-mail{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    font-size:14px;
+    color:var(--gran);
+    background:var(--bund);
+    border-radius:10px;
+    padding:11px 13px;
+    margin-top:4px;
+    word-break:break-all;
+  }
+  .valgt-mail span{ flex:1; font-weight:600; }
+  button.ret{
+    flex:0 0 auto;
+    background:none;
+    border:0;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--rav);
+    cursor:pointer;
+    padding:0;
+  }
+  a.send.hent{
+    display:block;
+    text-align:center;
+    text-decoration:none;
+    margin-top:18px;
+  }
   /* Rådet står OVER feltet, ikke under. Under havde det været en
      forklaring på en fejl, man allerede havde lavet. */
   .mail-raad{
@@ -231,23 +274,43 @@
         <li>Retter den ene noget, står det hos den anden</li>
       </ul>
 
+      <!-- TO TRIN (Kennet 11/9). Før stod mail og kodeord side om side, og
+           siden kunne ikke vide, hvad den skulle kalde kodeordsfeltet, før
+           mailen var skrevet. Den kaldte det "Vælg et kodeord" for alle — og
+           for den, der HAVDE en konto, var det direkte forkert: kodeordet
+           blev kastet væk, og hun skulle logge ind med sit gamle.
+
+           Oliivia fik to konti på den måde. Nu spørger vi om mailen først. -->
       <form id="tag-imod" novalidate>
-        <label for="email">Din mailadresse</label>
-        <p class="mail-raad">Har du <b>allerede</b> en Arytmi-konto, så skriv den mailadresse — så bliver I bare koblet sammen, og du beholder dine ture. Skriver du en anden, får du en ny, tom konto.</p>
-        <input id="email" name="email" type="email" inputmode="email"
-               autocomplete="username" autocapitalize="off" spellcheck="false"
-               placeholder="dig@eksempel.dk" required>
 
-        <label for="kodeord">Vælg et kodeord</label>
-        <div class="felt">
-          <input id="kodeord" name="kodeord" type="password" class="kode"
-                 autocomplete="new-password" autocapitalize="off" spellcheck="false"
-                 aria-describedby="maaler" required>
-          <button type="button" class="vis" id="vis" aria-label="Vis kodeordet">Vis</button>
+        <!-- trin 1 · hvem er du -->
+        <div id="mail-trin">
+          <label for="email">Din mailadresse</label>
+          <p class="mail-raad">Har du allerede en Arytmi-konto, så brug <b>den</b> mailadresse — så beholder du dine ture.</p>
+          <input id="email" name="email" type="email" inputmode="email"
+                 autocomplete="username" autocapitalize="off" spellcheck="false"
+                 placeholder="dig@eksempel.dk" required>
+          <button type="button" class="send" id="videre">Fortsæt</button>
         </div>
-        <p class="maaler" id="maaler" role="status" aria-live="polite">Mindst 12 tegn.</p>
 
-        <button type="submit" class="send" id="send">Tag imod invitationen</button>
+        <!-- trin 2 · kodeordet. Teksten afhænger af svaret fra trin 1. -->
+        <div id="kode-trin" hidden>
+          <p class="valgt-mail">
+            <span id="valgt-mail-tekst"></span>
+            <button type="button" class="ret" id="ret-mail">Ret</button>
+          </p>
+
+          <label for="kodeord" id="kode-etiket">Vælg et kodeord</label>
+          <div class="felt">
+            <input id="kodeord" name="kodeord" type="password" class="kode"
+                   autocapitalize="off" spellcheck="false"
+                   aria-describedby="maaler" required>
+            <button type="button" class="vis" id="vis" aria-label="Vis kodeordet">Vis</button>
+          </div>
+          <p class="maaler" id="maaler" role="status" aria-live="polite">Mindst 12 tegn.</p>
+
+          <button type="submit" class="send" id="send">Tag imod invitationen</button>
+        </div>
       </form>
 
       <div class="besked fejl" id="fejl" role="alert" hidden></div>
@@ -255,15 +318,20 @@
       <!-- Ingen krav om specialtegn. Besluttet af Kennet 7/9: tvungne
            tegnkrav producerer Sommer2026! og genbrug på tværs af tjenester.
            Længden gør arbejdet, og serveren tjekker mod kendte datalæk. -->
-      <p class="hjaelp"><b>Er det din første Arytmi-konto</b>, logger du ind i appen med din mailadresse og det kodeord, du vælger her. Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
-      <p class="hjaelp"><b>Har du en konto i forvejen</b>, beholder du dit nuværende kodeord. Vi ændrer det ikke herfra: den, der har linket, har en telefon — ikke nødvendigvis kontoen.</p>
+      <p class="hjaelp" id="hjaelp-ny" hidden>Du logger ind i appen med din mailadresse og det kodeord, du vælger her. Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
+      <p class="hjaelp" id="hjaelp-kendt" hidden>Vi ændrer ikke dit kodeord herfra, og vi kan ikke se det. Har du glemt det, kan du <a href="/nulstil">nulstille det</a> og komme tilbage til linket bagefter.</p>
     </section>
 
     <!-- 3 · færdig -->
     <section class="flade" id="trin-faerdig" hidden>
       <h2>Så er I to om det</h2>
       <div class="besked ok" id="faerdig-besked" role="status">Din konto er klar.</div>
-      <p>Hent Arytmi, og log ind med din mailadresse og dit nye kodeord. Turene er der allerede.</p>
+      <p id="faerdig-naeste">Næste skridt er at hente appen og logge ind. Turene er der allerede.</p>
+      <!-- En vej videre herfra (Kennet 11/9). Før sluttede siden med at sige
+           "hent Arytmi" uden at fortælle hvordan. Den, der lige har sagt ja,
+           skal ikke selv til at lede. -->
+      <a class="send hent" id="hent" href="https://play.google.com/store/apps/details?id=com.arytmi.app">Hent Arytmi til Android</a>
+      <p class="hjaelp">Arytmi findes kun til Android indtil videre. iPhone kommer senere.</p>
       <p class="hjaelp">Linket er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
     </section>
 
@@ -318,6 +386,17 @@
 
   var form = el('tag-imod'), mail = el('email'), felt = el('kodeord');
   var send = el('send'), maaler = el('maaler'), fejl = el('fejl');
+  var videre = el('videre'), kodeTrin = el('kode-trin'), mailTrin = el('mail-trin');
+
+  /* Hvad vi fandt ud af i trin 1. null = vi har ikke spurgt endnu. */
+  var kontoFindes = null;
+  var valgtMail = '';
+
+  function visFejl(tekst, hvor) {
+    fejl.textContent = tekst;
+    fejl.hidden = false;
+    if (hvor) hvor.focus();
+  }
 
   el('vis').addEventListener('click', function () {
     var skjult = felt.type === 'password';
@@ -327,7 +406,11 @@
     felt.focus();
   });
 
+  /* Tælleren hører til et kodeord, der bliver VALGT. Har hun en konto i
+     forvejen, er længden ikke hendes at rette herfra, og en tæller ville
+     kun se ud som et krav, hun ikke kan opfylde. */
   function opdater() {
+    if (kontoFindes) { maaler.textContent = ''; maaler.className = 'maaler'; return; }
     var n = felt.value.length;
     if (n === 0) { maaler.textContent = 'Mindst ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
     else if (n < MIN_KODEORD) { maaler.textContent = n + ' af ' + MIN_KODEORD + ' tegn.'; maaler.className = 'maaler'; }
@@ -342,16 +425,84 @@
     send.textContent = 'Tag imod invitationen';
   }
 
+  /* TRIN 1 · hvem er du. Vi spørger serveren, om mailen har en konto, og
+     klæder trin 2 på efter svaret. Kaldet opretter intet og bruger ikke
+     invitationen op — men det tælles, så ét link ikke kan bruges til at
+     afsøge, hvem der er kunde hos Arytmi. Se 0016. */
+  function gaaTilKodeord() {
+    fejl.hidden = true;
+    var email = mail.value.trim();
+    if (!email || email.indexOf('@') < 1) { visFejl('Skriv din mailadresse.', mail); return; }
+
+    videre.disabled = true;
+    videre.textContent = 'Et øjeblik …';
+
+    kald({ token: token, tjek_mail: email }).then(function (res) {
+      videre.disabled = false;
+      videre.textContent = 'Fortsæt';
+      if (!res.ok) {
+        var t = (res.svar && res.svar.error) || 'Det kunne ikke lade sig gøre. Prøv igen.';
+        if (res.status === 410) { el('doedt-tekst').textContent = t; vis('trin-doedt'); return; }
+        visFejl(t, mail);
+        return;
+      }
+
+      kontoFindes = !!(res.svar && res.svar.findes);
+      valgtMail = email;
+      el('valgt-mail-tekst').textContent = email;
+
+      if (kontoFindes) {
+        el('kode-etiket').textContent = 'Dit kodeord til Arytmi';
+        felt.setAttribute('autocomplete', 'current-password');
+        send.textContent = 'Tag imod invitationen';
+      } else {
+        el('kode-etiket').textContent = 'Vælg et kodeord';
+        felt.setAttribute('autocomplete', 'new-password');
+      }
+      el('hjaelp-ny').hidden = kontoFindes;
+      el('hjaelp-kendt').hidden = !kontoFindes;
+
+      mailTrin.hidden = true;
+      kodeTrin.hidden = false;
+      opdater();
+      felt.focus();
+    }).catch(function () {
+      videre.disabled = false;
+      videre.textContent = 'Fortsæt';
+      visFejl('Ingen forbindelse. Tjek nettet, og prøv igen.', mail);
+    });
+  }
+
+  videre.addEventListener('click', gaaTilKodeord);
+
+  /* Retur til trin 1. Kodeordet tømmes med: det hørte til den forrige mail,
+     og et felt, der står med noget fra før, er en fælde. */
+  el('ret-mail').addEventListener('click', function () {
+    fejl.hidden = true;
+    felt.value = '';
+    kontoFindes = null;
+    kodeTrin.hidden = true;
+    mailTrin.hidden = false;
+    mail.focus();
+  });
+
+  /* Enter i mailfeltet skal føre videre, ikke sende en halv formular. */
+  mail.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); gaaTilKodeord(); }
+  });
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     fejl.hidden = true;
 
-    var email = mail.value.trim();
-    if (!email) { fejl.textContent = 'Skriv din mailadresse.'; fejl.hidden = false; mail.focus(); return; }
-    if (felt.value.length < MIN_KODEORD) {
-      fejl.textContent = 'Kodeordet skal være mindst ' + MIN_KODEORD + ' tegn. Du har ' + felt.value.length + '.';
-      fejl.hidden = false;
-      felt.focus();
+    var email = valgtMail || mail.value.trim();
+    if (!email) { visFejl('Skriv din mailadresse.', mail); return; }
+    if (!felt.value) { visFejl('Skriv dit kodeord.', felt); return; }
+    /* Længdekravet gælder KUN et kodeord, der bliver valgt. Et, hun har i
+       forvejen, kan hun ikke lave om herfra, og serveren afgør alligevel,
+       om det passer. */
+    if (!kontoFindes && felt.value.length < MIN_KODEORD) {
+      visFejl('Kodeordet skal være mindst ' + MIN_KODEORD + ' tegn. Du har ' + felt.value.length + '.', felt);
       return;
     }
 
@@ -375,7 +526,10 @@
       var nyKonto = !(res.svar && res.svar.nyKonto === false);
       el('faerdig-besked').textContent = nyKonto
         ? ('Din konto er klar' + (fra ? ', og du deler nu Arytmi med ' + fra : '') + '.')
-        : ('Du deler nu Arytmi med ' + (fra || 'din rejsemakker') + '. Log ind med det kodeord, du havde i forvejen.');
+        : ('Du deler nu Arytmi med ' + (fra || 'din rejsemakker') + '.');
+      el('faerdig-naeste').textContent = nyKonto
+        ? 'Næste skridt er at hente appen og logge ind med din mailadresse og dit nye kodeord.'
+        : 'Har du allerede appen, er turene der, næste gang du åbner den. Ellers henter du den her.';
       /* Tokenet ud af adresselinjen, nu hvor det er brugt op. */
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       felt.value = '';
