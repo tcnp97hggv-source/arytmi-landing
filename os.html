@@ -141,7 +141,10 @@
     min-height:20px;
   }
   .maaler.god{ color:var(--god); }
-  button.send{
+  /* Baade knappen og <a>-linket "Hent Arytmi". Uden a.send her fik
+     linket kun de fire egenskaber nedenfor og blev tegnet som et
+     almindeligt blaat link midt i et hvidt kort. */
+  button.send, a.send{
     width:100%;
     margin-top:20px;
     font-family:inherit;
@@ -154,8 +157,8 @@
     padding:15px;
     cursor:pointer;
   }
-  button.send:hover{ background:var(--gran-mørk); }
-  button.send[disabled]{ background:var(--dæmpet); cursor:default; }
+  button.send:hover, a.send:hover{ background:var(--gran-mørk); }
+  button.send[disabled], a.send[disabled]{ background:var(--dæmpet); cursor:default; }
   .besked{
     margin-top:18px;
     font-size:14px;
@@ -329,9 +332,19 @@
       <p id="faerdig-naeste">Næste skridt er at hente appen og logge ind. Turene er der allerede.</p>
       <!-- En vej videre herfra (Kennet 11/9). Før sluttede siden med at sige
            "hent Arytmi" uden at fortælle hvordan. Den, der lige har sagt ja,
-           skal ikke selv til at lede. -->
-      <a class="send hent" id="hent" href="https://play.google.com/store/apps/details?id=com.arytmi.app">Hent Arytmi til Android</a>
-      <p class="hjaelp">Arytmi findes kun til Android indtil videre. iPhone kommer senere.</p>
+           skal ikke selv til at lede.
+
+           ⚠️ LINKET ER TESTSPORETS OPT-IN, ikke butikssiden. Arytmi er ikke
+           udgivet endnu; den offentlige side (…/store/apps/details?id=
+           com.arytmi.app) svarer ingenting, før appen er i produktion.
+           Opt-in-linket beder én om at blive tester og giver først derefter
+           en knap til Play Butik.
+
+           SKAL SKIFTES VED PRODUKTION — og det gælder både href og teksten
+           nedenunder, der siger, at det er en testudgave. Glemmes det, sender
+           vi rigtige kunder ind i et testspor. -->
+      <a class="send hent" id="hent" href="https://play.google.com/apps/internaltest/4700818478023293651">Hent Arytmi til Android</a>
+      <p class="hjaelp">Arytmi er under test, så du bliver først bedt om at blive tester — derefter kan du hente appen i Play Butik. Den findes kun til Android indtil videre; iPhone kommer senere.</p>
       <p class="hjaelp">Linket er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
     </section>
 
