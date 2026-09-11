@@ -25,34 +25,36 @@
   =============================================================
 
   Bygget 11/9 2026. Kennet og Oliivia skal kunne passe Arytmi fra en
-  browser i stedet for at åbne Supabases dashboard hver gang der skal
+  browser i stedet for at åbne Supabases dashboard, hver gang der skal
   rettes et komma. Dashboardet er et værktøj for en, der kan SQL — det er
   ikke et arbejdsbord, og det tilgiver ikke en fejlklikket `delete`.
 
   HVAD DEN KAN I DAG, OG HVAD DEN IKKE KAN
 
     Oversigt   rigtige tal, hentet i samme sekund. Ikke et skøn.
-    Tekster    virker helt: ret, gem, udgiv, rul tilbage.
+    Tekster    ret · gem · fortryd. Delt i KATEGORIER, ikke i nøglepræfikser.
+    Ture       ret alt i en destination, lav en ny, tag en ud.
     Kunder     LÆSES. Der kan endnu ikke oprettes herfra, og mailen kan
                ikke vises — den ligger i `auth.users`, som PostgREST ikke
-               rører. Begge dele kræver en funktion mere, og den er ikke
-               skrevet endnu.
+               rører. Begge dele kræver en funktion mere.
     Billeder   IKKE bygget. Fanen står der og siger det.
 
-  De to sidste punkter står med vilje som de er. En fane, der ser
-  færdig ud og ikke er det, er værre end ingen fane: den værste tilstand
-  for et værn er at se ud, som om det virker.
+  De to sidste står med vilje som de er. En fane, der ser færdig ud og
+  ikke er det, er værre end ingen fane: den værste tilstand for et værn er
+  at se ud, som om det virker.
 
-  SIKKERHEDEN LIGGER IKKE HER. Alt herinde går gennem PostgREST og
+  ÉN UDGIV-KNAP, OG DEN SIDDER I TOPPEN. Den sender ALT ud — tekster og
+  ture i ét bundt. Sad der en knap i hver fane, ville det se ud, som om
+  man kunne udgive teksterne uden turene, og det kan man ikke.
+
+  SIKKERHEDEN LIGGER IKKE HER. Alt går gennem PostgREST og
   Edge-funktionerne med brugerens eget token, og RLS afgør, hvad der
-  kommer retur. Fjernede nogen hele denne fil og skrev sin egen, ville
-  de få nøjagtig de samme rækker. Fanerne herunder er en BEKVEMMELIGHED,
-  ikke en lås — koden må gerne vise en knap til noget, serveren siger nej
-  til, så længe serveren faktisk siger nej.
+  kommer retur. Fjernede nogen hele denne fil og skrev sin egen, ville de
+  få nøjagtig de samme rækker. Fanerne er en BEKVEMMELIGHED, ikke en lås
+  — koden må gerne vise en knap til noget, serveren siger nej til, så
+  længe serveren faktisk siger nej.
 
-  ALT SKRIVES MED textContent. Aldrig innerHTML, ikke ét sted. Teksterne
-  herinde er skrevet af os selv, men de ender på en kundes skærm, og en
-  vane, der har en undtagelse, er ikke en vane.
+  ALT SKRIVES MED textContent. Aldrig innerHTML, ikke ét sted.
 
   NØGLEN HERUNDER ER OFFENTLIG. Det er den publicerbare nøgle, lavet til
   at stå i klientkode — samme som på de fire andre sider. Service-nøglen
@@ -91,43 +93,27 @@
   [hidden]{display:none !important}
 
   /* ---------- LOGIN ---------- */
-  #login{
-    min-height:100dvh;
-    display:flex; align-items:center; justify-content:center;
-    padding:24px 20px;
-  }
+  #login{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px; }
   #login .kort{ width:100%; max-width:380px; }
   #login .logo{ width:min(170px,48vw); margin:0 auto 26px; display:block; }
-  .flade{
-    background:var(--flade);
-    border:1px solid var(--linje);
-    border-radius:16px;
-    padding:24px 22px;
-  }
+  .flade{ background:var(--flade); border:1px solid var(--linje); border-radius:16px; padding:24px 22px; }
   h1{ font-size:20px; font-weight:600; line-height:1.3; }
   label{
     display:block; font-size:13px; font-weight:600;
     letter-spacing:.02em; color:var(--fjord); margin:16px 0 6px;
   }
-  input[type=email],input[type=password],input[type=search],textarea{
-    width:100%;
-    background:#fff;
-    border:1px solid var(--linje);
-    border-radius:10px;
-    padding:11px 13px;
-    color:var(--tekst);
+  input[type=email],input[type=password],input[type=search],input[type=text],textarea,select{
+    width:100%; background:#fff; border:1px solid var(--linje);
+    border-radius:10px; padding:11px 13px; color:var(--tekst);
   }
   input:focus,textarea:focus,button:focus-visible,select:focus{
     outline:2px solid var(--rav); outline-offset:1px; border-color:transparent;
   }
   textarea{ resize:vertical; line-height:1.5; }
   .knap{
-    display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    background:var(--gran); color:#f7f5ef;
-    border:1px solid var(--gran);
-    border-radius:10px;
-    padding:11px 18px;
-    font-weight:600; font-size:14px;
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    background:var(--gran); color:#f7f5ef; border:1px solid var(--gran);
+    border-radius:10px; padding:11px 18px; font-weight:600; font-size:14px;
   }
   .knap:hover{ background:var(--gran-mørk); }
   .knap[disabled]{ opacity:.45; cursor:default; }
@@ -135,6 +121,8 @@
   .knap.rolig{ background:transparent; color:var(--fjord); border-color:var(--linje); }
   .knap.rolig:hover{ background:#f1efe7; color:var(--tekst); }
   .knap.lille{ padding:7px 13px; font-size:13px; border-radius:8px; }
+  .knap.fare{ color:var(--fejl); border-color:#e6cfc4; background:transparent; }
+  .knap.fare:hover{ background:#f7e9e3; color:var(--fejl); }
 
   .besked{ margin-top:16px; font-size:14px; padding:11px 13px; border-radius:10px; }
   .besked.fejl{ background:#f7e9e3; color:var(--fejl); border:1px solid #e6cfc4; }
@@ -142,128 +130,140 @@
 
   /* ---------- RAMMEN ---------- */
   header.top{
-    background:var(--flade);
-    border-bottom:1px solid var(--linje);
+    background:var(--flade); border-bottom:1px solid var(--linje);
     position:sticky; top:0; z-index:20;
   }
   .top .indre{
-    max-width:1060px; margin:0 auto;
-    padding:12px 20px;
-    display:flex; align-items:center; gap:16px;
+    max-width:1060px; margin:0 auto; padding:11px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   }
   .top .mærke{ font-weight:700; letter-spacing:.06em; font-size:14px; text-transform:uppercase; }
   .top .mærke span{ color:var(--dæmpet); font-weight:500; text-transform:none; letter-spacing:0; margin-left:9px; }
-  .top .hvem{ margin-left:auto; font-size:13px; color:var(--dæmpet); }
-  .top .hvem b{ color:var(--tekst); font-weight:600; }
+  .top .højre{ margin-left:auto; display:flex; align-items:center; gap:10px; font-size:13px; color:var(--dæmpet); }
+  .top .højre b{ color:var(--tekst); font-weight:600; }
+  #udgiv-mærke{
+    display:inline-block; min-width:19px; padding:0 6px;
+    background:var(--rav); color:#fff; border-radius:9px;
+    font-size:11px; font-weight:700; line-height:18px; text-align:center;
+  }
 
   nav.faner{
-    max-width:1060px; margin:0 auto;
-    padding:0 20px;
+    max-width:1060px; margin:0 auto; padding:0 20px;
     display:flex; gap:2px; overflow-x:auto;
   }
   nav.faner button{
-    background:none; border:0;
-    padding:11px 14px;
+    background:none; border:0; padding:11px 14px;
     font-size:14px; font-weight:600; color:var(--dæmpet);
-    border-bottom:2px solid transparent;
-    white-space:nowrap;
+    border-bottom:2px solid transparent; white-space:nowrap;
   }
   nav.faner button:hover{ color:var(--tekst); }
   nav.faner button[aria-current=page]{ color:var(--gran); border-bottom-color:var(--rav); }
 
-  main{ max-width:1060px; margin:0 auto; padding:26px 20px 80px; }
+  main{ max-width:1060px; margin:0 auto; padding:26px 20px 90px; }
   h2{ font-size:18px; font-weight:600; margin-bottom:4px; }
-  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:20px; max-width:58ch; }
+  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:20px; max-width:60ch; }
+  .afsnit{
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dæmpet); margin-top:22px; margin-bottom:2px;
+  }
 
   /* ---------- OVERSIGT ---------- */
-  .tal{
-    display:grid; gap:12px;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    margin-bottom:26px;
-  }
-  .tal .felt{
-    background:var(--flade); border:1px solid var(--linje);
-    border-radius:14px; padding:18px 18px 16px;
-  }
+  .tal{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-bottom:26px; }
+  .tal .felt{ background:var(--flade); border:1px solid var(--linje); border-radius:14px; padding:18px 18px 16px; }
   .tal .felt .stor{ font-size:30px; font-weight:700; line-height:1.1; letter-spacing:-.02em; }
   .tal .felt .navn{ font-size:13px; color:var(--dæmpet); margin-top:5px; }
   .tal .felt .note{ font-size:12px; color:var(--dæmpet); margin-top:9px; line-height:1.4; }
 
-  /* ---------- TEKSTER ---------- */
-  .værktøjslinje{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-    margin-bottom:18px;
-  }
+  /* ---------- VÆRKTØJSLINJE ---------- */
+  .værktøjslinje{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
   .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:340px; }
-  .værktøjslinje select{
-    background:#fff; border:1px solid var(--linje); border-radius:10px; padding:10px 12px;
-  }
+  .værktøjslinje select{ background:#fff; border:1px solid var(--linje); border-radius:10px; padding:10px 12px; width:auto; }
   .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; }
 
-  .gruppe{ margin-bottom:26px; }
+  /* ---------- KATEGORIER ---------- */
+  .kategorier{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; }
+  .kategorier button{
+    background:var(--flade); border:1px solid var(--linje); border-radius:999px;
+    padding:7px 15px; font-size:13.5px; font-weight:600; color:var(--fjord);
+  }
+  .kategorier button:hover{ border-color:var(--rav); color:var(--tekst); }
+  .kategorier button[aria-pressed=true]{ background:var(--gran); border-color:var(--gran); color:#f7f5ef; }
+  .kategorier button .n{ opacity:.6; font-weight:500; margin-left:6px; }
+  .kategorier button.tom{ opacity:.5; }
+  .kat-om{ color:var(--dæmpet); font-size:13.5px; margin-bottom:16px; max-width:62ch; }
+
+  /* ---------- TEKSTRÆKKER ---------- */
+  .gruppe{ margin-bottom:24px; }
   .gruppe > h3{
-    font-size:13px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
     color:var(--dæmpet); margin-bottom:9px; padding-left:2px;
   }
-  .rk{
-    background:var(--flade); border:1px solid var(--linje);
-    border-radius:12px; padding:14px 16px; margin-bottom:8px;
-  }
+  .rk{ background:var(--flade); border:1px solid var(--linje); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
   .rk.rettet{ border-left:3px solid var(--rav); }
   .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .rk .nøgle{
-    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:12px; color:var(--fjord);
-  }
+  .rk .nøgle{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:var(--fjord); }
+  .rk .mærkat{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--rav); }
   .rk .af{ font-size:12px; color:var(--dæmpet); margin-left:auto; }
-  .rk .mærkat{
-    font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
-    color:var(--rav);
-  }
-  .rk .oprind{
-    font-size:13px; color:var(--dæmpet); margin-top:7px;
-    padding-left:11px; border-left:2px solid var(--linje);
-  }
-  .rk .oprind::before{
-    content:"Står i koden: "; font-weight:600; color:var(--fjord);
-  }
+  .rk .oprind{ font-size:13px; color:var(--dæmpet); margin-top:7px; padding-left:11px; border-left:2px solid var(--linje); }
+  .rk .oprind::before{ content:"Står i koden: "; font-weight:600; color:var(--fjord); }
   .rk textarea{ margin-top:10px; min-height:52px; }
-  .rk .bund{
-    display:flex; align-items:center; gap:9px; margin-top:10px;
-    min-height:32px;
-  }
+  .rk .bund{ display:flex; align-items:center; gap:9px; margin-top:10px; min-height:32px; flex-wrap:wrap; }
   .rk .bund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
   .rk .bund .status.fejl{ color:var(--fejl); }
   .rk .bund .status.god{ color:var(--god); }
 
+  /* ---------- TURE ---------- */
+  .tur{ background:var(--flade); border:1px solid var(--linje); border-radius:12px; margin-bottom:9px; overflow:hidden; }
+  .tur.skjult .navn{ color:var(--dæmpet); }
+  .tur > .linje{
+    display:flex; align-items:center; gap:11px; width:100%;
+    padding:13px 16px; background:none; border:0; text-align:left;
+  }
+  .tur > .linje:hover{ background:#f3f1e9; }
+  .tur .prik{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--god); }
+  .tur .prik.ude{ background:var(--dæmpet); }
+  .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tur .smaa{ font-size:12.5px; color:var(--dæmpet); flex:0 0 auto; }
+  .tur .pil{ color:var(--dæmpet); font-size:11px; flex:0 0 auto; }
+
+  .turkrop{ padding:2px 16px 16px; border-top:1px solid var(--linje); }
+  .par{ display:grid; gap:0 14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+  .felt .hint{ font-size:12px; color:var(--dæmpet); margin-top:5px; line-height:1.45; }
+  .afkryds{ display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px; }
+  .afkryds input{ width:17px; height:17px; accent-color:var(--gran); flex:0 0 auto; }
+  .afkryds .hint{ color:var(--dæmpet); font-size:12.5px; }
+  .turbund{
+    display:flex; align-items:center; gap:9px; margin-top:18px;
+    padding-top:14px; border-top:1px solid var(--linje); flex-wrap:wrap;
+  }
+  .turbund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
+  .turbund .status.fejl{ color:var(--fejl); }
+  .turbund .status.god{ color:var(--god); }
+  .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:18px; line-height:1.8; }
+  .billedliste code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; }
+
   /* ---------- TABEL ---------- */
   .rulle{ overflow-x:auto; border:1px solid var(--linje); border-radius:12px; background:var(--flade); }
-  table{ border-collapse:collapse; width:100%; min-width:620px; }
+  table{ border-collapse:collapse; width:100%; min-width:640px; }
   th,td{ text-align:left; padding:11px 14px; border-bottom:1px solid var(--linje); font-size:14px; }
-  th{
-    font-size:12px; letter-spacing:.05em; text-transform:uppercase;
-    color:var(--dæmpet); font-weight:700; white-space:nowrap;
-  }
+  th{ font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--dæmpet); font-weight:700; white-space:nowrap; }
   tbody tr:last-child td{ border-bottom:0; }
   td.dæmp{ color:var(--dæmpet); }
   td.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
-  .prik{
-    display:inline-block; width:7px; height:7px; border-radius:50%;
-    background:var(--god); margin-right:7px; vertical-align:1px;
-  }
+  .prik{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--god); margin-right:7px; vertical-align:1px; }
   .prik.ude{ background:var(--dæmpet); }
 
   .tomt{ color:var(--dæmpet); font-size:14px; padding:26px 4px; text-align:center; }
-
   .advarsel{
     background:#f6f1e6; border:1px solid #e3d8c2; border-radius:12px;
     padding:14px 16px; font-size:14px; color:var(--gran); margin-bottom:20px;
   }
   .advarsel b{ font-weight:700; }
+  .advarsel code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; }
 
   @media (max-width:560px){
-    .top .hvem span.mail{ display:none; }
-    main{ padding:20px 16px 70px; }
+    .top .mail{ display:none; }
+    main{ padding:20px 16px 80px; }
     nav.faner{ padding:0 10px; }
   }
 </style>
@@ -298,14 +298,16 @@
   <header class="top">
     <div class="indre">
       <div class="mærke">Arytmi <span>bagrummet</span></div>
-      <div class="hvem">
+      <div class="højre">
         <b id="hvem-navn"></b> <span class="mail" id="hvem-mail"></span>
-        <button type="button" class="knap rolig lille" id="ud" style="margin-left:12px">Log ud</button>
+        <button type="button" class="knap lille" id="udgiv"><span id="udgiv-ord">Udgiv</span><span id="udgiv-mærke" hidden></span></button>
+        <button type="button" class="knap rolig lille" id="ud">Log ud</button>
       </div>
     </div>
     <nav class="faner" id="faner" aria-label="Områder">
       <button type="button" data-fane="oversigt" aria-current="page">Oversigt</button>
       <button type="button" data-fane="tekster">Tekster</button>
+      <button type="button" data-fane="ture">Vores ture</button>
       <button type="button" data-fane="kunder">Kunder</button>
       <button type="button" data-fane="billeder">Billeder</button>
     </nav>
@@ -318,11 +320,11 @@
       <p class="under">Tallene hentes, hver gang du åbner fanen. Der er ikke gemt et tal noget sted, som kan blive gammelt.</p>
       <div class="tal" id="tal"></div>
       <h2 style="margin-top:30px">Seneste udgivelser</h2>
-      <p class="under">Hver gang teksterne sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
+      <p class="under">Hver gang indholdet sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
       <div class="rulle">
         <table>
-          <thead><tr><th>Nr.</th><th>Hvornår</th><th>Af</th><th class="tal-h">Tekster</th><th></th></tr></thead>
-          <tbody id="historik"><tr><td colspan="5" class="tomt">Henter …</td></tr></tbody>
+          <thead><tr><th>Nr.</th><th>Hvornår</th><th>Af</th><th class="tal-h">Tekster</th><th class="tal-h">Ture</th><th></th></tr></thead>
+          <tbody id="historik"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -334,20 +336,36 @@
         Ret det, kunden læser i appen. Tomt felt betyder, at teksten i koden står ved magt —
         det er altid vejen tilbage. Rettelser bliver først synlige på en telefon, når du udgiver.
       </p>
-      <div id="udgiv-linje" class="advarsel" hidden></div>
+      <div class="kategorier" id="kategorier"></div>
+      <p class="kat-om" id="kat-om"></p>
       <div class="værktøjslinje">
         <label for="søg" class="sr-only">Søg i teksterne</label>
-        <input type="search" id="søg" placeholder="Søg i nøgle eller tekst …" autocapitalize="off" spellcheck="false">
+        <input type="search" id="søg" placeholder="Søg i alle kategorier …" autocapitalize="off" spellcheck="false">
         <label for="filter" class="sr-only">Vis</label>
         <select id="filter">
           <option value="alle">Alle</option>
           <option value="rettede">Kun rettede</option>
           <option value="urørte">Kun urørte</option>
         </select>
-        <button type="button" class="knap" id="udgiv">Udgiv</button>
         <span class="tæller" id="tekst-tæller"></span>
       </div>
       <div id="tekster"><p class="tomt">Henter …</p></div>
+    </section>
+
+    <!-- ---------- TURE ---------- -->
+    <section id="fane-ture" hidden>
+      <h2>Vores ture</h2>
+      <p class="under">
+        Destinationerne, kunden får foreslået. Alt i en tur kan rettes herfra, og der kan lægges
+        nye til. En tur, nogen kan have set, kan tages ud — men ikke slettes.
+      </p>
+      <div class="værktøjslinje">
+        <label for="søg-tur" class="sr-only">Søg blandt turene</label>
+        <input type="search" id="søg-tur" placeholder="Søg i navn, ord eller beskrivelse …" autocapitalize="off" spellcheck="false">
+        <button type="button" class="knap" id="ny-tur">+ Ny tur</button>
+        <span class="tæller" id="tur-tæller"></span>
+      </div>
+      <div id="ture"><p class="tomt">Henter …</p></div>
     </section>
 
     <!-- ---------- KUNDER ---------- -->
@@ -378,8 +396,10 @@
       <p class="under">Her skal billeder kunne lægges op og skiftes ud uden at nogen rører ved koden.</p>
       <div class="advarsel">
         <b>Ikke bygget endnu.</b> Fanen står her, så den ikke bliver glemt — ikke fordi den virker.
-        Der mangler et sted at lægge filerne, en grænse for hvor store de må være, og en måde at
-        se, hvad der bruger et billede, før nogen sletter det.
+        Billederne til turene ligger i appen som filer (<code>billeder/t5-…jpg</code>), og en tur
+        peger på dem ved navn; du kan se listen nede i hver tur. Skal de kunne skiftes herfra,
+        mangler der et sted at lægge filerne, en grænse for hvor store de må være, og en måde at
+        se, hvad der <em>bruger</em> et billede, før nogen sletter det.
       </div>
     </section>
   </main>
@@ -397,10 +417,16 @@
      læser — den skal ikke ligge og vente i en browser på en delt maskine.
      Prisen er, at man logger ind igen efter en genstart. Den pris er lille. */
   var NØGLE = 'arytmi-bagrum';
-  var session = null;      // { token, refresh, udløber, sub }
-  var mig = null;          // { navn, rolle }
-  var tekster = [];        // arbejdsbordet
+  var session = null;
+  var mig = null;
+
+  var kategorier = [];
+  var valgtKat = null;
+  var tekster = [];
+  var ture = [];
+  var kunder = [];
   var sidsteUdgivelse = null;
+  var hentet = {};
 
   // -------------------------------------------------------------
   // Små hjælpere
@@ -447,10 +473,10 @@
   // Serveren
   // -------------------------------------------------------------
 
-  /* Tokenet lever en time. En tekstgennemgang kan sagtens tage længere, og
-     det må ikke ende med, at et "Gem" fejler med 401, efter man har skrevet
-     i et felt i tyve minutter. Derfor fornyes det, når der er under fem
-     minutter igen — før kaldet, ikke efter det slog fejl. */
+  /* Tokenet lever en time. En gennemgang af teksterne kan sagtens tage
+     længere, og det må ikke ende med, at et "Gem" fejler med 401, efter man
+     har skrevet i et felt i tyve minutter. Derfor fornyes det, når der er
+     under fem minutter igen — før kaldet, ikke efter det slog fejl. */
   function sørgForToken(){
     if(!session) return Promise.reject(new Error('ikke logget ind'));
     if(session.udløber - Date.now() > 5*60*1000) return Promise.resolve();
@@ -461,24 +487,19 @@
     }).then(function(r){
       if(!r.ok) throw new Error('login-udløbet');
       return r.json();
-    }).then(function(d){
-      gemSession(d);
-    });
+    }).then(gemSession);
   }
 
   function kald(sti, valg){
     valg = valg || {};
     return sørgForToken().then(function(){
-      var h = {
-        apikey: ANON,
-        Authorization: 'Bearer ' + session.token
-      };
-      if(valg.body) h['Content-Type'] = 'application/json';
+      var h = { apikey: ANON, Authorization: 'Bearer ' + session.token };
+      if(valg.body !== undefined) h['Content-Type'] = 'application/json';
       for(var n in (valg.headers||{})) h[n] = valg.headers[n];
       return fetch(PROJEKT_URL + sti, {
         method: valg.method || 'GET',
         headers: h,
-        body: valg.body ? JSON.stringify(valg.body) : undefined
+        body: valg.body !== undefined ? JSON.stringify(valg.body) : undefined
       });
     });
   }
@@ -491,7 +512,7 @@
         if(!r.ok){
           var f = new Error((d && (d.message || d.error)) || ('Serveren svarede ' + r.status));
           f.status = r.status;
-          f.kode = d && d.code;
+          f.kode = d && (d.code || d.kode);
           throw f;
         }
         return d;
@@ -515,6 +536,29 @@
     }).catch(function(){ return null; });
   }
 
+  /* Databasens fejl oversat til noget, man kan handle på. Tallene er
+     Postgres', teksterne er vores: "new row violates check constraint
+     tur_kan_vises" fortæller ingen, hvad de skal gøre ved det. */
+  function forklar(f){
+    var m = String((f && f.message) || '');
+    if(f && f.kode === '23514'){
+      if(m.indexOf('tur_kan_vises') >= 0)
+        return 'En tur skal have både navn og koordinater, før den kan være synlig.';
+      if(m.indexOf('tur_id_er_et_slug') >= 0)
+        return 'Id’et må kun indeholde små bogstaver, tal og bindestreg.';
+      if(m.indexOf('tur_ligger_paa_jorden') >= 0)
+        return 'Bredde skal ligge mellem -90 og 90, længde mellem -180 og 180.';
+      if(m.indexOf('oe_') >= 0) return 'Det ønske findes ikke. Vælg fra listen.';
+      /* Pladsholdertriggeren skriver selv en læsbar besked på dansk — den
+         står bedre end noget, der kan skrives her. */
+      if(m.indexOf('mangler {') >= 0) return m;
+      return 'Der mangler noget i { } — behold dem fra den grå tekst.';
+    }
+    if(f && f.kode === '23505') return 'Der findes allerede en tur med det id.';
+    if(f && f.status === 401) return 'Dit login er udløbet. Log ind igen.';
+    return m || 'Der gik noget galt.';
+  }
+
   // -------------------------------------------------------------
   // Login
   // -------------------------------------------------------------
@@ -531,7 +575,9 @@
   }
 
   function glem(){
-    session = null; mig = null; tekster = [];
+    session = null; mig = null;
+    tekster = []; ture = []; kunder = []; kategorier = []; valgtKat = null;
+    hentet = {};
     try{ sessionStorage.removeItem(NØGLE); }catch(e){}
     $('rum').hidden = true;
     $('login').hidden = false;
@@ -569,15 +615,15 @@
     /* Der logges ud på serveren OG lokalt. Kun lokalt ville lade
        opdateringstokenet leve videre i en time — det ville se ud som et
        log-ud uden at være det. */
-    kald('/auth/v1/logout', { method:'POST' }).catch(function(){});
+    kald('/auth/v1/logout', { method:'POST', body:{} }).catch(function(){});
     glem();
   });
 
   /* Hvem er du, og må du være her? Rollen hentes fra serveren, ikke fra
      tokenet. Står der 'bruger', vises bagrummet ikke — men det er ikke
-     DEN kontrol, der beskytter noget. Det gør RLS, som ville sende en tom
-     liste tilbage under alle omstændigheder. Den her kontrol findes for
-     at give et ordentligt svar frem for fire tomme faner. */
+     DEN kontrol, der beskytter noget. Det gør RLS, som ville sende tomme
+     lister tilbage under alle omstændigheder. Den her kontrol findes for
+     at give et ordentligt svar frem for fem tomme faner. */
   function start(){
     return json('/rest/v1/profiler?select=navn,rolle&id=eq.' + session.sub)
       .then(function(rk){
@@ -597,8 +643,6 @@
   // -------------------------------------------------------------
   // Fanerne
   // -------------------------------------------------------------
-  var hentet = {};
-
   function skiftFane(navn){
     var knapper = $('faner').querySelectorAll('button');
     for(var i=0;i<knapper.length;i++){
@@ -609,7 +653,8 @@
     }
     if(navn === 'oversigt'){ hentOversigt(); }
     if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
-    if(navn === 'kunder' && !hentet.kunder){ hentet.kunder = true; hentKunder(); }
+    if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
+    if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
   }
 
   $('faner').addEventListener('click', function(e){
@@ -632,12 +677,11 @@
     var nu = new Date().toISOString();
     var maaned = new Date(Date.now() - 30*24*3600*1000).toISOString();
 
-    /* KUN de tal, serveren faktisk kan svare paa. `ture` og `partner` staar
-       der med vilje IKKE: RLS lader heller ikke en administrator laese
-       kundernes ture, og et tal hentet herfra ville vise DINE egne ture og
-       kalde dem totalen. Det er den vaerste slags forkert - et tal, der ser
-       rigtigt ud. Skal totalen vises, kraever det en funktion, der taeller
-       paa serveren med service-noeglen, og den er ikke skrevet. */
+    /* KUN de tal, serveren faktisk kan svare på. Kundernes egne `ture` og
+       `partner` står med vilje IKKE her: RLS lader heller ikke en
+       administrator læse dem, og et tal hentet herfra ville vise DINE egne
+       ture og kalde dem totalen. Det er den værste slags forkert — et tal,
+       der ser rigtigt ud. */
     Promise.all([
       antal('profiler?id=not.is.null'),
       antal('adgang?or=(gyldig_til.is.null,gyldig_til.gt.' + nu + ')'),
@@ -648,18 +692,18 @@
       v.appendChild(felt(t[0], 'Konti i alt', 'Hver profil er én kunde med et login.'));
       v.appendChild(felt(t[1], 'Med gyldig adgang', 'Ingen slutdato, eller en slutdato ude i fremtiden.'));
       v.appendChild(felt(t[2], 'Nye seneste 30 dage', 'Talt fra den dag, kontoen blev oprettet.'));
-      v.appendChild(felt(null, 'Ture', 'Vises ikke. Heller ikke en administrator kan læse kundernes ture — det er med vilje, og det laves ikke om for et tals skyld.'));
+      v.appendChild(felt(null, 'Kundernes ture', 'Vises ikke. Heller ikke en administrator kan læse kundernes ture — det er med vilje, og det laves ikke om for et tals skyld.'));
     });
 
-    json('/rest/v1/indhold_udgivelse?select=id,udgivet_kl,antal,profiler(navn)&order=id.desc&limit=10')
+    json('/rest/v1/indhold_udgivelse?select=id,udgivet_kl,antal,antal_ture,profiler(navn)&order=id.desc&limit=10')
       .then(function(rk){
         sidsteUdgivelse = (rk && rk[0]) || null;
         var krop = $('historik');
         tøm(krop);
         if(!rk || !rk.length){
-          var tr = lav('tr'); var td = lav('td','tomt','Teksterne er ikke udgivet endnu.');
-          td.colSpan = 5; tr.appendChild(td); krop.appendChild(tr);
-          opdaterUdgivLinje();
+          var tr = lav('tr'); var td = lav('td','tomt','Indholdet er ikke udgivet endnu.');
+          td.colSpan = 6; tr.appendChild(td); krop.appendChild(tr);
+          opdaterUdgivMærke();
           return;
         }
         rk.forEach(function(u, i){
@@ -668,6 +712,7 @@
           tr.appendChild(lav('td', null, dato(u.udgivet_kl)));
           tr.appendChild(lav('td','dæmp', (u.profiler && u.profiler.navn) || '—'));
           tr.appendChild(lav('td','tal-h', u.antal));
+          tr.appendChild(lav('td','tal-h', u.antal_ture));
           var h = lav('td');
           if(i > 0){
             var k = lav('button','knap rolig lille','Send ud igen');
@@ -679,11 +724,11 @@
           tr.appendChild(h);
           krop.appendChild(tr);
         });
-        opdaterUdgivLinje();
+        opdaterUdgivMærke();
       })
       .catch(function(f){
         var krop = $('historik'); tøm(krop);
-        var tr = lav('tr'); var td = lav('td','tomt', f.message); td.colSpan = 5;
+        var tr = lav('tr'); var td = lav('td','tomt', forklar(f)); td.colSpan = 6;
         tr.appendChild(td); krop.appendChild(tr);
       });
   }
@@ -698,53 +743,134 @@
       .catch(function(f){
         knap.disabled = false;
         knap.textContent = 'Send ud igen';
-        window.alert(f.message);
+        window.alert(forklar(f));
       });
   }
+
+  // -------------------------------------------------------------
+  // Udgivelsen — én knap, og den sender ALT
+  // -------------------------------------------------------------
+
+  /* Hvor meget venter? Sammenligningen er `opdateret` mod udgivelsens
+     tidsstempel — begge kommer fra serveren, så browserens ur kan ikke
+     lyve om det. Og efter 0025 bumper `opdateret` kun, når INDHOLDET
+     ændrer sig: en omsortering tæller ikke med som en rettelse, der venter
+     på at komme ud. */
+  function venter(){
+    var siden = sidsteUdgivelse ? new Date(sidsteUdgivelse.udgivet_kl).getTime() : 0;
+    var nyere = function(x){ return new Date(x.opdateret).getTime() > siden; };
+    return tekster.filter(function(t){ return t.tekst !== null && nyere(t); }).length
+         + ture.filter(nyere).length;
+  }
+
+  function opdaterUdgivMærke(){
+    var m = $('udgiv-mærke');
+    var n = (tekster.length || ture.length) ? venter() : 0;
+    if(n > 0){ m.textContent = n; m.hidden = false; } else { m.hidden = true; }
+  }
+
+  function udgiv(krop){
+    var knap = $('udgiv');
+    var ord = $('udgiv-ord');
+    knap.disabled = true;
+    ord.textContent = 'Udgiver …';
+    return json('/functions/v1/udgiv-tekster', { method:'POST', body: krop })
+      .then(function(s){
+        ord.textContent = 'Udgiv';
+        knap.disabled = false;
+        if(hentet.tekster) hentTekster();
+        if(hentet.ture) hentTure();
+        hentOversigt();
+        window.alert('Udgivet.\n\n' + s.antal + (s.antal === 1 ? ' rettet tekst' : ' rettede tekster')
+          + ' og ' + s.antal_ture + (s.antal_ture === 1 ? ' tur' : ' ture') + ' er ude nu.');
+      })
+      .catch(function(f){
+        ord.textContent = 'Udgiv';
+        knap.disabled = false;
+        /* Serveren afviser et bundt uden synlige ture. Den siger hvorfor,
+           og her spørges der, om det alligevel er meningen. Døren findes,
+           fordi et værn uden en dør bare er en mur. */
+        if(f.kode === 'ingen_ture'){
+          if(window.confirm(f.message + '\n\nEr det med vilje?')) return udgiv({ alligevel:true });
+          return;
+        }
+        window.alert(forklar(f));
+      });
+  }
+
+  $('udgiv').addEventListener('click', function(){
+    var t = tekster.filter(function(x){ return x.tekst !== null; }).length;
+    var u = ture.filter(function(x){ return x.synlig; }).length;
+    var hvad = (hentet.tekster && hentet.ture)
+      ? '\n\nDer sendes ' + t + (t === 1 ? ' rettet tekst' : ' rettede tekster')
+        + ' og ' + u + (u === 1 ? ' synlig tur' : ' synlige ture') + ' ud.'
+      : '\n\nDet sender både teksterne og turene.';
+    if(!window.confirm('Udgive alt indhold?' + hvad
+      + '\n\nDet bliver synligt i appen, næste gang den åbnes. Du kan altid sende en '
+      + 'tidligere udgivelse ud igen fra Oversigt.')) return;
+    udgiv({});
+  });
 
   // -------------------------------------------------------------
   // Tekster
   // -------------------------------------------------------------
+  var TEKST_FELTER = 'noegle,faldbak,tekst,kategori,opdateret,profiler(navn)';
+
   function hentTekster(){
-    json('/rest/v1/indhold_tekst?select=noegle,faldbak,tekst,opdateret,profiler(navn)&order=noegle')
-      .then(function(rk){ tekster = rk || []; tegnTekster(); opdaterUdgivLinje(); })
-      .catch(function(f){
-        var v = $('tekster'); tøm(v); v.appendChild(lav('p','tomt', f.message));
+    Promise.all([
+      json('/rest/v1/indhold_kategori?select=id,navn,beskrivelse,raekkefoelge&order=raekkefoelge'),
+      json('/rest/v1/indhold_tekst?select=' + TEKST_FELTER + '&order=noegle')
+    ]).then(function(svar){
+      kategorier = svar[0] || [];
+      tekster = svar[1] || [];
+      if(!valgtKat && kategorier.length) valgtKat = kategorier[0].id;
+      tegnKategorier();
+      tegnTekster();
+      opdaterUdgivMærke();
+    }).catch(function(f){
+      var v = $('tekster'); tøm(v); v.appendChild(lav('p','tomt', forklar(f)));
+    });
+  }
+
+  /* Kategorierne kommer fra serveren med deres egen rækkefølge — ikke
+     alfabetisk. En kunde møder dem i en bestemt orden, og det er den
+     orden, det giver mening at rette dem i.
+
+     EN TOM KATEGORI VISES OGSÅ, bare dæmpet. "Ikke sorteret endnu" med et
+     nul ved siden af er en oplysning: der er ikke noget, der er faldet ned
+     mellem to stole i dag. Skjulte vi den, kunne man ikke se forskel på
+     "ingen" og "findes ikke". */
+  function tegnKategorier(){
+    var v = $('kategorier');
+    tøm(v);
+    kategorier.forEach(function(k){
+      var n = tekster.filter(function(t){ return t.kategori === k.id; }).length;
+      var b = lav('button', n ? '' : 'tom');
+      b.type = 'button';
+      b.appendChild(document.createTextNode(k.navn));
+      b.appendChild(lav('span','n', n));
+      b.setAttribute('aria-pressed', String(k.id === valgtKat));
+      b.addEventListener('click', function(){
+        valgtKat = k.id;
+        $('søg').value = '';
+        tegnKategorier();
+        tegnTekster();
       });
+      v.appendChild(b);
+    });
+    var valgt = kategorier.filter(function(k){ return k.id === valgtKat; })[0];
+    $('kat-om').textContent = valgt ? valgt.beskrivelse : '';
   }
 
-  /* Hvor mange er rettet, siden der sidst blev udgivet? Sammenligningen er
-     `opdateret` mod udgivelsens tidsstempel — begge kommer fra serveren,
-     så browserens ur kan ikke lyve om det. */
-  function opdaterUdgivLinje(){
-    var linje = $('udgiv-linje');
-    if(!tekster.length){ linje.hidden = true; return; }
-    var siden = sidsteUdgivelse ? new Date(sidsteUdgivelse.udgivet_kl).getTime() : 0;
-    var venter = tekster.filter(function(t){
-      return t.tekst !== null && new Date(t.opdateret).getTime() > siden;
-    }).length;
-    tøm(linje);
-    if(!sidsteUdgivelse){
-      linje.appendChild(lav('b','','Intet er udgivet endnu. '));
-      linje.appendChild(document.createTextNode(
-        'Det, du retter her, står kun på arbejdsbordet, indtil du trykker Udgiv.'));
-      linje.hidden = false;
-    } else if(venter){
-      linje.appendChild(lav('b','', venter + (venter === 1 ? ' rettelse' : ' rettelser') + ' venter. '));
-      linje.appendChild(document.createTextNode(
-        'Sidst udgivet ' + dato(sidsteUdgivelse.udgivet_kl) + '. Tryk Udgiv for at sende dem ud.'));
-      linje.hidden = false;
-    } else {
-      linje.hidden = true;
-    }
-  }
-
+  /* Søgningen går PÅ TVÆRS af kategorier. Man leder efter en sætning, man
+     har set på en skærm, og man ved sjældent hvilken kasse vi har lagt den
+     i — så ville vores egen inddeling spænde ben for et opslag. */
   function passer(t){
     var s = $('søg').value.trim().toLowerCase();
     var f = $('filter').value;
     if(f === 'rettede' && t.tekst === null) return false;
     if(f === 'urørte'  && t.tekst !== null) return false;
-    if(!s) return true;
+    if(!s) return t.kategori === valgtKat;
     return t.noegle.toLowerCase().indexOf(s) >= 0
         || (t.faldbak || '').toLowerCase().indexOf(s) >= 0
         || (t.tekst   || '').toLowerCase().indexOf(s) >= 0;
@@ -753,22 +879,23 @@
   function tegnTekster(){
     var v = $('tekster');
     tøm(v);
+    var søger = $('søg').value.trim() !== '';
     var synlige = tekster.filter(passer);
 
-    $('tekst-tæller').textContent =
-      synlige.length === tekster.length
-        ? tekster.length + ' tekster'
-        : synlige.length + ' af ' + tekster.length;
+    $('tekst-tæller').textContent = søger
+      ? synlige.length + ' fundet i alle kategorier'
+      : synlige.length + ' her · ' + tekster.length + ' i alt';
 
     if(!synlige.length){
-      v.appendChild(lav('p','tomt','Ingen tekster passer på det, du søgte efter.'));
+      v.appendChild(lav('p','tomt', søger
+        ? 'Ingen tekster passer på det, du søgte efter.'
+        : 'Der er ingen tekster i den kategori.'));
       return;
     }
 
-    /* Nøglerne hedder `login.titel`, `login.knap`, `hvorfra.spm` … Delen
-       før det første punktum er den skærm, teksten står på, og det er den
-       eneste gruppering, der ikke skal vedligeholdes nogen steder: den
-       står i nøglen i forvejen. */
+    /* Inden for en kategori grupperes der på nøglens første led — det er
+       SKÆRMEN, teksten står på. To niveauer er nok: kategorien siger, hvor
+       i appen man er, skærmen holder beslægtede tekster samlet. */
     var orden = [];
     var grupper = {};
     synlige.forEach(function(t){
@@ -780,12 +907,12 @@
     orden.forEach(function(g){
       var boks = lav('div','gruppe');
       boks.appendChild(lav('h3', null, g));
-      grupper[g].forEach(function(t){ boks.appendChild(række(t)); });
+      grupper[g].forEach(function(t){ boks.appendChild(tekstRække(t)); });
       v.appendChild(boks);
     });
   }
 
-  function række(t){
+  function tekstRække(t){
     var rk = lav('div','rk' + (t.tekst !== null ? ' rettet' : ''));
 
     var hoved = lav('div','hoved');
@@ -816,9 +943,7 @@
     var nulstil = lav('button','knap rolig lille','Brug teksten fra koden');
     nulstil.hidden = (t.tekst === null);
     var status = lav('span','status');
-    bund.appendChild(gem);
-    bund.appendChild(nulstil);
-    bund.appendChild(status);
+    bund.appendChild(gem); bund.appendChild(nulstil); bund.appendChild(status);
     rk.appendChild(bund);
 
     function nuværende(){ return t.tekst === null ? '' : t.tekst; }
@@ -826,16 +951,12 @@
 
     felt.addEventListener('input', function(){
       gem.disabled = !ændret();
-      status.textContent = '';
-      status.className = 'status';
+      status.textContent = ''; status.className = 'status';
     });
-
     felt.addEventListener('keydown', function(e){
       if((e.metaKey || e.ctrlKey) && e.key === 'Enter' && ændret()){ e.preventDefault(); skriv(felt.value); }
     });
-
     gem.addEventListener('click', function(){ skriv(felt.value); });
-
     nulstil.addEventListener('click', function(){
       if(!window.confirm('Slette din rettelse og bruge teksten fra koden igen?')) return;
       skriv('');
@@ -851,47 +972,34 @@
       status.textContent = 'Gemmer …';
 
       json('/rest/v1/indhold_tekst?noegle=eq.' + encodeURIComponent(t.noegle)
-        + '&select=noegle,tekst,opdateret,profiler(navn)', {
-        method:'PATCH',
-        body:{ tekst: ny },
-        headers:{ Prefer:'return=representation' }
-      }).then(function(rk){
-        var opdateret = rk && rk[0];
-        if(!opdateret) throw new Error('Serveren gemte ingenting. Er din konto stadig administrator?');
-        t.tekst = opdateret.tekst;
-        t.opdateret = opdateret.opdateret;
-        t.profiler = opdateret.profiler;
+         + '&select=' + TEKST_FELTER, {
+        method:'PATCH', body:{ tekst: ny }, headers:{ Prefer:'return=representation' }
+      }).then(function(rk2){
+        var ny2 = rk2 && rk2[0];
+        if(!ny2) throw new Error('Serveren gemte ingenting. Er din konto stadig administrator?');
+        t.tekst = ny2.tekst; t.opdateret = ny2.opdateret; t.profiler = ny2.profiler;
         felt.value = t.tekst === null ? '' : t.tekst;
-        rk_klasse();
+        frisk();
         status.className = 'status god';
         status.textContent = 'Gemt';
-        opdaterUdgivLinje();
+        opdaterUdgivMærke();
         window.setTimeout(function(){
           if(status.textContent === 'Gemt'){ status.textContent = ''; status.className = 'status'; }
         }, 2500);
       }).catch(function(f){
         gem.disabled = false;
         status.className = 'status fejl';
-        /* 23514 er databasens egen check. Den udløses af én ting: en
-           pladsholder som {antal} er forsvundet ud af teksten. Fejlen
-           oversættes her, fordi "new row violates check constraint" ikke
-           fortæller nogen, hvad de skal gøre. */
-        status.textContent = (f.kode === '23514' || /pladsholder|23514/.test(f.message || ''))
-          ? 'Der mangler noget i { } — behold dem fra den grå tekst.'
-          : (f.message || 'Kunne ikke gemmes.');
+        status.textContent = forklar(f);
       });
     }
 
-    function rk_klasse(){
+    function frisk(){
       rk.className = 'rk' + (t.tekst !== null ? ' rettet' : '');
       oprind.hidden = (t.tekst === null);
       nulstil.hidden = (t.tekst === null);
       var m = hoved.querySelector('.mærkat');
       if(t.tekst !== null && !m) hoved.insertBefore(lav('span','mærkat','rettet'), af);
       if(t.tekst === null && m) hoved.removeChild(m);
-      /* Hvem rettede den sidst. Navnet kommer fra serveren, som tager det
-         ud af tokenet - ikke fra noget, fladen selv har fundet paa. Er der
-         intet navn, staar der intet: et gaet ville se ud som en oplysning. */
       af.textContent = (t.tekst !== null && t.profiler && t.profiler.navn)
         ? t.profiler.navn + ', ' + dato(t.opdateret) : '';
     }
@@ -902,40 +1010,326 @@
   $('søg').addEventListener('input', tegnTekster);
   $('filter').addEventListener('change', tegnTekster);
 
-  $('udgiv').addEventListener('click', function(){
-    var knap = $('udgiv');
-    var klar = tekster.filter(function(t){ return t.tekst !== null; }).length;
-    if(!window.confirm('Udgive ' + klar + (klar === 1 ? ' tekst' : ' tekster') + '?\n\n'
-      + 'De bliver synlige i appen, næste gang den åbnes. Du kan altid sende en tidligere '
-      + 'udgivelse ud igen fra Oversigt.')) return;
-    knap.disabled = true;
-    knap.textContent = 'Udgiver …';
-    json('/functions/v1/udgiv-tekster', { method:'POST', body:{} })
-      .then(function(s){
-        knap.textContent = 'Udgiv';
-        knap.disabled = false;
-        hentOversigt();
-        window.alert('Udgivet. ' + s.antal + (s.antal === 1 ? ' tekst er' : ' tekster er') + ' ude nu.');
-      })
+  // -------------------------------------------------------------
+  // Turene
+  // -------------------------------------------------------------
+  var TUR_FELTER = 'id,navn,ord,kort,beskrivelse,fac_toilet,fac_handel,fac_aftensmad,'
+                 + 'fac_morgen,lat,lon,klar,oe_lys,oe_natur,oe_stemning,billeder,synlig,'
+                 + 'raekkefoelge,opdateret,profiler(navn)';
+
+  var ØNSKER = [
+    ['oe_lys',      'Lys',      [['','—'],['solopgang','Solopgang'],['solnedgang','Solnedgang']]],
+    ['oe_natur',    'Natur',    [['','—'],['vand','Vand'],['land','Land']]],
+    ['oe_stemning', 'Stemning', [['','—'],['isoleret','Isoleret'],['livligt','Livligt']]]
+  ];
+
+  function hentTure(){
+    json('/rest/v1/indhold_tur?select=' + TUR_FELTER + '&order=raekkefoelge')
+      .then(function(rk){ ture = rk || []; tegnTure(); opdaterUdgivMærke(); })
       .catch(function(f){
-        knap.textContent = 'Udgiv';
-        knap.disabled = false;
-        window.alert(f.message);
+        var v = $('ture'); tøm(v); v.appendChild(lav('p','tomt', forklar(f)));
       });
+  }
+
+  function tegnTure(åbenId){
+    var v = $('ture');
+    /* Hvilke ture stod åbne? En gentegning efter et "Gem" må ikke smække
+       den tur i, man sad og arbejdede i. */
+    var åbne = {};
+    var kroppe = v.querySelectorAll('.turkrop');
+    for(var i=0;i<kroppe.length;i++){
+      if(!kroppe[i].hidden) åbne[kroppe[i].getAttribute('data-id')] = true;
+    }
+    if(åbenId) åbne[åbenId] = true;
+    tøm(v);
+
+    var s = $('søg-tur').value.trim().toLowerCase();
+    var synlige = ture.filter(function(t){
+      if(!s) return true;
+      return (t.id||'').toLowerCase().indexOf(s) >= 0
+          || (t.navn||'').toLowerCase().indexOf(s) >= 0
+          || (t.ord||'').toLowerCase().indexOf(s) >= 0
+          || (t.kort||'').toLowerCase().indexOf(s) >= 0
+          || (t.beskrivelse||'').toLowerCase().indexOf(s) >= 0;
+    });
+
+    var ude = ture.filter(function(t){ return !t.synlig; }).length;
+    $('tur-tæller').textContent = (s ? synlige.length + ' af ' : '') + ture.length + ' ture'
+      + (ude ? ' · ' + ude + ' ikke synlige' : '');
+
+    if(!synlige.length){
+      v.appendChild(lav('p','tomt', ture.length
+        ? 'Ingen ture passer på det, du søgte efter.'
+        : 'Der er ingen ture endnu.'));
+      return;
+    }
+    synlige.forEach(function(t){ v.appendChild(turKort(t, !!åbne[t.id])); });
+  }
+
+  function vælgFelt(etiket, nu, valg){
+    var boks = lav('div','felt');
+    var id = 'f' + Math.random().toString(36).slice(2, 9);
+    var l = lav('label', null, etiket);
+    l.setAttribute('for', id);
+    boks.appendChild(l);
+    var s = document.createElement('select');
+    s.id = id;
+    valg.forEach(function(v){
+      var o = document.createElement('option');
+      o.value = v[0]; o.textContent = v[1];
+      if(v[0] === (nu || '')) o.selected = true;
+      s.appendChild(o);
+    });
+    boks.appendChild(s);
+    boks.felt = s;
+    return boks;
+  }
+
+  function tekstFelt(etiket, værdi, hint, linjer){
+    var boks = lav('div','felt');
+    var id = 'f' + Math.random().toString(36).slice(2, 9);
+    var l = lav('label', null, etiket);
+    l.setAttribute('for', id);
+    boks.appendChild(l);
+    var f = document.createElement(linjer ? 'textarea' : 'input');
+    if(linjer) f.rows = linjer; else f.type = 'text';
+    f.id = id;
+    f.value = (værdi === null || værdi === undefined) ? '' : String(værdi);
+    boks.appendChild(f);
+    if(hint) boks.appendChild(lav('div','hint', hint));
+    boks.felt = f;
+    return boks;
+  }
+
+  function afsnit(krop, navn){ krop.appendChild(lav('div','afsnit', navn)); }
+
+  function turKort(t, åben){
+    var kort = lav('div','tur' + (t.synlig ? '' : ' skjult'));
+
+    // ---------- linjen, man klikker på ----------
+    var linje = lav('button','linje');
+    linje.type = 'button';
+    linje.appendChild(lav('span','prik' + (t.synlig ? '' : ' ude')));
+    linje.appendChild(lav('span','navn', t.navn || '(uden navn endnu)'));
+    var smaa = [];
+    if(!t.synlig) smaa.push(t.navn ? 'ikke synlig' : 'kladde');
+    if(!t.klar) smaa.push('måske');
+    if(t.billeder && t.billeder.length) smaa.push(t.billeder.length + ' billeder');
+    linje.appendChild(lav('span','smaa', smaa.join(' · ')));
+    var pil = lav('span','pil', åben ? '▲' : '▼');
+    linje.appendChild(pil);
+    kort.appendChild(linje);
+
+    // ---------- editoren ----------
+    var krop = lav('div','turkrop');
+    krop.setAttribute('data-id', t.id);
+    krop.hidden = !åben;
+    linje.addEventListener('click', function(){
+      krop.hidden = !krop.hidden;
+      pil.textContent = krop.hidden ? '▼' : '▲';
+    });
+
+    var par1 = lav('div','par');
+    var navn = tekstFelt('Navn', t.navn, 'Det, der står øverst på skærmen.');
+    var ord  = tekstFelt('Ét ord', t.ord, 'Kendetegnet — “Vandkanten”, “Bunkere”, “Fyret”.');
+    par1.appendChild(navn); par1.appendChild(ord);
+    krop.appendChild(par1);
+
+    var kortT = tekstFelt('Kort beskrivelse', t.kort, 'Én linje. Den står på listen med forslag.', 2);
+    krop.appendChild(kortT);
+
+    var lang = tekstFelt('Den lange beskrivelse', t.beskrivelse,
+      'Prosaen, man læser, når man trykker ind på stedet.', 7);
+    krop.appendChild(lang);
+
+    afsnit(krop, 'Faciliteter');
+    var par2 = lav('div','par');
+    var toilet = tekstFelt('Toilet', t.fac_toilet, 'Tomt = vi ved det ikke, og så vises linjen ikke.');
+    var handel = tekstFelt('Indkøb', t.fac_handel, 'Tomt = vises ikke.');
+    var aften  = tekstFelt('Aftensmad', t.fac_aftensmad, 'Tomt = vises ikke.');
+    var morgen = tekstFelt('Morgenkaffe', t.fac_morgen, 'Tomt = vises ikke.');
+    par2.appendChild(toilet); par2.appendChild(handel);
+    par2.appendChild(aften);  par2.appendChild(morgen);
+    krop.appendChild(par2);
+
+    afsnit(krop, 'Sted');
+    var par3 = lav('div','par');
+    var lat = tekstFelt('Bredde (lat)', t.lat, 'Fx 55.905. Appen regner stedets plads på kortet ud af de to.');
+    var lon = tekstFelt('Længde (lon)', t.lon, 'Fx 8.117.');
+    var rkf = tekstFelt('Rækkefølge', t.raekkefoelge, 'Lavest først.');
+    par3.appendChild(lat); par3.appendChild(lon); par3.appendChild(rkf);
+    krop.appendChild(par3);
+
+    afsnit(krop, 'Passer til');
+    var par4 = lav('div','par');
+    var vælgere = {};
+    ØNSKER.forEach(function(ø){
+      var f = vælgFelt(ø[1], t[ø[0]], ø[2]);
+      vælgere[ø[0]] = f.felt;
+      par4.appendChild(f);
+    });
+    krop.appendChild(par4);
+    krop.appendChild(lav('div','hint',
+      'Guiden holder turen op mod det, kunden valgte i trin 4. Står alle tre på “—”, vises der '
+      + 'ingen matchlinje på turen — og det er noget andet end nul ud af tre.'));
+
+    // Billederne kan læses, ikke rettes. Det står der, frem for ikke at stå der.
+    if(t.billeder && t.billeder.length){
+      var bl = lav('div','billedliste');
+      bl.appendChild(lav('b', null, 'Billeder: '));
+      t.billeder.forEach(function(b, i){
+        if(i) bl.appendChild(document.createTextNode(' · '));
+        bl.appendChild(lav('code', null, String(b).replace(/^billeder\//, '')));
+      });
+      var note = lav('div', null, 'Filerne ligger i appen og kan ikke skiftes herfra endnu.');
+      note.style.cssText = 'font-size:12px;margin-top:2px';
+      bl.appendChild(note);
+      krop.appendChild(bl);
+    }
+
+    var synlig = document.createElement('input');
+    synlig.type = 'checkbox';
+    synlig.checked = !!t.synlig;
+    var r1 = lav('div','afkryds');
+    r1.appendChild(synlig);
+    r1.appendChild(lav('span', null, 'Synlig i appen'));
+    r1.appendChild(lav('span','hint','— kræver navn og koordinater'));
+    krop.appendChild(r1);
+
+    var klar = document.createElement('input');
+    klar.type = 'checkbox';
+    klar.checked = !!t.klar;
+    var r2 = lav('div','afkryds');
+    r2.appendChild(klar);
+    r2.appendChild(lav('span', null, 'Testet af Arytmi ★'));
+    r2.appendChild(lav('span','hint','— slået fra vises turen som “Måske — vi tester igen”'));
+    krop.appendChild(r2);
+
+    // ---------- bunden ----------
+    var bund = lav('div','turbund');
+    var gem = lav('button','knap lille','Gem');
+    var slet = lav('button','knap fare lille','Smid kladden ud');
+    slet.hidden = !!t.synlig;
+    var status = lav('span','status');
+    if(t.profiler && t.profiler.navn){
+      status.textContent = 'Sidst rettet af ' + t.profiler.navn + ', ' + dato(t.opdateret);
+    }
+    bund.appendChild(gem); bund.appendChild(slet); bund.appendChild(status);
+    krop.appendChild(bund);
+    kort.appendChild(krop);
+
+    /* Tomt felt bliver til NULL og ikke til nul. `lat = 0` er et rigtigt
+       sted i Atlanterhavet; `lat = null` er "vi ved det ikke", og det er
+       dét, der skal ske, når nogen rydder feltet. */
+    function tal(v){
+      var s2 = String(v).trim().replace(',', '.');
+      if(s2 === '') return null;
+      var n = Number(s2);
+      return isNaN(n) ? null : n;
+    }
+
+    gem.addEventListener('click', function(){
+      gem.disabled = true;
+      status.className = 'status';
+      status.textContent = 'Gemmer …';
+      var r = Math.round(tal(rkf.felt.value) || 0);
+      json('/rest/v1/indhold_tur?id=eq.' + encodeURIComponent(t.id) + '&select=' + TUR_FELTER, {
+        method:'PATCH',
+        headers:{ Prefer:'return=representation' },
+        body:{
+          navn: navn.felt.value.trim(),
+          ord: ord.felt.value.trim(),
+          kort: kortT.felt.value.trim(),
+          beskrivelse: lang.felt.value.trim(),
+          fac_toilet: toilet.felt.value.trim(),
+          fac_handel: handel.felt.value.trim(),
+          fac_aftensmad: aften.felt.value.trim(),
+          fac_morgen: morgen.felt.value.trim(),
+          lat: tal(lat.felt.value),
+          lon: tal(lon.felt.value),
+          raekkefoelge: r,
+          oe_lys: vælgere.oe_lys.value,
+          oe_natur: vælgere.oe_natur.value,
+          oe_stemning: vælgere.oe_stemning.value,
+          synlig: synlig.checked,
+          klar: klar.checked
+        }
+      }).then(function(rk2){
+        var ny = rk2 && rk2[0];
+        if(!ny) throw new Error('Serveren gemte ingenting. Er din konto stadig administrator?');
+        for(var i=0;i<ture.length;i++) if(ture[i].id === t.id) ture[i] = ny;
+        tegnTure(t.id);
+        opdaterUdgivMærke();
+      }).catch(function(f){
+        gem.disabled = false;
+        status.className = 'status fejl';
+        status.textContent = forklar(f);
+        /* Fluebenet sættes tilbage, hvis serveren sagde nej. Ellers ville
+           skærmen vise "synlig", mens rækken ikke er det — og næste
+           udgivelse ville komme uden den tur, uden at nogen forstod det. */
+        synlig.checked = !!t.synlig;
+      });
+    });
+
+    slet.addEventListener('click', function(){
+      if(!window.confirm('Smide "' + (t.navn || t.id) + '" helt ud?\n\n'
+        + 'Det kan kun lade sig gøre, fordi turen aldrig har været synlig. '
+        + 'Den kan ikke hentes tilbage.')) return;
+      json('/rest/v1/indhold_tur?id=eq.' + encodeURIComponent(t.id), { method:'DELETE' })
+        .then(function(){
+          ture = ture.filter(function(x){ return x.id !== t.id; });
+          tegnTure();
+          opdaterUdgivMærke();
+        })
+        .catch(function(f){ window.alert(forklar(f)); });
+    });
+
+    return kort;
+  }
+
+  $('søg-tur').addEventListener('input', function(){ tegnTure(); });
+
+  /* En ny tur fødes som KLADDE — `synlig` er falsk i skemaet. Den kan ikke
+     nå en telefon, før nogen har udfyldt den og selv sat fluebenet, og
+     databasen siger fra, hvis navn eller koordinater mangler. */
+  $('ny-tur').addEventListener('click', function(){
+    var id = window.prompt('Et kort id til turen.\n\n'
+      + 'Kun små bogstaver, tal og bindestreg — det ender i en fil og kan ende i en adresse.\n'
+      + 'Fx: blokhus-strand', '');
+    if(id === null) return;
+    id = id.trim().toLowerCase();
+    if(!/^[a-z0-9][a-z0-9-]{0,39}$/.test(id)){
+      window.alert('Det id duer ikke.\n\nKun små bogstaver, tal og bindestreg, og det skal '
+        + 'begynde med et bogstav eller et tal.');
+      return;
+    }
+    var størst = ture.reduce(function(m, t){ return Math.max(m, t.raekkefoelge || 0); }, 0);
+    json('/rest/v1/indhold_tur?select=' + TUR_FELTER, {
+      method:'POST',
+      headers:{ Prefer:'return=representation' },
+      body:{ id:id, navn:'', raekkefoelge: størst + 10 }
+    }).then(function(rk){
+      var ny = rk && rk[0];
+      if(!ny) throw new Error('Serveren oprettede ingenting.');
+      ture.push(ny);
+      $('søg-tur').value = id;
+      tegnTure(id);
+      var krop = document.querySelector('.turkrop[data-id="' + id + '"]');
+      var f = krop && krop.querySelector('input[type=text]');
+      if(f) f.focus();
+    }).catch(function(f){ window.alert(forklar(f)); });
   });
 
   // -------------------------------------------------------------
   // Kunder
   // -------------------------------------------------------------
-  var kunder = [];
-
   function hentKunder(){
     json('/rest/v1/profiler?select=id,navn,telefon,rolle,oprettet,adgang(niveau,gyldig_til)'
        + '&order=oprettet.desc&limit=200')
       .then(function(rk){ kunder = rk || []; tegnKunder(); })
       .catch(function(f){
         var krop = $('kunder'); tøm(krop);
-        var tr = lav('tr'); var td = lav('td','tomt', f.message); td.colSpan = 5;
+        var tr = lav('tr'); var td = lav('td','tomt', forklar(f)); td.colSpan = 5;
         tr.appendChild(td); krop.appendChild(tr);
       });
   }
@@ -973,13 +1367,11 @@
       var tr = lav('tr');
       tr.appendChild(lav('td', null, k.navn || '(uden navn)'));
       tr.appendChild(lav('td','dæmp', k.telefon || '—'));
-
       var a = lav('td');
       var aktiv = harAdgang(k);
       a.appendChild(lav('span','prik' + (aktiv ? '' : ' ude')));
       a.appendChild(document.createTextNode(aktiv ? 'Aktiv' : 'Ingen'));
       tr.appendChild(a);
-
       tr.appendChild(lav('td','dæmp', dato(k.oprettet)));
       tr.appendChild(lav('td','dæmp', k.rolle === 'admin' ? 'Administrator' : 'Kunde'));
       krop.appendChild(tr);
