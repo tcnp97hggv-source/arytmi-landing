@@ -1275,13 +1275,25 @@
       if(!window.confirm('Smide "' + (t.navn || t.id) + '" helt ud?\n\n'
         + 'Det kan kun lade sig gøre, fordi turen aldrig har været synlig. '
         + 'Den kan ikke hentes tilbage.')) return;
-      json('/rest/v1/indhold_tur?id=eq.' + encodeURIComponent(t.id), { method:'DELETE' })
-        .then(function(){
-          ture = ture.filter(function(x){ return x.id !== t.id; });
-          tegnTure();
-          opdaterUdgivMærke();
-        })
-        .catch(function(f){ window.alert(forklar(f)); });
+      /* `return=representation` er ikke pynt her. RLS filtrerer en DELETE
+         frem for at afvise den, saa en sletning af en SYNLIG tur svarer
+         204 og fjerner INTET. Uden svaret ville fladen stryge raekken af
+         skaermen, og turen ville dukke op igen ved naeste genindlaesning —
+         den vaerste slags: en handling, der ser ud til at virke. */
+      json('/rest/v1/indhold_tur?id=eq.' + encodeURIComponent(t.id), {
+        method:'DELETE', headers:{ Prefer:'return=representation' }
+      }).then(function(væk){
+        if(!væk || !væk.length){
+          window.alert('Turen blev ikke slettet.\n\nDen er synlig — og en tur, nogen kan '
+            + 'have set, kan kun tages ud, ikke slettes. Fjern fluebenet ved "Synlig i appen", '
+            + 'gem, og prøv igen.');
+          hentTure();
+          return;
+        }
+        ture = ture.filter(function(x){ return x.id !== t.id; });
+        tegnTure();
+        opdaterUdgivMærke();
+      }).catch(function(f){ window.alert(forklar(f)); });
     });
 
     return kort;
