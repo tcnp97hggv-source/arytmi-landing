@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<!--
+  INDHOLDSPOLITIK (CSP). Samme opbygning som de fire app-sider — se
+  README.md for de tre ting, der er værd at kende, hvis du retter i den.
+
+  Én forskel fra de andre sider: `form-action 'none'` er her af en endnu
+  mere konkret grund. Login-formularen herunder indeholder et KODEORD til
+  en administratorkonto. Uden linjen ville en formular uden JavaScript
+  submitte til sig selv med GET, og kodeordet ville stå i adresselinjen,
+  i browserhistorikken og i alt, hvad der måtte logge adresser undervejs.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arytmi — bagrummet</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../apple-touch-icon-180.png">
+<!--
+  =============================================================
+  ARYTMI — BAGRUMMET. arytmi.com/admin
+  =============================================================
+
+  Bygget 11/9 2026. Kennet og Oliivia skal kunne passe Arytmi fra en
+  browser i stedet for at åbne Supabases dashboard hver gang der skal
+  rettes et komma. Dashboardet er et værktøj for en, der kan SQL — det er
+  ikke et arbejdsbord, og det tilgiver ikke en fejlklikket `delete`.
+
+  HVAD DEN KAN I DAG, OG HVAD DEN IKKE KAN
+
+    Oversigt   rigtige tal, hentet i samme sekund. Ikke et skøn.
+    Tekster    virker helt: ret, gem, udgiv, rul tilbage.
+    Kunder     LÆSES. Der kan endnu ikke oprettes herfra, og mailen kan
+               ikke vises — den ligger i `auth.users`, som PostgREST ikke
+               rører. Begge dele kræver en funktion mere, og den er ikke
+               skrevet endnu.
+    Billeder   IKKE bygget. Fanen står der og siger det.
+
+  De to sidste punkter står med vilje som de er. En fane, der ser
+  færdig ud og ikke er det, er værre end ingen fane: den værste tilstand
+  for et værn er at se ud, som om det virker.
+
+  SIKKERHEDEN LIGGER IKKE HER. Alt herinde går gennem PostgREST og
+  Edge-funktionerne med brugerens eget token, og RLS afgør, hvad der
+  kommer retur. Fjernede nogen hele denne fil og skrev sin egen, ville
+  de få nøjagtig de samme rækker. Fanerne herunder er en BEKVEMMELIGHED,
+  ikke en lås — koden må gerne vise en knap til noget, serveren siger nej
+  til, så længe serveren faktisk siger nej.
+
+  ALT SKRIVES MED textContent. Aldrig innerHTML, ikke ét sted. Teksterne
+  herinde er skrevet af os selv, men de ender på en kundes skærm, og en
+  vane, der har en undtagelse, er ikke en vane.
+
+  NØGLEN HERUNDER ER OFFENTLIG. Det er den publicerbare nøgle, lavet til
+  at stå i klientkode — samme som på de fire andre sider. Service-nøglen
+  er en HELT anden ting og må aldrig herind.
+-->
+<style>
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+    --fejl:#9c4221;
+    --god:#4f6b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    -webkit-text-size-adjust:100%;
+  }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  button{font:inherit;color:inherit;cursor:pointer}
+  input,textarea,select{font:inherit;color:inherit}
+  [hidden]{display:none !important}
+
+  /* ---------- LOGIN ---------- */
+  #login{
+    min-height:100dvh;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px 20px;
+  }
+  #login .kort{ width:100%; max-width:380px; }
+  #login .logo{ width:min(170px,48vw); margin:0 auto 26px; display:block; }
+  .flade{
+    background:var(--flade);
+    border:1px solid var(--linje);
+    border-radius:16px;
+    padding:24px 22px;
+  }
+  h1{ font-size:20px; font-weight:600; line-height:1.3; }
+  label{
+    display:block; font-size:13px; font-weight:600;
+    letter-spacing:.02em; color:var(--fjord); margin:16px 0 6px;
+  }
+  input[type=email],input[type=password],input[type=search],textarea{
+    width:100%;
+    background:#fff;
+    border:1px solid var(--linje);
+    border-radius:10px;
+    padding:11px 13px;
+    color:var(--tekst);
+  }
+  input:focus,textarea:focus,button:focus-visible,select:focus{
+    outline:2px solid var(--rav); outline-offset:1px; border-color:transparent;
+  }
+  textarea{ resize:vertical; line-height:1.5; }
+  .knap{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--gran); color:#f7f5ef;
+    border:1px solid var(--gran);
+    border-radius:10px;
+    padding:11px 18px;
+    font-weight:600; font-size:14px;
+  }
+  .knap:hover{ background:var(--gran-mørk); }
+  .knap[disabled]{ opacity:.45; cursor:default; }
+  .knap.bred{ width:100%; margin-top:22px; }
+  .knap.rolig{ background:transparent; color:var(--fjord); border-color:var(--linje); }
+  .knap.rolig:hover{ background:#f1efe7; color:var(--tekst); }
+  .knap.lille{ padding:7px 13px; font-size:13px; border-radius:8px; }
+
+  .besked{ margin-top:16px; font-size:14px; padding:11px 13px; border-radius:10px; }
+  .besked.fejl{ background:#f7e9e3; color:var(--fejl); border:1px solid #e6cfc4; }
+  .besked.god{ background:#e9efe7; color:var(--god); border:1px solid #cfdcca; }
+
+  /* ---------- RAMMEN ---------- */
+  header.top{
+    background:var(--flade);
+    border-bottom:1px solid var(--linje);
+    position:sticky; top:0; z-index:20;
+  }
+  .top .indre{
+    max-width:1060px; margin:0 auto;
+    padding:12px 20px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .top .mærke{ font-weight:700; letter-spacing:.06em; font-size:14px; text-transform:uppercase; }
+  .top .mærke span{ color:var(--dæmpet); font-weight:500; text-transform:none; letter-spacing:0; margin-left:9px; }
+  .top .hvem{ margin-left:auto; font-size:13px; color:var(--dæmpet); }
+  .top .hvem b{ color:var(--tekst); font-weight:600; }
+
+  nav.faner{
+    max-width:1060px; margin:0 auto;
+    padding:0 20px;
+    display:flex; gap:2px; overflow-x:auto;
+  }
+  nav.faner button{
+    background:none; border:0;
+    padding:11px 14px;
+    font-size:14px; font-weight:600; color:var(--dæmpet);
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  nav.faner button:hover{ color:var(--tekst); }
+  nav.faner button[aria-current=page]{ color:var(--gran); border-bottom-color:var(--rav); }
+
+  main{ max-width:1060px; margin:0 auto; padding:26px 20px 80px; }
+  h2{ font-size:18px; font-weight:600; margin-bottom:4px; }
+  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:20px; max-width:58ch; }
+
+  /* ---------- OVERSIGT ---------- */
+  .tal{
+    display:grid; gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    margin-bottom:26px;
+  }
+  .tal .felt{
+    background:var(--flade); border:1px solid var(--linje);
+    border-radius:14px; padding:18px 18px 16px;
+  }
+  .tal .felt .stor{ font-size:30px; font-weight:700; line-height:1.1; letter-spacing:-.02em; }
+  .tal .felt .navn{ font-size:13px; color:var(--dæmpet); margin-top:5px; }
+  .tal .felt .note{ font-size:12px; color:var(--dæmpet); margin-top:9px; line-height:1.4; }
+
+  /* ---------- TEKSTER ---------- */
+  .værktøjslinje{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    margin-bottom:18px;
+  }
+  .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:340px; }
+  .værktøjslinje select{
+    background:#fff; border:1px solid var(--linje); border-radius:10px; padding:10px 12px;
+  }
+  .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; }
+
+  .gruppe{ margin-bottom:26px; }
+  .gruppe > h3{
+    font-size:13px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:9px; padding-left:2px;
+  }
+  .rk{
+    background:var(--flade); border:1px solid var(--linje);
+    border-radius:12px; padding:14px 16px; margin-bottom:8px;
+  }
+  .rk.rettet{ border-left:3px solid var(--rav); }
+  .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .rk .nøgle{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px; color:var(--fjord);
+  }
+  .rk .mærkat{
+    font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--rav);
+  }
+  .rk .oprind{
+    font-size:13px; color:var(--dæmpet); margin-top:7px;
+    padding-left:11px; border-left:2px solid var(--linje);
+  }
+  .rk textarea{ margin-top:10px; min-height:52px; }
+  .rk .bund{
+    display:flex; align-items:center; gap:9px; margin-top:10px;
+    min-height:32px;
+  }
+  .rk .bund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
+  .rk .bund .status.fejl{ color:var(--fejl); }
+  .rk .bund .status.god{ color:var(--god); }
+
+  /* ---------- TABEL ---------- */
+  .rulle{ overflow-x:auto; border:1px solid var(--linje); border-radius:12px; background:var(--flade); }
+  table{ border-collapse:collapse; width:100%; min-width:620px; }
+  th,td{ text-align:left; padding:11px 14px; border-bottom:1px solid var(--linje); font-size:14px; }
+  th{
+    font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--dæmpet); font-weight:700; white-space:nowrap;
+  }
+  tbody tr:last-child td{ border-bottom:0; }
+  td.dæmp{ color:var(--dæmpet); }
+  td.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
+  .prik{
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--god); margin-right:7px; vertical-align:1px;
+  }
+  .prik.ude{ background:var(--dæmpet); }
+
+  .tomt{ color:var(--dæmpet); font-size:14px; padding:26px 4px; text-align:center; }
+
+  .advarsel{
+    background:#f6f1e6; border:1px solid #e3d8c2; border-radius:12px;
+    padding:14px 16px; font-size:14px; color:var(--gran); margin-bottom:20px;
+  }
+  .advarsel b{ font-weight:700; }
+
+  @media (max-width:560px){
+    .top .hvem span.mail{ display:none; }
+    main{ padding:20px 16px 70px; }
+    nav.faner{ padding:0 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =============================================================
+     LOGIN
+     ============================================================= -->
+<div id="login">
+  <div class="kort">
+    <img src="../logo.png" alt="Arytmi" class="logo" width="340" height="120">
+    <div class="flade">
+      <h1>Bagrummet</h1>
+      <p style="color:var(--fjord);font-size:14px;margin-top:8px">Log ind med din Arytmi-konto.</p>
+      <form id="login-form" novalidate>
+        <label for="mail">Mail</label>
+        <input type="email" id="mail" autocomplete="username" required inputmode="email" autocapitalize="off" spellcheck="false">
+        <label for="kode">Kodeord</label>
+        <input type="password" id="kode" autocomplete="current-password" required>
+        <button type="submit" class="knap bred" id="login-knap">Log ind</button>
+      </form>
+      <div id="login-besked" class="besked" hidden role="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================
+     BAGRUMMET
+     ============================================================= -->
+<div id="rum" hidden>
+  <header class="top">
+    <div class="indre">
+      <div class="mærke">Arytmi <span>bagrummet</span></div>
+      <div class="hvem">
+        <b id="hvem-navn"></b> <span class="mail" id="hvem-mail"></span>
+        <button type="button" class="knap rolig lille" id="ud" style="margin-left:12px">Log ud</button>
+      </div>
+    </div>
+    <nav class="faner" id="faner" aria-label="Områder">
+      <button type="button" data-fane="oversigt" aria-current="page">Oversigt</button>
+      <button type="button" data-fane="tekster">Tekster</button>
+      <button type="button" data-fane="kunder">Kunder</button>
+      <button type="button" data-fane="billeder">Billeder</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ---------- OVERSIGT ---------- -->
+    <section id="fane-oversigt">
+      <h2>Oversigt</h2>
+      <p class="under">Tallene hentes, hver gang du åbner fanen. Der er ikke gemt et tal noget sted, som kan blive gammelt.</p>
+      <div class="tal" id="tal"></div>
+      <h2 style="margin-top:30px">Seneste udgivelser</h2>
+      <p class="under">Hver gang teksterne sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
+      <div class="rulle">
+        <table>
+          <thead><tr><th>Nr.</th><th>Hvornår</th><th>Af</th><th class="tal-h">Tekster</th><th></th></tr></thead>
+          <tbody id="historik"><tr><td colspan="5" class="tomt">Henter …</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- TEKSTER ---------- -->
+    <section id="fane-tekster" hidden>
+      <h2>Tekster</h2>
+      <p class="under">
+        Ret det, kunden læser i appen. Tomt felt betyder, at teksten i koden står ved magt —
+        det er altid vejen tilbage. Rettelser bliver først synlige på en telefon, når du udgiver.
+      </p>
+      <div id="udgiv-linje" class="advarsel" hidden></div>
+      <div class="værktøjslinje">
+        <label for="søg" class="sr-only">Søg i teksterne</label>
+        <input type="search" id="søg" placeholder="Søg i nøgle eller tekst …" autocapitalize="off" spellcheck="false">
+        <label for="filter" class="sr-only">Vis</label>
+        <select id="filter">
+          <option value="alle">Alle</option>
+          <option value="rettede">Kun rettede</option>
+          <option value="urørte">Kun urørte</option>
+        </select>
+        <button type="button" class="knap" id="udgiv">Udgiv</button>
+        <span class="tæller" id="tekst-tæller"></span>
+      </div>
+      <div id="tekster"><p class="tomt">Henter …</p></div>
+    </section>
+
+    <!-- ---------- KUNDER ---------- -->
+    <section id="fane-kunder" hidden>
+      <h2>Kunder</h2>
+      <p class="under">De nyeste først. Listen kommer fra serveren med dit eget login — ser du den, er det fordi din konto må.</p>
+      <div class="advarsel">
+        <b>Ikke færdig endnu.</b> Her kan kun læses. Der kan ikke oprettes en kunde herfra, og
+        mailadressen kan ikke vises — den ligger i login-tabellen, som den her side ikke har
+        adgang til. Begge dele kræver en funktion mere på serveren.
+      </div>
+      <div class="værktøjslinje">
+        <label for="søg-kunde" class="sr-only">Søg blandt kunder</label>
+        <input type="search" id="søg-kunde" placeholder="Søg i navn eller telefon …" autocapitalize="off" spellcheck="false">
+        <span class="tæller" id="kunde-tæller"></span>
+      </div>
+      <div class="rulle">
+        <table>
+          <thead><tr><th>Navn</th><th>Telefon</th><th>Adgang</th><th>Oprettet</th><th>Rolle</th></tr></thead>
+          <tbody id="kunder"><tr><td colspan="5" class="tomt">Henter …</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- BILLEDER ---------- -->
+    <section id="fane-billeder" hidden>
+      <h2>Billeder</h2>
+      <p class="under">Her skal billeder kunne lægges op og skiftes ud uden at nogen rører ved koden.</p>
+      <div class="advarsel">
+        <b>Ikke bygget endnu.</b> Fanen står her, så den ikke bliver glemt — ikke fordi den virker.
+        Der mangler et sted at lægge filerne, en grænse for hvor store de må være, og en måde at
+        se, hvad der bruger et billede, før nogen sletter det.
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
+
+  /* SESSIONEN LIGGER I sessionStorage, ikke localStorage. Lukkes fanen, er
+     den væk. Det er en administratorkonto, der kan rette det, alle kunder
+     læser — den skal ikke ligge og vente i en browser på en delt maskine.
+     Prisen er, at man logger ind igen efter en genstart. Den pris er lille. */
+  var NØGLE = 'arytmi-bagrum';
+  var session = null;      // { token, refresh, udløber, sub }
+  var mig = null;          // { navn, rolle }
+  var tekster = [];        // arbejdsbordet
+  var sidsteUdgivelse = null;
+
+  // -------------------------------------------------------------
+  // Små hjælpere
+  // -------------------------------------------------------------
+  var $ = function(id){ return document.getElementById(id); };
+
+  function tøm(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+
+  function lav(tag, klasse, tekst){
+    var el = document.createElement(tag);
+    if(klasse) el.className = klasse;
+    if(tekst !== undefined && tekst !== null) el.textContent = String(tekst);
+    return el;
+  }
+
+  function vis(el, tekst, slags){
+    el.textContent = tekst;
+    el.className = 'besked' + (slags ? ' ' + slags : '');
+    el.hidden = false;
+  }
+
+  function dato(iso){
+    if(!iso) return '—';
+    var d = new Date(iso);
+    if(isNaN(d)) return '—';
+    var p = function(n){ return (n<10?'0':'') + n; };
+    return p(d.getDate()) + '/' + p(d.getMonth()+1) + ' ' + d.getFullYear()
+         + ' kl. ' + p(d.getHours()) + '.' + p(d.getMinutes());
+  }
+
+  /* Kun for at finde ud af, HVEM tokenet tilhører, og hvornår det udløber.
+     Der bliver ikke truffet en eneste beslutning om adgang her — det gør
+     serveren. Blev det her regnestykke løjet for, ville man få lov at se
+     en fane og ingenting i den. */
+  function læsToken(jwt){
+    try{
+      var del = jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+      while(del.length % 4) del += '=';
+      return JSON.parse(decodeURIComponent(escape(atob(del))));
+    }catch(e){ return null; }
+  }
+
+  // -------------------------------------------------------------
+  // Serveren
+  // -------------------------------------------------------------
+
+  /* Tokenet lever en time. En tekstgennemgang kan sagtens tage længere, og
+     det må ikke ende med, at et "Gem" fejler med 401, efter man har skrevet
+     i et felt i tyve minutter. Derfor fornyes det, når der er under fem
+     minutter igen — før kaldet, ikke efter det slog fejl. */
+  function sørgForToken(){
+    if(!session) return Promise.reject(new Error('ikke logget ind'));
+    if(session.udløber - Date.now() > 5*60*1000) return Promise.resolve();
+    return fetch(PROJEKT_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:ANON },
+      body: JSON.stringify({ refresh_token: session.refresh })
+    }).then(function(r){
+      if(!r.ok) throw new Error('login-udløbet');
+      return r.json();
+    }).then(function(d){
+      gemSession(d);
+    });
+  }
+
+  function kald(sti, valg){
+    valg = valg || {};
+    return sørgForToken().then(function(){
+      var h = {
+        apikey: ANON,
+        Authorization: 'Bearer ' + session.token
+      };
+      if(valg.body) h['Content-Type'] = 'application/json';
+      for(var n in (valg.headers||{})) h[n] = valg.headers[n];
+      return fetch(PROJEKT_URL + sti, {
+        method: valg.method || 'GET',
+        headers: h,
+        body: valg.body ? JSON.stringify(valg.body) : undefined
+      });
+    });
+  }
+
+  function json(sti, valg){
+    return kald(sti, valg).then(function(r){
+      return r.text().then(function(t){
+        var d = null;
+        try{ d = t ? JSON.parse(t) : null; }catch(e){ d = null; }
+        if(!r.ok){
+          var f = new Error((d && (d.message || d.error)) || ('Serveren svarede ' + r.status));
+          f.status = r.status;
+          f.kode = d && d.code;
+          throw f;
+        }
+        return d;
+      });
+    });
+  }
+
+  /* Antal rækker uden at hente rækkerne. PostgREST svarer med
+     `Content-Range: 0-0/128`, og det er tallet efter skråstregen, vi vil
+     have. Er hovedet der ikke, siges det — der returneres ikke et nul,
+     som ville ligne et svar. */
+  function antal(forespørgsel){
+    return kald('/rest/v1/' + forespørgsel + '&select=id&limit=1', {
+      headers:{ Prefer:'count=exact' }
+    }).then(function(r){
+      if(!r.ok) return null;
+      var omr = r.headers.get('content-range');
+      if(!omr || omr.indexOf('/') < 0) return null;
+      var n = parseInt(omr.split('/')[1], 10);
+      return isNaN(n) ? null : n;
+    }).catch(function(){ return null; });
+  }
+
+  // -------------------------------------------------------------
+  // Login
+  // -------------------------------------------------------------
+  function gemSession(d){
+    var krav = læsToken(d.access_token);
+    session = {
+      token: d.access_token,
+      refresh: d.refresh_token,
+      udløber: (krav && krav.exp ? krav.exp * 1000 : Date.now() + 55*60*1000),
+      sub: krav && krav.sub,
+      mail: krav && krav.email
+    };
+    try{ sessionStorage.setItem(NØGLE, JSON.stringify(session)); }catch(e){}
+  }
+
+  function glem(){
+    session = null; mig = null; tekster = [];
+    try{ sessionStorage.removeItem(NØGLE); }catch(e){}
+    $('rum').hidden = true;
+    $('login').hidden = false;
+    $('kode').value = '';
+  }
+
+  $('login-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var knap = $('login-knap');
+    var besked = $('login-besked');
+    besked.hidden = true;
+    knap.disabled = true;
+    knap.textContent = 'Logger ind …';
+
+    fetch(PROJEKT_URL + '/auth/v1/token?grant_type=password', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:ANON },
+      body: JSON.stringify({ email: $('mail').value.trim(), password: $('kode').value })
+    }).then(function(r){
+      return r.json().then(function(d){ return { ok:r.ok, d:d }; });
+    }).then(function(s){
+      if(!s.ok) throw new Error('Mailen eller kodeordet passer ikke.');
+      gemSession(s.d);
+      return start();
+    }).catch(function(f){
+      glem();
+      vis(besked, f.message || 'Der gik noget galt. Prøv igen.', 'fejl');
+    }).then(function(){
+      knap.disabled = false;
+      knap.textContent = 'Log ind';
+    });
+  });
+
+  $('ud').addEventListener('click', function(){
+    /* Der logges ud på serveren OG lokalt. Kun lokalt ville lade
+       opdateringstokenet leve videre i en time — det ville se ud som et
+       log-ud uden at være det. */
+    kald('/auth/v1/logout', { method:'POST' }).catch(function(){});
+    glem();
+  });
+
+  /* Hvem er du, og må du være her? Rollen hentes fra serveren, ikke fra
+     tokenet. Står der 'bruger', vises bagrummet ikke — men det er ikke
+     DEN kontrol, der beskytter noget. Det gør RLS, som ville sende en tom
+     liste tilbage under alle omstændigheder. Den her kontrol findes for
+     at give et ordentligt svar frem for fire tomme faner. */
+  function start(){
+    return json('/rest/v1/profiler?select=navn,rolle&id=eq.' + session.sub)
+      .then(function(rk){
+        var p = rk && rk[0];
+        if(!p) throw new Error('Din konto findes ikke i Arytmi.');
+        if(p.rolle !== 'admin') throw new Error('Din konto har ikke adgang til bagrummet.');
+        mig = p;
+        $('hvem-navn').textContent = p.navn || 'Administrator';
+        $('hvem-mail').textContent = session.mail ? '· ' + session.mail : '';
+        $('login').hidden = true;
+        $('rum').hidden = false;
+        $('login-besked').hidden = true;
+        skiftFane('oversigt');
+      });
+  }
+
+  // -------------------------------------------------------------
+  // Fanerne
+  // -------------------------------------------------------------
+  var hentet = {};
+
+  function skiftFane(navn){
+    var knapper = $('faner').querySelectorAll('button');
+    for(var i=0;i<knapper.length;i++){
+      var er = knapper[i].getAttribute('data-fane') === navn;
+      if(er) knapper[i].setAttribute('aria-current','page');
+      else knapper[i].removeAttribute('aria-current');
+      $('fane-' + knapper[i].getAttribute('data-fane')).hidden = !er;
+    }
+    if(navn === 'oversigt'){ hentOversigt(); }
+    if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
+    if(navn === 'kunder' && !hentet.kunder){ hentet.kunder = true; hentKunder(); }
+  }
+
+  $('faner').addEventListener('click', function(e){
+    var k = e.target.closest('button[data-fane]');
+    if(k) skiftFane(k.getAttribute('data-fane'));
+  });
+
+  // -------------------------------------------------------------
+  // Oversigt
+  // -------------------------------------------------------------
+  function felt(stor, navn, note){
+    var f = lav('div','felt');
+    f.appendChild(lav('div','stor', stor === null ? '—' : stor));
+    f.appendChild(lav('div','navn', navn));
+    if(note) f.appendChild(lav('div','note', note));
+    return f;
+  }
+
+  function hentOversigt(){
+    var nu = new Date().toISOString();
+    var maaned = new Date(Date.now() - 30*24*3600*1000).toISOString();
+
+    /* KUN de tal, serveren faktisk kan svare paa. `ture` og `partner` staar
+       der med vilje IKKE: RLS lader heller ikke en administrator laese
+       kundernes ture, og et tal hentet herfra ville vise DINE egne ture og
+       kalde dem totalen. Det er den vaerste slags forkert - et tal, der ser
+       rigtigt ud. Skal totalen vises, kraever det en funktion, der taeller
+       paa serveren med service-noeglen, og den er ikke skrevet. */
+    Promise.all([
+      antal('profiler?id=not.is.null'),
+      antal('adgang?or=(gyldig_til.is.null,gyldig_til.gt.' + nu + ')'),
+      antal('profiler?oprettet=gte.' + maaned)
+    ]).then(function(t){
+      var v = $('tal');
+      tøm(v);
+      v.appendChild(felt(t[0], 'Konti i alt', 'Hver profil er én kunde med et login.'));
+      v.appendChild(felt(t[1], 'Med gyldig adgang', 'Ingen slutdato, eller en slutdato ude i fremtiden.'));
+      v.appendChild(felt(t[2], 'Nye seneste 30 dage', 'Talt fra den dag, kontoen blev oprettet.'));
+      v.appendChild(felt(null, 'Ture', 'Vises ikke. Heller ikke en administrator kan læse kundernes ture — det er med vilje, og det laves ikke om for et tals skyld.'));
+    });
+
+    json('/rest/v1/indhold_udgivelse?select=id,udgivet_kl,antal,profiler(navn)&order=id.desc&limit=10')
+      .then(function(rk){
+        sidsteUdgivelse = (rk && rk[0]) || null;
+        var krop = $('historik');
+        tøm(krop);
+        if(!rk || !rk.length){
+          var tr = lav('tr'); var td = lav('td','tomt','Teksterne er ikke udgivet endnu.');
+          td.colSpan = 5; tr.appendChild(td); krop.appendChild(tr);
+          opdaterUdgivLinje();
+          return;
+        }
+        rk.forEach(function(u, i){
+          var tr = lav('tr');
+          tr.appendChild(lav('td','dæmp','#' + u.id));
+          tr.appendChild(lav('td', null, dato(u.udgivet_kl)));
+          tr.appendChild(lav('td','dæmp', (u.profiler && u.profiler.navn) || '—'));
+          tr.appendChild(lav('td','tal-h', u.antal));
+          var h = lav('td');
+          if(i > 0){
+            var k = lav('button','knap rolig lille','Send ud igen');
+            k.addEventListener('click', function(){ rulTilbage(u.id, k); });
+            h.appendChild(k);
+          } else {
+            h.appendChild(lav('span','dæmp','aktiv nu'));
+          }
+          tr.appendChild(h);
+          krop.appendChild(tr);
+        });
+        opdaterUdgivLinje();
+      })
+      .catch(function(f){
+        var krop = $('historik'); tøm(krop);
+        var tr = lav('tr'); var td = lav('td','tomt', f.message); td.colSpan = 5;
+        tr.appendChild(td); krop.appendChild(tr);
+      });
+  }
+
+  function rulTilbage(id, knap){
+    if(!window.confirm('Sende udgivelse #' + id + ' ud igen?\n\nIngenting slettes. Den gamle udgivelse '
+      + 'sendes af sted som en ny, så begge dele bliver stående i historikken.')) return;
+    knap.disabled = true;
+    knap.textContent = 'Sender …';
+    json('/functions/v1/udgiv-tekster', { method:'POST', body:{ rul_tilbage:id } })
+      .then(function(){ hentOversigt(); })
+      .catch(function(f){
+        knap.disabled = false;
+        knap.textContent = 'Send ud igen';
+        window.alert(f.message);
+      });
+  }
+
+  // -------------------------------------------------------------
+  // Tekster
+  // -------------------------------------------------------------
+  function hentTekster(){
+    json('/rest/v1/indhold_tekst?select=noegle,faldbak,tekst,opdateret&order=noegle')
+      .then(function(rk){ tekster = rk || []; tegnTekster(); opdaterUdgivLinje(); })
+      .catch(function(f){
+        var v = $('tekster'); tøm(v); v.appendChild(lav('p','tomt', f.message));
+      });
+  }
+
+  /* Hvor mange er rettet, siden der sidst blev udgivet? Sammenligningen er
+     `opdateret` mod udgivelsens tidsstempel — begge kommer fra serveren,
+     så browserens ur kan ikke lyve om det. */
+  function opdaterUdgivLinje(){
+    var linje = $('udgiv-linje');
+    if(!tekster.length){ linje.hidden = true; return; }
+    var siden = sidsteUdgivelse ? new Date(sidsteUdgivelse.udgivet_kl).getTime() : 0;
+    var venter = tekster.filter(function(t){
+      return t.tekst !== null && new Date(t.opdateret).getTime() > siden;
+    }).length;
+    tøm(linje);
+    if(!sidsteUdgivelse){
+      linje.appendChild(lav('b','','Intet er udgivet endnu. '));
+      linje.appendChild(document.createTextNode(
+        'Det, du retter her, står kun på arbejdsbordet, indtil du trykker Udgiv.'));
+      linje.hidden = false;
+    } else if(venter){
+      linje.appendChild(lav('b','', venter + (venter === 1 ? ' rettelse' : ' rettelser') + ' venter. '));
+      linje.appendChild(document.createTextNode(
+        'Sidst udgivet ' + dato(sidsteUdgivelse.udgivet_kl) + '. Tryk Udgiv for at sende dem ud.'));
+      linje.hidden = false;
+    } else {
+      linje.hidden = true;
+    }
+  }
+
+  function passer(t){
+    var s = $('søg').value.trim().toLowerCase();
+    var f = $('filter').value;
+    if(f === 'rettede' && t.tekst === null) return false;
+    if(f === 'urørte'  && t.tekst !== null) return false;
+    if(!s) return true;
+    return t.noegle.toLowerCase().indexOf(s) >= 0
+        || (t.faldbak || '').toLowerCase().indexOf(s) >= 0
+        || (t.tekst   || '').toLowerCase().indexOf(s) >= 0;
+  }
+
+  function tegnTekster(){
+    var v = $('tekster');
+    tøm(v);
+    var synlige = tekster.filter(passer);
+
+    $('tekst-tæller').textContent =
+      synlige.length === tekster.length
+        ? tekster.length + ' tekster'
+        : synlige.length + ' af ' + tekster.length;
+
+    if(!synlige.length){
+      v.appendChild(lav('p','tomt','Ingen tekster passer på det, du søgte efter.'));
+      return;
+    }
+
+    /* Nøglerne hedder `login.titel`, `login.knap`, `hvorfra.spm` … Delen
+       før det første punktum er den skærm, teksten står på, og det er den
+       eneste gruppering, der ikke skal vedligeholdes nogen steder: den
+       står i nøglen i forvejen. */
+    var orden = [];
+    var grupper = {};
+    synlige.forEach(function(t){
+      var g = t.noegle.split('.')[0];
+      if(!grupper[g]){ grupper[g] = []; orden.push(g); }
+      grupper[g].push(t);
+    });
+
+    orden.forEach(function(g){
+      var boks = lav('div','gruppe');
+      boks.appendChild(lav('h3', null, g));
+      grupper[g].forEach(function(t){ boks.appendChild(række(t)); });
+      v.appendChild(boks);
+    });
+  }
+
+  function række(t){
+    var rk = lav('div','rk' + (t.tekst !== null ? ' rettet' : ''));
+
+    var hoved = lav('div','hoved');
+    hoved.appendChild(lav('span','nøgle', t.noegle));
+    if(t.tekst !== null) hoved.appendChild(lav('span','mærkat','rettet'));
+    rk.appendChild(hoved);
+
+    rk.appendChild(lav('div','oprind', t.faldbak));
+
+    var felt = document.createElement('textarea');
+    felt.rows = Math.min(6, Math.max(2, Math.ceil((t.tekst || t.faldbak).length / 62)));
+    felt.value = t.tekst === null ? '' : t.tekst;
+    felt.placeholder = t.faldbak;
+    felt.setAttribute('aria-label', 'Tekst for ' + t.noegle);
+    rk.appendChild(felt);
+
+    var bund = lav('div','bund');
+    var gem = lav('button','knap lille','Gem');
+    gem.disabled = true;
+    var nulstil = lav('button','knap rolig lille','Brug teksten fra koden');
+    nulstil.hidden = (t.tekst === null);
+    var status = lav('span','status');
+    bund.appendChild(gem);
+    bund.appendChild(nulstil);
+    bund.appendChild(status);
+    rk.appendChild(bund);
+
+    function nuværende(){ return t.tekst === null ? '' : t.tekst; }
+    function ændret(){ return felt.value !== nuværende(); }
+
+    felt.addEventListener('input', function(){
+      gem.disabled = !ændret();
+      status.textContent = '';
+      status.className = 'status';
+    });
+
+    felt.addEventListener('keydown', function(e){
+      if((e.metaKey || e.ctrlKey) && e.key === 'Enter' && ændret()){ e.preventDefault(); skriv(felt.value); }
+    });
+
+    gem.addEventListener('click', function(){ skriv(felt.value); });
+
+    nulstil.addEventListener('click', function(){
+      if(!window.confirm('Slette din rettelse og bruge teksten fra koden igen?')) return;
+      skriv('');
+    });
+
+    /* Tom streng bliver til NULL. Det er hele vejen tilbage: så er det
+       igen teksten i koden, der står på skærmen, og der ligger ikke en
+       tom tekst i databasen, som ville vise en BLANK linje til kunden. */
+    function skriv(værdi){
+      var ny = værdi.trim() === '' ? null : værdi;
+      gem.disabled = true;
+      status.className = 'status';
+      status.textContent = 'Gemmer …';
+
+      json('/rest/v1/indhold_tekst?noegle=eq.' + encodeURIComponent(t.noegle), {
+        method:'PATCH',
+        body:{ tekst: ny },
+        headers:{ Prefer:'return=representation' }
+      }).then(function(rk){
+        var opdateret = rk && rk[0];
+        if(!opdateret) throw new Error('Serveren gemte ingenting. Er din konto stadig administrator?');
+        t.tekst = opdateret.tekst;
+        t.opdateret = opdateret.opdateret;
+        felt.value = t.tekst === null ? '' : t.tekst;
+        rk_klasse();
+        status.className = 'status god';
+        status.textContent = 'Gemt';
+        opdaterUdgivLinje();
+        window.setTimeout(function(){
+          if(status.textContent === 'Gemt'){ status.textContent = ''; status.className = 'status'; }
+        }, 2500);
+      }).catch(function(f){
+        gem.disabled = false;
+        status.className = 'status fejl';
+        /* 23514 er databasens egen check. Den udløses af én ting: en
+           pladsholder som {antal} er forsvundet ud af teksten. Fejlen
+           oversættes her, fordi "new row violates check constraint" ikke
+           fortæller nogen, hvad de skal gøre. */
+        status.textContent = (f.kode === '23514' || /pladsholder|23514/.test(f.message || ''))
+          ? 'Der mangler noget i { } — behold dem fra den grå tekst.'
+          : (f.message || 'Kunne ikke gemmes.');
+      });
+    }
+
+    function rk_klasse(){
+      rk.className = 'rk' + (t.tekst !== null ? ' rettet' : '');
+      nulstil.hidden = (t.tekst === null);
+      var m = hoved.querySelector('.mærkat');
+      if(t.tekst !== null && !m) hoved.appendChild(lav('span','mærkat','rettet'));
+      if(t.tekst === null && m) hoved.removeChild(m);
+    }
+
+    return rk;
+  }
+
+  $('søg').addEventListener('input', tegnTekster);
+  $('filter').addEventListener('change', tegnTekster);
+
+  $('udgiv').addEventListener('click', function(){
+    var knap = $('udgiv');
+    var klar = tekster.filter(function(t){ return t.tekst !== null; }).length;
+    if(!window.confirm('Udgive ' + klar + (klar === 1 ? ' tekst' : ' tekster') + '?\n\n'
+      + 'De bliver synlige i appen, næste gang den åbnes. Du kan altid sende en tidligere '
+      + 'udgivelse ud igen fra Oversigt.')) return;
+    knap.disabled = true;
+    knap.textContent = 'Udgiver …';
+    json('/functions/v1/udgiv-tekster', { method:'POST', body:{} })
+      .then(function(s){
+        knap.textContent = 'Udgiv';
+        knap.disabled = false;
+        hentOversigt();
+        window.alert('Udgivet. ' + s.antal + (s.antal === 1 ? ' tekst er' : ' tekster er') + ' ude nu.');
+      })
+      .catch(function(f){
+        knap.textContent = 'Udgiv';
+        knap.disabled = false;
+        window.alert(f.message);
+      });
+  });
+
+  // -------------------------------------------------------------
+  // Kunder
+  // -------------------------------------------------------------
+  var kunder = [];
+
+  function hentKunder(){
+    json('/rest/v1/profiler?select=id,navn,telefon,rolle,oprettet,adgang(niveau,gyldig_til)'
+       + '&order=oprettet.desc&limit=200')
+      .then(function(rk){ kunder = rk || []; tegnKunder(); })
+      .catch(function(f){
+        var krop = $('kunder'); tøm(krop);
+        var tr = lav('tr'); var td = lav('td','tomt', f.message); td.colSpan = 5;
+        tr.appendChild(td); krop.appendChild(tr);
+      });
+  }
+
+  /* Gyldig nu = ingen slutdato, eller en slutdato ude i fremtiden. Der
+     regnes på det, serveren sendte, og ikke på et felt, nogen har sat i
+     hånden — så kan en udløbet adgang ikke stå og se aktiv ud. */
+  function harAdgang(k){
+    return (k.adgang || []).some(function(a){
+      return !a.gyldig_til || new Date(a.gyldig_til).getTime() > Date.now();
+    });
+  }
+
+  function tegnKunder(){
+    var s = $('søg-kunde').value.trim().toLowerCase();
+    var synlige = kunder.filter(function(k){
+      if(!s) return true;
+      return (k.navn||'').toLowerCase().indexOf(s) >= 0
+          || (k.telefon||'').toLowerCase().indexOf(s) >= 0;
+    });
+
+    $('kunde-tæller').textContent = synlige.length === kunder.length
+      ? kunder.length + ' konti'
+      : synlige.length + ' af ' + kunder.length;
+
+    var krop = $('kunder');
+    tøm(krop);
+    if(!synlige.length){
+      var tr0 = lav('tr'); var td0 = lav('td','tomt','Ingen konti passer på det, du søgte efter.');
+      td0.colSpan = 5; tr0.appendChild(td0); krop.appendChild(tr0);
+      return;
+    }
+
+    synlige.forEach(function(k){
+      var tr = lav('tr');
+      tr.appendChild(lav('td', null, k.navn || '(uden navn)'));
+      tr.appendChild(lav('td','dæmp', k.telefon || '—'));
+
+      var a = lav('td');
+      var aktiv = harAdgang(k);
+      a.appendChild(lav('span','prik' + (aktiv ? '' : ' ude')));
+      a.appendChild(document.createTextNode(aktiv ? 'Aktiv' : 'Ingen'));
+      tr.appendChild(a);
+
+      tr.appendChild(lav('td','dæmp', dato(k.oprettet)));
+      tr.appendChild(lav('td','dæmp', k.rolle === 'admin' ? 'Administrator' : 'Kunde'));
+      krop.appendChild(tr);
+    });
+  }
+
+  $('søg-kunde').addEventListener('input', tegnKunder);
+
+  // -------------------------------------------------------------
+  // Start
+  // -------------------------------------------------------------
+  try{
+    var gemt = sessionStorage.getItem(NØGLE);
+    if(gemt){
+      session = JSON.parse(gemt);
+      start().catch(function(){ glem(); });
+    }
+  }catch(e){ glem(); }
+
+})();
+</script>
+</body>
+</html>
