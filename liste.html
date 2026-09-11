@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Du er inviteret med på en tur</title>
+<meta name="description" content="Se turen, din pakkeliste, og sig ja eller nej.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+<!--
+  ARYTMI — liste.html. Gæsten på ÉN tur.
+
+  Bygget 11/9 som anden del af fase 3. Søstersiden til os.html, men de to
+  løser ikke det samme problem, og forskellen er hele pointen:
+
+    os.html     fast rejsemakker — alle ture, for altid, og der OPRETTES
+                en konto. Derfor mail og kodeord.
+    liste.html  gæst på ÉN tur, én gang. INGEN konto, intet login, intet
+                kodeord. Tokenet er adgangen, og det er alt.
+
+  Den, der lander her, har fået en SMS fra en, der skal af sted, og har
+  måske aldrig hørt om Arytmi. Han skal kunne se hvad, hvor, hvornår og
+  hvad han selv skal huske — og svare. Intet andet.
+
+  LÆSNINGEN ÆNDRER INGENTING. Planens prøve siger det ligeud: "hent linket
+  med GET → intet må ændre sig". Mailscannere, linkforhåndsvisninger og
+  virusfiltre klikker alt, hvad der kommer forbi. Markerede siden linket
+  som brugt ved at blive åbnet, ville det være opbrugt, før gæsten selv
+  nåede at se det — og fejlen ville se ud, som om han havde gjort noget
+  forkert. `gaest-liste` skriver kun, når der sendes et udtrykkeligt svar.
+
+  SVARET MÅ SKIFTES. Man kan sige ja og blive syg dagen efter. Linket er
+  gæstens eneste vej til at sige det, så det bruges ikke op af et svar.
+
+  Læg mærke til, hvor lidt der vises: afsenderens FORNAVN, turen, og
+  gæstens egen del af pakkelisten. Ikke resten af hvad de to har skrevet om
+  turen, ikke mail, ikke telefonnummer. Et link i de forkerte hænder skal
+  ikke kunne bruges som opslagsværk.
+
+  Systemskrift som forsiden. Repoet har ingen fonts/-mappe.
+
+  NØGLEN HERUNDER ER OFFENTLIG. Det er den publicerbare nøgle, lavet til at
+  stå i klientkode. Service-nøglen er en helt anden ting og må aldrig herind.
+-->
+<style>
+  :root{
+    --gran:#3a3227;
+    --gran-mørk:#241f18;
+    --fjord:#5f6353;
+    --rav:#b0794e;
+    --bund:#eceae3;
+    --flade:#faf9f5;
+    --tekst:#2e2a24;
+    --dæmpet:#8e8a7f;
+    --linje:#ddd8cb;
+    --fejl:#9c4221;
+    --god:#4f6b4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund);
+    color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    position:relative;
+    padding:24px 20px 90px;
+    overflow-x:hidden;
+  }
+  .bil{
+    position:fixed;
+    bottom:-30px;
+    right:-40px;
+    width:min(70vw,520px);
+    opacity:.14;
+    filter:grayscale(1);
+    pointer-events:none;
+  }
+  .kort{ position:relative; z-index:1; width:100%; max-width:420px; }
+  .logo{ width:min(190px,52vw); height:auto; margin:0 auto 28px; display:block; }
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .flade{
+    background:var(--flade);
+    border:1px solid var(--linje);
+    border-radius:16px;
+    padding:26px 22px;
+  }
+  h2{ font-size:21px; line-height:1.3; font-weight:600; margin-bottom:10px; }
+  p{ font-size:15px; line-height:1.6; color:var(--fjord); }
+  p + p{ margin-top:12px; }
+
+  /* Turen. En definitionsliste, fordi det ER par af navn og værdi — og
+     fordi en skærmlæser så siger "Hvor: Mols Bjerge" og ikke to løsrevne
+     stumper tekst. */
+  dl.tur{ margin-top:18px; }
+  dl.tur div{
+    display:flex;
+    gap:12px;
+    padding:11px 0;
+    border-top:1px solid var(--linje);
+  }
+  dl.tur dt{
+    flex:0 0 92px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--dæmpet);
+    padding-top:2px;
+  }
+  dl.tur dd{ font-size:15px; line-height:1.5; color:var(--tekst); }
+
+  h3{
+    font-size:15px;
+    font-weight:600;
+    color:var(--gran);
+    margin:26px 0 4px;
+  }
+  ul.ting{ margin-top:12px; padding-left:0; list-style:none; }
+  ul.ting li{
+    font-size:15px;
+    line-height:1.5;
+    padding:9px 0 9px 26px;
+    border-top:1px solid var(--linje);
+    position:relative;
+    color:var(--tekst);
+  }
+  /* Streg-ikon i CSS, ikke en emoji. Appens regel gælder også her. */
+  ul.ting li::before{
+    content:"";
+    position:absolute;
+    left:4px;
+    top:15px;
+    width:9px;
+    height:9px;
+    border:1.5px solid var(--rav);
+    border-radius:2px;
+  }
+  .intet-ting{ font-size:14px; color:var(--dæmpet); margin-top:10px; }
+
+  .svarknapper{ display:flex; gap:10px; margin-top:24px; }
+  button.svar{
+    flex:1;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+    border:1px solid var(--linje);
+    background:#fff;
+    color:var(--gran);
+  }
+  button.svar.ja{ background:var(--gran); border-color:var(--gran); color:#fff; }
+  button.svar.ja:hover{ background:var(--gran-mørk); }
+  button.svar.nej:hover{ border-color:var(--fjord); color:var(--gran-mørk); }
+  button.svar[disabled]{ opacity:.55; cursor:default; }
+
+  .besked{
+    margin-top:18px;
+    font-size:14px;
+    line-height:1.6;
+    border-radius:10px;
+    padding:13px 15px;
+  }
+  .besked.fejl{ color:var(--fejl); background:#f7ece7; border:1px solid #e6cfc4; }
+  .besked.ok{ color:var(--god); background:#eef2ea; border:1px solid #d5ddd0; }
+  .hjaelp{ margin-top:18px; font-size:13px; line-height:1.6; color:var(--dæmpet); }
+  .hjaelp a{ color:var(--gran); }
+  footer{
+    position:absolute;
+    bottom:24px;
+    left:0;
+    right:0;
+    text-align:center;
+    font-size:13px;
+    color:var(--dæmpet);
+  }
+  footer a{ color:var(--gran); text-decoration:none; border-bottom:1px solid var(--linje); }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+
+  <main class="kort">
+    <h1 class="sr-only">Du er inviteret med på en tur</h1>
+    <img class="logo" src="logo.png" alt="Arytmi">
+
+    <!-- 0 · vi henter turen -->
+    <section class="flade" id="trin-tjekker" hidden>
+      <h2>Et øjeblik</h2>
+      <p>Vi henter turen.</p>
+    </section>
+
+    <!-- 1 · her uden et link -->
+    <section class="flade" id="trin-intet" hidden>
+      <h2>Her mangler et link</h2>
+      <p>Den her side åbnes fra invitationen i den SMS, du har fået. Åbn linket i beskeden, så kommer du det rigtige sted hen.</p>
+    </section>
+
+    <!-- 2 · turen -->
+    <section class="flade" id="trin-tur" hidden>
+      <h2 id="overskrift">Du er inviteret med</h2>
+      <p id="indledning"></p>
+
+      <dl class="tur">
+        <div id="raekke-hvor" hidden><dt>Hvor</dt><dd id="v-hvor"></dd></div>
+        <div id="raekke-hvornaar" hidden><dt>Hvornår</dt><dd id="v-hvornaar"></dd></div>
+        <div id="raekke-hjem" hidden><dt>Hjemme igen</dt><dd id="v-hjem"></dd></div>
+      </dl>
+
+      <h3 id="ting-titel">Det, du skal huske</h3>
+      <ul class="ting" id="ting"></ul>
+      <p class="intet-ting" id="intet-ting" hidden>Der er ikke lagt noget over på dig. Tag dig selv med.</p>
+
+      <div class="svarknapper">
+        <button type="button" class="svar ja"  id="ja">Ja tak, jeg er med</button>
+        <button type="button" class="svar nej" id="nej">Jeg kan ikke</button>
+      </div>
+
+      <div class="besked ok"   id="kvittering" role="status" hidden></div>
+      <div class="besked fejl" id="fejl" role="alert" hidden></div>
+
+      <p class="hjaelp">Du skal ikke oprette noget for at svare. Skifter det, kan du åbne linket igen og ændre dit svar.</p>
+    </section>
+
+    <!-- 3 · linket kan ikke bruges -->
+    <section class="flade" id="trin-doedt" hidden>
+      <h2>Invitationen gælder ikke længere</h2>
+      <p>Et link til en tur gælder i 30 dage, og det holder op med at virke, hvis der bliver sendt et nyt. Bed om en ny invitation.</p>
+    </section>
+  </main>
+
+  <footer>Spørgsmål? Skriv til <a href="mailto:oliivia@arytmi.com">oliivia@arytmi.com</a></footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
+  var ENDEPUNKT = PROJEKT_URL + '/functions/v1/gaest-liste';
+
+  var el = function (id) { return document.getElementById(id); };
+  var TRIN = ['trin-tjekker', 'trin-intet', 'trin-tur', 'trin-doedt'];
+
+  function vis(trin) {
+    TRIN.forEach(function (id) { el(id).hidden = (id !== trin); });
+  }
+
+  function kald(krop) {
+    return fetch(ENDEPUNKT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON },
+      body: JSON.stringify(krop)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (svar) {
+        return { ok: r.ok, status: r.status, svar: svar };
+      });
+    });
+  }
+
+  /* Tokenet står i FRAGMENTET, ikke i en forespørgselsstreng. Fragmentet
+     sendes aldrig til en server og havner derfor hverken i serverlogs eller
+     i en henvisende adresse. Samme valg som aktiverings-, nulstillings- og
+     partnerlinket. */
+  function tokenFraAdressen() {
+    var h = String(location.hash || '').replace(/^#/, '').trim();
+    return /^[0-9a-f]{32,128}$/i.test(h) ? h : null;
+  }
+
+  var token = tokenFraAdressen();
+  var ja = el('ja'), nej = el('nej'), fejl = el('fejl'), kvittering = el('kvittering');
+
+  function saetRaekke(id, felt, vaerdi) {
+    var tekst = String(vaerdi || '').trim();
+    el(felt).textContent = tekst;
+    el(id).hidden = !tekst;
+  }
+
+  function visFejl(tekst) {
+    fejl.textContent = tekst;
+    fejl.hidden = false;
+  }
+
+  function malSvar(svar) {
+    kvittering.hidden = !svar;
+    ja.classList.toggle('ja', svar !== 'nej');
+    nej.classList.toggle('ja', svar === 'nej');
+    if (svar === 'ja') {
+      kvittering.textContent = 'Du er med. Tak — nu ved de det.';
+      ja.textContent = 'Du har sagt ja';
+      nej.textContent = 'Jeg kan alligevel ikke';
+    } else if (svar === 'nej') {
+      kvittering.textContent = 'Dit afbud er sendt. Tak, fordi du sagde til.';
+      ja.textContent = 'Jeg kan alligevel godt';
+      nej.textContent = 'Du har meldt afbud';
+    }
+  }
+
+  function malTuren(d) {
+    el('overskrift').textContent = d.dig
+      ? 'Hej ' + d.dig + '!'
+      : 'Du er inviteret med';
+    el('indledning').textContent = (d.fra || 'En ven')
+      + ' inviterer dig med på en tur'
+      + (d.sted ? ' til ' + d.sted : '') + '.';
+
+    saetRaekke('raekke-hvor', 'v-hvor', d.hvor || d.sted);
+    saetRaekke('raekke-hvornaar', 'v-hvornaar', d.hvornaar);
+    saetRaekke('raekke-hjem', 'v-hjem', d.hjem);
+
+    var liste = el('ting');
+    liste.textContent = '';
+    var ting = Array.isArray(d.ting) ? d.ting : [];
+    ting.forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t;            // textContent, aldrig innerHTML
+      liste.appendChild(li);
+    });
+    el('intet-ting').hidden = ting.length > 0;
+    el('ting-titel').hidden = false;
+
+    malSvar(d.svar);
+    vis('trin-tur');
+  }
+
+  function svarMed(vaerdi) {
+    fejl.hidden = true;
+    ja.disabled = true; nej.disabled = true;
+    kald({ token: token, svar: vaerdi }).then(function (r) {
+      ja.disabled = false; nej.disabled = false;
+      if (!r.ok) {
+        if (r.status === 410) { vis('trin-doedt'); return; }
+        visFejl((r.svar && r.svar.error) || 'Svaret kunne ikke sendes. Prøv igen.');
+        return;
+      }
+      malSvar(r.svar.svar);
+    }).catch(function () {
+      ja.disabled = false; nej.disabled = false;
+      visFejl('Ingen forbindelse. Tjek nettet, og prøv igen.');
+    });
+  }
+
+  ja.addEventListener('click', function () { svarMed('ja'); });
+  nej.addEventListener('click', function () { svarMed('nej'); });
+
+  /* FØRSTE KALD ER EN REN LÆSNING. Der sendes intet `svar` med, og
+     funktionen skriver derfor ingenting. Det er dét, der gør linket
+     sikkert mod mailscannere — ikke at vi bruger POST. */
+  if (!token) { vis('trin-intet'); }
+  else {
+    vis('trin-tjekker');
+    kald({ token: token }).then(function (r) {
+      if (!r.ok) { vis('trin-doedt'); return; }
+      malTuren(r.svar);
+    }).catch(function () {
+      /* Et fladt net må ikke se ud som et dødt link. To forskellige
+         problemer skal have to forskellige beskeder. */
+      vis('trin-tur');
+      el('overskrift').textContent = 'Vi kunne ikke hente turen';
+      el('indledning').textContent = 'Tjek din forbindelse, og hent siden igen.';
+      ja.hidden = true; nej.hidden = true;
+      el('ting-titel').hidden = true;
+      el('intet-ting').hidden = true;
+    });
+  }
+
+  /* Tokenet ud af adresselinjen, når siden er hentet. Det ligger stadig i
+     browserens historik, men det skal ikke stå og lyse i adressefeltet på
+     en telefon, andre kigger med på. Samme greb som os.html. */
+  if (token && history.replaceState) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+})();
+</script>
+</body>
+</html>
