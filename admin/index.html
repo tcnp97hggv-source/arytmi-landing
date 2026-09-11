@@ -215,6 +215,7 @@
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     font-size:12px; color:var(--fjord);
   }
+  .rk .af{ font-size:12px; color:var(--dæmpet); margin-left:auto; }
   .rk .mærkat{
     font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
     color:var(--rav);
@@ -705,7 +706,7 @@
   // Tekster
   // -------------------------------------------------------------
   function hentTekster(){
-    json('/rest/v1/indhold_tekst?select=noegle,faldbak,tekst,opdateret&order=noegle')
+    json('/rest/v1/indhold_tekst?select=noegle,faldbak,tekst,opdateret,profiler(navn)&order=noegle')
       .then(function(rk){ tekster = rk || []; tegnTekster(); opdaterUdgivLinje(); })
       .catch(function(f){
         var v = $('tekster'); tøm(v); v.appendChild(lav('p','tomt', f.message));
@@ -790,11 +791,17 @@
     var hoved = lav('div','hoved');
     hoved.appendChild(lav('span','nøgle', t.noegle));
     if(t.tekst !== null) hoved.appendChild(lav('span','mærkat','rettet'));
+    var af = lav('span','af');
+    hoved.appendChild(af);
     rk.appendChild(hoved);
 
     var oprind = lav('div','oprind', t.faldbak);
     oprind.hidden = (t.tekst === null);
     rk.appendChild(oprind);
+
+    if(t.tekst !== null && t.profiler && t.profiler.navn){
+      af.textContent = t.profiler.navn + ', ' + dato(t.opdateret);
+    }
 
     var felt = document.createElement('textarea');
     felt.rows = Math.min(6, Math.max(2, Math.ceil((t.tekst || t.faldbak).length / 62)));
@@ -843,7 +850,8 @@
       status.className = 'status';
       status.textContent = 'Gemmer …';
 
-      json('/rest/v1/indhold_tekst?noegle=eq.' + encodeURIComponent(t.noegle), {
+      json('/rest/v1/indhold_tekst?noegle=eq.' + encodeURIComponent(t.noegle)
+        + '&select=noegle,tekst,opdateret,profiler(navn)', {
         method:'PATCH',
         body:{ tekst: ny },
         headers:{ Prefer:'return=representation' }
@@ -852,6 +860,7 @@
         if(!opdateret) throw new Error('Serveren gemte ingenting. Er din konto stadig administrator?');
         t.tekst = opdateret.tekst;
         t.opdateret = opdateret.opdateret;
+        t.profiler = opdateret.profiler;
         felt.value = t.tekst === null ? '' : t.tekst;
         rk_klasse();
         status.className = 'status god';
@@ -878,8 +887,13 @@
       oprind.hidden = (t.tekst === null);
       nulstil.hidden = (t.tekst === null);
       var m = hoved.querySelector('.mærkat');
-      if(t.tekst !== null && !m) hoved.appendChild(lav('span','mærkat','rettet'));
+      if(t.tekst !== null && !m) hoved.insertBefore(lav('span','mærkat','rettet'), af);
       if(t.tekst === null && m) hoved.removeChild(m);
+      /* Hvem rettede den sidst. Navnet kommer fra serveren, som tager det
+         ud af tokenet - ikke fra noget, fladen selv har fundet paa. Er der
+         intet navn, staar der intet: et gaet ville se ud som en oplysning. */
+      af.textContent = (t.tekst !== null && t.profiler && t.profiler.navn)
+        ? t.profiler.navn + ', ' + dato(t.opdateret) : '';
     }
 
     return rk;
