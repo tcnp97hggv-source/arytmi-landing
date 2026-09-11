@@ -716,7 +716,7 @@
           var h = lav('td');
           if(i > 0){
             var k = lav('button','knap rolig lille','Send ud igen');
-            k.addEventListener('click', function(){ rulTilbage(u.id, k); });
+            k.addEventListener('click', function(){ rulTilbage(u.id, u.antal_ture, k); });
             h.appendChild(k);
           } else {
             h.appendChild(lav('span','dæmp','aktiv nu'));
@@ -733,7 +733,19 @@
       });
   }
 
-  function rulTilbage(id, knap){
+  function rulTilbage(id, antalTure, knap){
+    /* DE FØRSTE UDGIVELSER ER FRA FØR TURENE. De ligger i historikken med
+       "Ture 0", og deres bundt indeholder kun tekster. Serveren afviser et
+       NYT bundt uden ture, men et tilbagerul er undtaget — det gamle bundt
+       er, hvad det er, og det skal man kunne få præcis som det stod.
+
+       Derfor spørges der her i stedet. Uden det ville et tryk på "Send ud
+       igen" på en gammel linje tage alle nitten ture ud af appen, og det
+       eneste tegn ville være et nul i en kolonne, ingen kiggede på. */
+    if(!antalTure && !window.confirm('⚠️ Udgivelse #' + id + ' er fra FØR turene.\n\n'
+      + 'Dens bundt indeholder kun tekster. Sender du den ud igen, har appen '
+      + 'ingen destinationer at foreslå, før du udgiver på ny.\n\n'
+      + 'Er det med vilje?')) return;
     if(!window.confirm('Sende udgivelse #' + id + ' ud igen?\n\nIngenting slettes. Den gamle udgivelse '
       + 'sendes af sted som en ny, så begge dele bliver stående i historikken.')) return;
     knap.disabled = true;
