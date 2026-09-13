@@ -180,17 +180,51 @@
   .værktøjslinje select{ background:#fff; border:1px solid var(--linje); border-radius:10px; padding:10px 12px; width:auto; }
   .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; }
 
-  /* ---------- KATEGORIER ---------- */
-  .kategorier{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; }
-  .kategorier button{
-    background:var(--flade); border:1px solid var(--linje); border-radius:999px;
-    padding:7px 15px; font-size:13.5px; font-weight:600; color:var(--fjord);
+  /* ---------- SKAERMENE ----------
+     Foer 13/9 stod her tre kategori-piller og derunder ALLE teksterne i
+     kategorien - over 300 linjer i "Appen" alene, med praefikset raat som
+     overskrift ("vk", "faelles"). Inddelingen fandtes, men paa maskinens
+     sprog.
+
+     Nu er der to trin: vaelg skaermen, ret teksterne. Man lander paa et
+     overblik over appen og trykker sig ind paa "Forsiden" eller
+     "Pakkelisten" - de ord, man selv bruger om dem. */
+  .skaerm-flok{ margin-bottom:26px; }
+  .skaerm-flok > h3{
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:4px;
   }
-  .kategorier button:hover{ border-color:var(--rav); color:var(--tekst); }
-  .kategorier button[aria-pressed=true]{ background:var(--gran); border-color:var(--gran); color:#f7f5ef; }
-  .kategorier button .n{ opacity:.6; font-weight:500; margin-left:6px; }
-  .kategorier button.tom{ opacity:.5; }
-  .kat-om{ color:var(--dæmpet); font-size:13.5px; margin-bottom:16px; max-width:62ch; }
+  .skaerm-flok > p.om{ color:var(--dæmpet); font-size:13px; margin:0 0 11px; max-width:66ch; }
+  .skaermliste{ display:grid; gap:9px; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); }
+  .skaermkort{
+    display:flex; align-items:flex-start; gap:12px; text-align:left; width:100%;
+    background:var(--flade); border:1px solid var(--linje); border-radius:12px;
+    padding:14px 15px; color:inherit;
+  }
+  .skaermkort:hover{ border-color:var(--rav); background:#f3f1e9; }
+  .skaermkort .krop{ flex:1 1 auto; min-width:0; }
+  .skaermkort .navn{ font-weight:600; font-size:15px; display:block; }
+  .skaermkort .om{ color:var(--dæmpet); font-size:12.5px; margin-top:3px; line-height:1.45; }
+  /* Hedder .antal og ikke .tal: .tal er allerede statistik-fliserne paa
+     Oversigt (display:grid), og de to kolliderede - pillen blev et gitter,
+     der aad hele kortets bredde. Set paa foerste skaermbillede 13/9. */
+  .skaermkort .antal{
+    display:block; flex:0 0 auto; font-size:12.5px; color:var(--fjord);
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+    background:#eceadf; border-radius:999px; padding:3px 9px; font-weight:600;
+  }
+  .skaermkort .antal.rettet{ background:var(--rav); color:#241c10; }
+  .skaermkort.tom .antal{ opacity:.45; }
+
+  /* Hovedet, naar EN skaerm er valgt. */
+  .skaerm-hoved{ margin-bottom:16px; }
+  .tilbagelink{
+    background:none; border:0; padding:0; color:var(--fjord);
+    font-size:13.5px; font-weight:600; margin-bottom:9px;
+  }
+  .tilbagelink:hover{ color:var(--tekst); text-decoration:underline; }
+  .skaerm-hoved h3{ font-size:19px; margin:0; }
+  .skaerm-hoved .om{ color:var(--dæmpet); font-size:13.5px; margin:5px 0 0; max-width:66ch; }
 
   /* ---------- TEKSTRÆKKER ---------- */
   .gruppe{ margin-bottom:24px; }
@@ -201,7 +235,10 @@
   .rk{ background:var(--flade); border:1px solid var(--linje); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
   .rk.rettet{ border-left:3px solid var(--rav); }
   .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .rk .nøgle{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:var(--fjord); }
+  .rk .nøgle{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px; color:var(--dæmpet); }
+  /* Overskriften paa en raekke er TEKSTEN, ikke noeglen. Man leder efter et
+     ord, man har set paa en skaerm - ikke efter "turdato.afgangstid". */
+  .rk .vist{ font-size:14.5px; font-weight:600; line-height:1.4; flex:1 1 100%; }
   .rk .mærkat{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--rav); }
   .rk .af{ font-size:12px; color:var(--dæmpet); margin-left:auto; }
   .rk .oprind{ font-size:13px; color:var(--dæmpet); margin-top:7px; padding-left:11px; border-left:2px solid var(--linje); }
@@ -336,11 +373,9 @@
         Ret det, kunden læser i appen. Tomt felt betyder, at teksten i koden står ved magt —
         det er altid vejen tilbage. Rettelser bliver først synlige på en telefon, når du udgiver.
       </p>
-      <div class="kategorier" id="kategorier"></div>
-      <p class="kat-om" id="kat-om"></p>
       <div class="værktøjslinje">
         <label for="søg" class="sr-only">Søg i teksterne</label>
-        <input type="search" id="søg" placeholder="Søg i alle kategorier …" autocapitalize="off" spellcheck="false">
+        <input type="search" id="søg" placeholder="Søg i alle skærme …" autocapitalize="off" spellcheck="false">
         <label for="filter" class="sr-only">Vis</label>
         <select id="filter">
           <option value="alle">Alle</option>
@@ -349,7 +384,11 @@
         </select>
         <span class="tæller" id="tekst-tæller"></span>
       </div>
-      <div id="tekster"><p class="tomt">Henter …</p></div>
+      <!-- Overblikket over skaermene. Staar der, indtil man vaelger en. -->
+      <div id="skaerme"></div>
+      <!-- Hovedet, naar EN skaerm er valgt: vejen tilbage, navnet, hvad den er. -->
+      <div class="skaerm-hoved" id="skaerm-hoved" hidden></div>
+      <div id="tekster"></div>
     </section>
 
     <!-- ---------- TURE ---------- -->
@@ -421,7 +460,10 @@
   var mig = null;
 
   var kategorier = [];
-  var valgtKat = null;
+  /* Skaermene (0026). Praefikset i noeglen ER skaermen; tabellen giver den
+     et navn, man kan se sig selv i, og den raekkefoelge man moeder dem i. */
+  var skaerme = [];
+  var valgtSkaerm = null;
   var tekster = [];
   var ture = [];
   var kunder = [];
@@ -576,7 +618,7 @@
 
   function glem(){
     session = null; mig = null;
-    tekster = []; ture = []; kunder = []; kategorier = []; valgtKat = null;
+    tekster = []; ture = []; kunder = []; kategorier = []; skaerme = []; valgtSkaerm = null;
     hentet = {};
     try{ sessionStorage.removeItem(NØGLE); }catch(e){}
     $('rum').hidden = true;
@@ -831,12 +873,12 @@
   function hentTekster(){
     Promise.all([
       json('/rest/v1/indhold_kategori?select=id,navn,beskrivelse,raekkefoelge&order=raekkefoelge'),
-      json('/rest/v1/indhold_tekst?select=' + TEKST_FELTER + '&order=noegle')
+      json('/rest/v1/indhold_tekst?select=' + TEKST_FELTER + '&order=noegle'),
+      json('/rest/v1/indhold_skaerm?select=praefiks,navn,beskrivelse,kategori,raekkefoelge&order=raekkefoelge')
     ]).then(function(svar){
       kategorier = svar[0] || [];
       tekster = svar[1] || [];
-      if(!valgtKat && kategorier.length) valgtKat = kategorier[0].id;
-      tegnKategorier();
+      skaerme = svar[2] || [];
       tegnTekster();
       opdaterUdgivMærke();
     }).catch(function(f){
@@ -844,81 +886,188 @@
     });
   }
 
-  /* Kategorierne kommer fra serveren med deres egen rækkefølge — ikke
-     alfabetisk. En kunde møder dem i en bestemt orden, og det er den
-     orden, det giver mening at rette dem i.
+  /* Hvilken skærm hører en nøgle til? Første led. Det er den samme regel
+     som i vaerktoej/hent-noegler.mjs, og den er ikke til forhandling:
+     nøglen ER skærmen plus elementet. */
+  function skaermFor(t){ return t.noegle.split('.')[0]; }
 
-     EN TOM KATEGORI VISES OGSÅ, bare dæmpet. "Ikke sorteret endnu" med et
-     nul ved siden af er en oplysning: der er ikke noget, der er faldet ned
-     mellem to stole i dag. Skjulte vi den, kunne man ikke se forskel på
-     "ingen" og "findes ikke". */
-  function tegnKategorier(){
-    var v = $('kategorier');
+  /* OVERBLIKKET. Skærmene i den rækkefølge man møder dem, flokket efter
+     kategori — "Kom i gang", "Turguiden", "Appen".
+
+     En skærm UDEN tekster vises også, bare dæmpet. Den er en oplysning:
+     skærmen findes i appen, og der er ikke faldet noget ned mellem to
+     stole. Skjulte vi den, kunne man ikke se forskel på "ingen" og
+     "findes ikke" — samme grund som den tomme kategori havde før. */
+  function tegnSkaerme(){
+    var v = $('skaerme');
     tøm(v);
+
     kategorier.forEach(function(k){
-      var n = tekster.filter(function(t){ return t.kategori === k.id; }).length;
-      var b = lav('button', n ? '' : 'tom');
-      b.type = 'button';
-      b.appendChild(document.createTextNode(k.navn));
-      b.appendChild(lav('span','n', n));
-      b.setAttribute('aria-pressed', String(k.id === valgtKat));
-      b.addEventListener('click', function(){
-        valgtKat = k.id;
-        $('søg').value = '';
-        tegnKategorier();
-        tegnTekster();
+      var mine = skaerme.filter(function(sk){ return sk.kategori === k.id; });
+      if(!mine.length) return;
+
+      var flok = lav('div','skaerm-flok');
+      flok.appendChild(lav('h3', null, k.navn));
+      if(k.beskrivelse) flok.appendChild(lav('p','om', k.beskrivelse));
+
+      var liste = lav('div','skaermliste');
+      mine.forEach(function(sk){
+        var mine2 = tekster.filter(function(t){ return skaermFor(t) === sk.praefiks; });
+        var rettede = mine2.filter(function(t){ return t.tekst !== null; }).length;
+
+        var b = lav('button','skaermkort' + (mine2.length ? '' : ' tom'));
+        b.type = 'button';
+        var krop = lav('div','krop');
+        krop.appendChild(lav('span','navn', sk.navn));
+        if(sk.beskrivelse) krop.appendChild(lav('div','om', sk.beskrivelse));
+        b.appendChild(krop);
+
+        /* Tallet siger "hvor meget" — og bliver ravfarvet, saa snart der
+           er rettet noget her. Saa kan man se hvor man var, uden at aabne. */
+        var tal = lav('span','antal' + (rettede ? ' rettet' : ''),
+          rettede ? rettede + ' af ' + mine2.length : String(mine2.length));
+        b.appendChild(tal);
+
+        b.addEventListener('click', function(){
+          valgtSkaerm = sk.praefiks;
+          $('søg').value = '';
+          tegnTekster();
+          window.scrollTo(0, 0);
+        });
+        liste.appendChild(b);
       });
-      v.appendChild(b);
+      flok.appendChild(liste);
+      v.appendChild(flok);
     });
-    var valgt = kategorier.filter(function(k){ return k.id === valgtKat; })[0];
-    $('kat-om').textContent = valgt ? valgt.beskrivelse : '';
+
+    /* Nøgler, hvis præfiks ikke står i indhold_skaerm. De skal kunne SES —
+       en tekst, der findes i appen og ikke i fladen, ville ingen opdage,
+       før en kunde spurgte. */
+    var kendte = {};
+    skaerme.forEach(function(sk){ kendte[sk.praefiks] = true; });
+    var hjemloese = {};
+    tekster.forEach(function(t){
+      var g = skaermFor(t);
+      if(!kendte[g]) hjemloese[g] = (hjemloese[g] || 0) + 1;
+    });
+    var navne = Object.keys(hjemloese).sort();
+    if(navne.length){
+      var flok2 = lav('div','skaerm-flok');
+      flok2.appendChild(lav('h3', null, 'Ikke sorteret endnu'));
+      flok2.appendChild(lav('p','om',
+        'Nøgler, hvis skærm ikke er skrevet ind endnu. De virker fint i appen — '
+      + 'de mangler bare at få et navn her. Skriv præfikset ind i SKAERME i '
+      + 'vaerktoej/hent-noegler.mjs og kør --skaerme.'));
+      var liste2 = lav('div','skaermliste');
+      navne.forEach(function(g){
+        var b = lav('button','skaermkort');
+        b.type = 'button';
+        var krop = lav('div','krop');
+        krop.appendChild(lav('span','navn', g));
+        krop.appendChild(lav('div','om','Uden navn endnu'));
+        b.appendChild(krop);
+        b.appendChild(lav('span','antal', String(hjemloese[g])));
+        b.addEventListener('click', function(){
+          valgtSkaerm = g; $('søg').value = ''; tegnTekster(); window.scrollTo(0, 0);
+        });
+        liste2.appendChild(b);
+      });
+      flok2.appendChild(liste2);
+      v.appendChild(flok2);
+    }
   }
 
-  /* Søgningen går PÅ TVÆRS af kategorier. Man leder efter en sætning, man
-     har set på en skærm, og man ved sjældent hvilken kasse vi har lagt den
-     i — så ville vores egen inddeling spænde ben for et opslag. */
+  /* Hovedet over teksterne, naar EN skaerm er valgt. */
+  function tegnSkaermHoved(){
+    var v = $('skaerm-hoved');
+    tøm(v);
+    var sk = skaerme.filter(function(x){ return x.praefiks === valgtSkaerm; })[0];
+
+    var tilbage = lav('button','tilbagelink','← Alle skærme');
+    tilbage.type = 'button';
+    tilbage.addEventListener('click', function(){
+      valgtSkaerm = null;
+      $('søg').value = '';
+      tegnTekster();
+      window.scrollTo(0, 0);
+    });
+    v.appendChild(tilbage);
+    v.appendChild(lav('h3', null, sk ? sk.navn : valgtSkaerm));
+    if(sk && sk.beskrivelse) v.appendChild(lav('p','om', sk.beskrivelse));
+  }
+
+  /* Søgningen går PÅ TVÆRS af skærme. Man leder efter en sætning, man
+     har set på en skærm, og man husker sjældent hvilken — så ville vores
+     egen inddeling spænde ben for et opslag. */
   function passer(t){
     var s = $('søg').value.trim().toLowerCase();
     var f = $('filter').value;
     if(f === 'rettede' && t.tekst === null) return false;
     if(f === 'urørte'  && t.tekst !== null) return false;
-    if(!s) return t.kategori === valgtKat;
+    if(!s) return skaermFor(t) === valgtSkaerm;
     return t.noegle.toLowerCase().indexOf(s) >= 0
         || (t.faldbak || '').toLowerCase().indexOf(s) >= 0
         || (t.tekst   || '').toLowerCase().indexOf(s) >= 0;
   }
 
+  /* TRE TILSTANDE, og det er hele fladen:
+       ingen skærm valgt, ingen søgning  -> overblikket
+       en skærm valgt                    -> dens tekster
+       en søgning                        -> traef paa tvaers, grupperet
+     Soegningen vinder over valget: skriver man i feltet, leder man i hele
+     appen, ikke i den skaerm man tilfaeldigvis stod paa. */
   function tegnTekster(){
     var v = $('tekster');
-    tøm(v);
     var søger = $('søg').value.trim() !== '';
+    tøm(v);
+
+    if(!søger && !valgtSkaerm){
+      $('skaerme').hidden = false;
+      $('skaerm-hoved').hidden = true;
+      tegnSkaerme();
+      var rettede = tekster.filter(function(t){ return t.tekst !== null; }).length;
+      $('tekst-tæller').textContent = tekster.length + ' tekster · '
+        + (rettede ? rettede + ' rettet' : 'ingen rettet endnu');
+      return;
+    }
+
+    $('skaerme').hidden = true;
+    $('skaerm-hoved').hidden = søger;
+    if(!søger) tegnSkaermHoved();
+
     var synlige = tekster.filter(passer);
 
     $('tekst-tæller').textContent = søger
-      ? synlige.length + ' fundet i alle kategorier'
-      : synlige.length + ' her · ' + tekster.length + ' i alt';
+      ? synlige.length + ' fundet på tværs af skærmene'
+      : synlige.length + ' på denne skærm · ' + tekster.length + ' i alt';
 
     if(!synlige.length){
       v.appendChild(lav('p','tomt', søger
         ? 'Ingen tekster passer på det, du søgte efter.'
-        : 'Der er ingen tekster i den kategori.'));
+        : 'Der er ingen tekster på den skærm.'));
       return;
     }
 
-    /* Inden for en kategori grupperes der på nøglens første led — det er
-       SKÆRMEN, teksten står på. To niveauer er nok: kategorien siger, hvor
-       i appen man er, skærmen holder beslægtede tekster samlet. */
+    /* Ved en soegning grupperes traeffene efter skaerm, saa man kan se HVOR
+       de staar. Inde paa en enkelt skaerm er der kun een gruppe, og saa
+       ville overskriften bare gentage hovedet - derfor udelades den. */
+    if(!søger){
+      synlige.forEach(function(t){ v.appendChild(tekstRække(t)); });
+      return;
+    }
+
     var orden = [];
     var grupper = {};
     synlige.forEach(function(t){
-      var g = t.noegle.split('.')[0];
+      var g = skaermFor(t);
       if(!grupper[g]){ grupper[g] = []; orden.push(g); }
       grupper[g].push(t);
     });
 
     orden.forEach(function(g){
+      var sk = skaerme.filter(function(x){ return x.praefiks === g; })[0];
       var boks = lav('div','gruppe');
-      boks.appendChild(lav('h3', null, g));
+      boks.appendChild(lav('h3', null, sk ? sk.navn : g));
       grupper[g].forEach(function(t){ boks.appendChild(tekstRække(t)); });
       v.appendChild(boks);
     });
@@ -926,6 +1075,13 @@
 
   function tekstRække(t){
     var rk = lav('div','rk' + (t.tekst !== null ? ' rettet' : ''));
+
+    /* Overskriften er DEN TEKST, DER STAAR PAA SKAERMEN LIGE NU - ikke
+       noeglen. Man leder efter ord, man har set i appen; "turdato.afgangstid"
+       er et opslagsnavn, ikke noget man genkender. Noeglen staar stadig,
+       bare mindre: den er det, man siger i en besked til hinanden. */
+    var vist = lav('div','vist', (t.tekst !== null ? t.tekst : t.faldbak) || '(tom)');
+    rk.appendChild(vist);
 
     var hoved = lav('div','hoved');
     hoved.appendChild(lav('span','nøgle', t.noegle));
@@ -1007,6 +1163,7 @@
 
     function frisk(){
       rk.className = 'rk' + (t.tekst !== null ? ' rettet' : '');
+      vist.textContent = (t.tekst !== null ? t.tekst : t.faldbak) || '(tom)';
       oprind.hidden = (t.tekst === null);
       nulstil.hidden = (t.tekst === null);
       var m = hoved.querySelector('.mærkat');
