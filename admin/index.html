@@ -12,7 +12,20 @@
   submitte til sig selv med GET, og kodeordet ville stå i adresselinjen,
   i browserhistorikken og i alt, hvad der måtte logge adresser undervejs.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<!--
+  ⚠️ `img-src` har faaet Supabase med 17/9, og det er IKKE en opblødning
+  af politikken - det er en ny, navngiven kilde til én slags fil.
+
+  Stedbillederne ligger i spanden `stedbilleder` (0034) og hentes fra
+  projektets eget domaene. Uden linjen blokerer browseren dem lydloest:
+  fladen ville vise tomme flisér, uploaden ville se ud til at lykkes, og
+  fejlen ville staa i konsollen et sted, ingen kigger.
+
+  Domaenet er det SAMME, som `connect-src` allerede tillader. Der er
+  altsaa ikke kommet en ny part til - kun en ny slags anmodning til en
+  part, siden i forvejen taler med.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arytmi — bagrummet</title>
 <meta name="robots" content="noindex, nofollow">
@@ -188,63 +201,112 @@
   .besked.fejl{ background:#f7e9e3; color:var(--fejl); border:1px solid #e6cfc4; }
   .besked.god{ background:#e9efe7; color:var(--god); border:1px solid #cfdcca; }
 
-  /* ---------- RAMMEN ---------- */
-  header.top{
-    background:rgba(253,252,249,.88);
+  /* ---------- RAMMEN: SKINNE + ARK ----------
+     Sidebjaelken ("skinnen") staar fast; arket ruller. Det er hele
+     forskellen paa en side med faner og et arbejdsbord: navigationen
+     flytter sig ikke, fordi man rullede tre hundrede tekster ned.
+
+     Gitteret er to spor. Paa telefon bliver det ét spor, og skinnen
+     flytter ned i bunden - samme sted som appens egen bundnavigation,
+     saa de to foles ens at bruge. */
+  #rum{
+    display:grid;
+    grid-template-columns:232px minmax(0,1fr);
+    min-height:100dvh;
+  }
+
+  .skinne{
+    display:flex; flex-direction:column;
+    background:var(--flade);
+    border-right:1px solid var(--linje);
+    position:sticky; top:0; height:100dvh;
+    padding:22px 14px 16px;
+  }
+  .sk-maerke{ padding:0 10px 22px; display:flex; flex-direction:column; gap:1px; }
+  .sk-ord{
+    font-family:var(--skrift-display); font-weight:600; color:var(--gran);
+    letter-spacing:.14em; font-size:15px; text-transform:uppercase;
+  }
+  .sk-under{ font-size:13px; color:var(--dæmpet); }
+
+  nav.faner{ display:flex; flex-direction:column; gap:2px; }
+  nav.faner button{
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+    background:none; border:0; padding:10px 11px;
+    border-radius:11px;
+    font-size:14.5px; font-weight:600; color:var(--fjord);
+    transition:background .14s, color .14s;
+  }
+  nav.faner button .ik{
+    width:19px; height:19px; flex:0 0 auto;
+    fill:none; stroke:currentColor; stroke-width:1.5;
+    stroke-linecap:round; stroke-linejoin:round;
+    opacity:.75;
+  }
+  nav.faner button:hover{ background:#f1efe6; color:var(--tekst); }
+  nav.faner button[aria-current=page]{ background:var(--gran); color:#f7f5ef; }
+  nav.faner button[aria-current=page] .ik{ opacity:1; }
+
+  /* Kontoen og udgangen i bunden - vaek fra det, man arbejder med.
+     `margin-top:auto` skubber dem ned, uanset hvor mange punkter der
+     kommer i navigationen senere. */
+  .sk-bund{ margin-top:auto; padding:14px 11px 0; border-top:1px solid var(--linje); }
+  .sk-hvem{ display:flex; flex-direction:column; margin-bottom:11px; min-width:0; }
+  .sk-hvem b{ font-size:13.5px; font-weight:600; color:var(--tekst); }
+  .sk-hvem .mail{
+    font-size:12px; color:var(--dæmpet);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .sk-bund .knap{ width:100%; }
+
+  .ark{ min-width:0; display:flex; flex-direction:column; }
+
+  /* ---------- UDGIVELSESLINJEN ----------
+     Husets vigtigste handling faar sin egen linje oeverst i arket, og
+     den KLAEBER: uanset hvor langt man er rullet ned i teksterne, er
+     vejen ud til kunden det foerste man ser, naar man kigger op.
+
+     I hvile er den rolig og creme. Er der noget at udgive, skifter hele
+     linjen til kobber - ikke bare knappen. Skiftet sker paa :has()
+     omkring maerket, som JavaScriptet i forvejen viser og skjuler. */
+  .udgiv-linje{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    padding:13px 30px;
+    background:rgba(253,252,249,.9);
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     border-bottom:1px solid var(--linje);
-    position:sticky; top:0; z-index:20;
+    transition:background .2s, border-color .2s;
   }
-  .top .indre{
-    max-width:1100px; margin:0 auto; padding:13px 22px;
-    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  .ul-tekst{ flex:1 1 auto; min-width:0; font-size:13.5px; color:var(--dæmpet); }
+  .ul-venter{ display:none; }
+  .udgiv-linje:has(#udgiv-mærke:not([hidden])){
+    background:linear-gradient(180deg,rgba(210,169,126,.2),rgba(176,121,78,.13));
+    border-bottom-color:rgba(176,121,78,.32);
   }
-  .top .mærke{
-    font-family:var(--skrift-display); font-weight:600;
-    letter-spacing:.14em; font-size:14px; text-transform:uppercase; color:var(--gran);
+  .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-ro{ display:none; }
+  .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-venter{ display:inline; }
+  .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-tekst{
+    color:var(--gran); font-weight:600;
   }
-  .top .mærke span{
-    font-family:var(--skrift-brød); color:var(--dæmpet); font-weight:500;
-    text-transform:none; letter-spacing:0; margin-left:10px; font-size:13.5px;
-  }
-  .top .højre{ margin-left:auto; display:flex; align-items:center; gap:11px; font-size:13px; color:var(--dæmpet); }
-  .top .højre b{ color:var(--tekst); font-weight:600; }
-  .top .mail{ color:var(--dæmpet); }
 
-  /* UDGIV — husets vigtigste knap.
-     Den er kobber, fordi kobber er logoets accent og bruges til ét
-     formål i appen: det, man skal lægge mærke til. Mærket ved siden af
-     er ANTALLET af ting, der venter; er det der, pulserer kanten svagt,
-     så den kan ses ud af øjenkrogen uden at larme. */
+  /* UDGIV — kobber, fordi kobber er logoets accent og i appen bruges til
+     ét formaal: det, man skal laegge maerke til. Maerket ved siden af er
+     ANTALLET, der venter. */
   #udgiv{
+    flex:0 0 auto;
     background:var(--rav); border-color:var(--rav); color:#fffaf4;
-    padding:9px 16px; font-size:13.5px;
+    padding:9px 18px; font-size:13.5px;
   }
   #udgiv:hover{ background:var(--rav-mørk); border-color:var(--rav-mørk); }
   #udgiv-mærke{
-    display:inline-block; min-width:20px; padding:0 6px; margin-left:2px;
-    background:rgba(255,255,255,.22); color:#fffaf4; border-radius:9px;
+    display:inline-block; min-width:20px; padding:0 6px; margin-left:4px;
+    background:rgba(255,255,255,.24); color:#fffaf4; border-radius:9px;
     font-size:11.5px; font-weight:700; line-height:19px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
-  #udgiv:has(#udgiv-mærke:not([hidden])){ box-shadow:0 0 0 3px rgba(176,121,78,.18); }
 
-  nav.faner{
-    max-width:1100px; margin:0 auto; padding:0 22px;
-    display:flex; gap:4px; overflow-x:auto;
-    scrollbar-width:none;
-  }
-  nav.faner::-webkit-scrollbar{ display:none; }
-  nav.faner button{
-    background:none; border:0; padding:12px 14px 11px;
-    font-size:14.5px; font-weight:600; color:var(--dæmpet);
-    border-bottom:2px solid transparent; white-space:nowrap;
-    transition:color .15s, border-color .15s;
-  }
-  nav.faner button:hover{ color:var(--tekst); border-bottom-color:var(--linje); }
-  nav.faner button[aria-current=page]{ color:var(--gran); border-bottom-color:var(--rav); }
-
-  main{ max-width:1100px; margin:0 auto; padding:30px 22px 100px; }
+  main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
   h2{ font-size:22px; margin-bottom:5px; }
   .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
   .afsnit{
@@ -382,6 +444,46 @@
   .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:19px; line-height:1.85; }
   .billedliste code{ font-family:var(--skrift-kode); font-size:12px; }
 
+  /* ---------- BILLEDER PAA EN TUR (17/9) ---------- */
+  .billedboks{ margin-top:20px; padding-top:16px; border-top:1px solid var(--linje-blød); }
+  .bb-titel{ font-size:11.5px; font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--dæmpet); margin-bottom:10px; }
+  .billednet{ display:grid; gap:9px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
+  .bb-flise{
+    position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden;
+    background:#efece3; border:1px solid var(--linje-blød);
+  }
+  .bb-flise img{ width:100%; height:100%; object-fit:cover; display:block; }
+  /* De nitten gamle steder peger paa filer, der ligger i APPENS pakke.
+     De kan ikke hentes herfra, og et brudt <img> ville ligne en fejl. */
+  .bb-flise.lokal{ border-style:dashed; }
+  .bb-ifil{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:600; color:var(--dæmpet); letter-spacing:.03em;
+  }
+  .bb-foerste{
+    position:absolute; left:6px; bottom:6px;
+    background:rgba(36,31,24,.78); color:#f7f5ef;
+    font-size:10.5px; font-weight:700; letter-spacing:.04em;
+    padding:2px 7px; border-radius:999px;
+  }
+  .bb-fjern{
+    position:absolute; top:5px; right:5px; width:24px; height:24px;
+    border:0; border-radius:50%; background:rgba(36,31,24,.72); color:#fff;
+    font-size:15px; line-height:22px; text-align:center; padding:0;
+    opacity:0; transition:opacity .14s;
+  }
+  .bb-flise:hover .bb-fjern, .bb-fjern:focus-visible{ opacity:1; }
+  /* Paa en telefon findes der ingen hover - saa skal krydset altid staa. */
+  @media (hover:none){ .bb-fjern{ opacity:1; } }
+  .bb-tom{ grid-column:1/-1; color:var(--dæmpet); font-size:13.5px; padding:14px 2px; }
+  .bb-linje{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:11px; }
+  .bb-vaelg{ cursor:pointer; }
+  .bb-vaelg.arbejder{ opacity:.55; pointer-events:none; }
+  .bb-linje .status{ font-size:13px; color:var(--dæmpet); }
+  .bb-linje .status.fejl{ color:var(--fejl); }
+  .bb-linje .status.god{ color:var(--god); }
+
   /* ---------- TABEL ---------- */
   .rulle{
     overflow-x:auto; border:1px solid var(--linje-blød); border-radius:14px;
@@ -414,13 +516,58 @@
      derfor klæbende hele vejen ned — skal man fra "Tekster" til "Ture"
      efter at have rullet gennem tre hundrede linjer, skal man ikke
      rulle op igen først. */
-  @media (max-width:640px){
-    .top .indre{ padding:11px 16px; gap:10px; }
-    .top .mail{ display:none; }
-    .top .højre{ gap:8px; }
-    main{ padding:22px 16px 90px; }
+  @media (max-width:860px){
+    #rum{ grid-template-columns:minmax(0,1fr); }
+
+    /* Skinnen flytter NED og bliver en bundbjaelke - samme sted og samme
+       form som appens egen, saa de to foles ens at bruge. */
+    .skinne{
+      position:fixed; left:0; right:0; bottom:0; top:auto;
+      height:auto; z-index:40;
+      flex-direction:row; align-items:center;
+      padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+      border-right:0; border-top:1px solid var(--linje);
+      background:rgba(253,252,249,.96);
+      -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    }
+    /* Maerket ud - titlen staar i browserens egen fane, og en telefon har
+       ikke plads til at gentage den. */
+    .sk-maerke{ display:none; }
+
+    /* ⚠️ "Log ud" maa IKKE skjules. Foerste udgave af den her media query
+       satte `.sk-bund{display:none}`, og saa kunne man ikke logge ud paa
+       en telefon overhovedet. En knap, der kun findes paa store skaerme,
+       er en blindgyde - ikke et design.
+       Navnet og mailen ryger derimod: de er en bekraeftelse paa, hvem man
+       er logget ind som, og det er ikke det, man mangler i en bundbjaelke. */
+    .sk-bund{
+      margin-top:0; padding:0; border-top:0; flex:0 0 auto;
+      display:flex; align-items:center;
+    }
+    .sk-hvem{ display:none; }
+    .sk-bund .knap{
+      width:auto; padding:8px 10px; font-size:11px;
+      border-color:transparent; background:none; border-radius:12px;
+    }
+    .sk-bund .knap:hover{ background:#f1efe6; }
+
+    nav.faner{
+      flex-direction:row; width:100%; gap:2px;
+      overflow-x:auto; scrollbar-width:none;
+    }
+    nav.faner::-webkit-scrollbar{ display:none; }
+    nav.faner button{
+      flex:1 1 0; min-width:60px;
+      flex-direction:column; gap:3px; padding:7px 4px;
+      font-size:11px; text-align:center; border-radius:12px;
+    }
+    nav.faner button .ik{ width:21px; height:21px; }
+
+    /* Arket maa ikke slutte bag bundbjaelken. */
+    main{ padding:22px 16px 112px; max-width:none; }
     h2{ font-size:20px; }
-    nav.faner{ padding:0 10px; }
+    .udgiv-linje{ padding:11px 16px; gap:10px; }
+    .ul-tekst{ flex:1 1 100%; order:2; font-size:12.5px; }
     .tal .felt .stor{ font-size:32px; }
   }
   @media (prefers-reduced-motion:reduce){
@@ -456,23 +603,89 @@
      BAGRUMMET
      ============================================================= -->
 <div id="rum" hidden>
-  <header class="top">
-    <div class="indre">
-      <div class="mærke">Arytmi <span>bagrummet</span></div>
-      <div class="højre">
-        <b id="hvem-navn"></b> <span class="mail" id="hvem-mail"></span>
-        <button type="button" class="knap lille" id="udgiv"><span id="udgiv-ord">Udgiv</span><span id="udgiv-mærke" hidden></span></button>
-        <button type="button" class="knap rolig lille" id="ud">Log ud</button>
-      </div>
+  <!--
+    OPBYGNINGEN, OMSKREVET 17/9
+
+    Foer stod alt i én midterkolonne med fem faner i en vandret strimmel
+    oeverst. Det er den mest generiske form et dashboard kan have, og den
+    siger ingenting om, hvad det her er for et sted.
+
+    Nu er der en FAST SIDEBJAELKE. Den koster 232 px paa en skaerm der har
+    dem, og til gengaeld staar navigationen stille, mens man arbejder -
+    man mister ikke sin plads, fordi man rullede gennem tre hundrede
+    tekster. Paa telefon bliver den til en bundbjaelke, som appens egen.
+
+    ⚠️ JAVASCRIPTET ER IKKE ROERT. Det haenger fast i fire ting, og alle
+    fire staar uaendret: knapperne ligger i #faner og har data-fane,
+    sektionerne hedder #fane-<navn>, og #udgiv / #udgiv-ord /
+    #udgiv-maerke / #ud / #hvem-navn / #hvem-mail findes stadig.
+    skiftFane() bruger event-delegation med closest(), saa knapperne maa
+    gerne staa et andet sted, end de gjorde.
+
+    IKONERNE ER APPENS EGNE. Stierne er kopieret fra IKONER i app.js -
+    hjem, blyant, kort og folk. Kun "billeder" er ny, og den er tegnet i
+    samme system: 24x24, kun konturer, ingen fyld, saa den arver farven.
+    Det er et UI-ikon, ikke brandgrafik - der gentegnes ikke noget af
+    Kennets.
+  -->
+  <aside class="skinne">
+    <div class="sk-maerke">
+      <span class="sk-ord">Arytmi</span>
+      <span class="sk-under">bagrummet</span>
     </div>
+
     <nav class="faner" id="faner" aria-label="Områder">
-      <button type="button" data-fane="oversigt" aria-current="page">Oversigt</button>
-      <button type="button" data-fane="tekster">Tekster</button>
-      <button type="button" data-fane="ture">Vores ture</button>
-      <button type="button" data-fane="kunder">Kunder</button>
-      <button type="button" data-fane="billeder">Billeder</button>
+      <button type="button" data-fane="oversigt" aria-current="page">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.5 12 4.5l7.5 7v7.3a1.2 1.2 0 0 1-1.2 1.2H14v-5.5h-4V20H5.7a1.2 1.2 0 0 1-1.2-1.2Z"/></svg>
+        <span>Oversigt</span>
+      </button>
+      <button type="button" data-fane="tekster">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 19.2 5.4 15l9-9a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8l-9 9Z"/><path d="M13.2 7.6 16.4 10.8" opacity=".55"/></svg>
+        <span>Tekster</span>
+      </button>
+      <button type="button" data-fane="ture">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5-4.5 2v12L9 17l6 2 4.5-2V5L15 7Z"/><path d="M9 5v12M15 7v12" opacity=".5"/></svg>
+        <span>Vores ture</span>
+      </button>
+      <button type="button" data-fane="kunder">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="8.5" r="2.4" opacity=".7"/><path d="M15 13.6c2 .2 3.6 1.7 4.2 4.4" opacity=".7"/></svg>
+        <span>Kunder</span>
+      </button>
+      <button type="button" data-fane="billeder">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="13" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 16.5 4-4 3.5 3.5 2.5-2.5 4 4" opacity=".7"/></svg>
+        <span>Billeder</span>
+      </button>
     </nav>
-  </header>
+
+    <div class="sk-bund">
+      <div class="sk-hvem">
+        <b id="hvem-navn"></b>
+        <span class="mail" id="hvem-mail"></span>
+      </div>
+      <button type="button" class="knap rolig lille" id="ud">Log ud</button>
+    </div>
+  </aside>
+
+  <div class="ark">
+    <!--
+      UDGIVELSESLINJEN. Foer var Udgiv en lille knap mellem navnet og
+      "Log ud". Alt hvad der rettes er usynligt for kunden, indtil der
+      trykkes paa den - den fortjener sin egen linje.
+
+      De to tekster skiftes med CSS alene, paa :has() omkring maerket,
+      som JavaScriptet allerede viser og skjuler. Ingen ny JS.
+
+      ⚠️ Hvileteksten lover IKKE "alt er ude". Maerket er ogsaa skjult,
+      foer der er hentet noget, og en paastand om at alt er udgivet ville
+      derfor vaere usand i det sekund, siden aabner.
+    -->
+    <div class="udgiv-linje">
+      <div class="ul-tekst">
+        <span class="ul-ro">Rettelser bliver først synlige i appen, når du udgiver.</span>
+        <span class="ul-venter">Der er ændringer, kunden ikke kan se endnu.</span>
+      </div>
+      <button type="button" class="knap" id="udgiv"><span id="udgiv-ord">Udgiv</span><span id="udgiv-mærke" hidden></span></button>
+    </div>
 
   <main>
     <!-- ---------- OVERSIGT ---------- -->
@@ -556,16 +769,23 @@
     <!-- ---------- BILLEDER ---------- -->
     <section id="fane-billeder" hidden>
       <h2>Billeder</h2>
-      <p class="under">Her skal billeder kunne lægges op og skiftes ud uden at nogen rører ved koden.</p>
-      <div class="advarsel">
-        <b>Ikke bygget endnu.</b> Fanen står her, så den ikke bliver glemt — ikke fordi den virker.
-        Billederne til turene ligger i appen som filer (<code>billeder/t5-…jpg</code>), og en tur
-        peger på dem ved navn; du kan se listen nede i hver tur. Skal de kunne skiftes herfra,
-        mangler der et sted at lægge filerne, en grænse for hvor store de må være, og en måde at
-        se, hvad der <em>bruger</em> et billede, før nogen sletter det.
+      <p class="under">
+        Alt, hvad der er lagt op til turene. Billederne lægges op <b>inde på den enkelte tur</b>,
+        under Vores ture — det er dér, man ved, hvilket sted de hører til.
+      </p>
+      <div class="værktøjslinje">
+        <span class="tæller" id="billed-tæller"></span>
+      </div>
+      <div id="billeder"><p class="tomt">Henter …</p></div>
+      <div class="advarsel" style="margin-top:24px">
+        <b>Der kan ikke slettes herfra endnu.</b> Et billede kan tages af en tur — det gør du på
+        turen — men filen bliver liggende. Det er med vilje, indtil der er en måde at se,
+        hvad der <em>bruger</em> et billede, før nogen fjerner det. En fil, der forsvinder
+        under et udgivet sted, er værre end en fil for meget.
       </div>
     </section>
   </main>
+  </div><!-- .ark -->
 </div>
 
 <script>
@@ -668,6 +888,62 @@
         body: valg.body !== undefined ? JSON.stringify(valg.body) : undefined
       });
     });
+  }
+
+  /* ---------- BILLEDER ----------
+     `kald()` JSON-koder altid kroppen og saetter Content-Type derefter.
+     En fil skal sendes RAA og med sin egen type, saa den har sin egen
+     vej ud. Alt andet - token, fornyelse, apikey - er det samme. */
+  function kaldRaa(sti, metode, krop, type){
+    return sørgForToken().then(function(){
+      var h = { apikey: ANON, Authorization: 'Bearer ' + session.token };
+      if(type) h['Content-Type'] = type;
+      return fetch(PROJEKT_URL + sti, { method: metode, headers: h, body: krop });
+    });
+  }
+
+  var SPAND = 'stedbilleder';
+
+  /* Adressen, appen henter billedet paa. Spanden er offentlig (0034), saa
+     der er ingen udloebstid og intet token - et indholdsbundt fra i fjor
+     viser stadig sine billeder. */
+  function billedURL(sti){
+    return PROJEKT_URL + '/storage/v1/object/public/' + SPAND + '/' + sti;
+  }
+
+  /* Filnavnet er VORES, ikke brugerens. Et navn fra en telefon kan
+     indeholde mellemrum, ae/oe/aa, emoji og skraastreger - og et navn med
+     en skraastreg i laver en mappe, man ikke bad om. Derfor: turens id,
+     et tidsstempel og en endelse udledt af filens TYPE, ikke af dens navn. */
+  function billedSti(turId, fil){
+    var endelse = fil.type === 'image/png' ? 'png' : fil.type === 'image/webp' ? 'webp' : 'jpg';
+    var rent = String(turId).toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 40);
+    return rent + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.' + endelse;
+  }
+
+  var MAKS_BILLEDE = 5 * 1024 * 1024;
+  var TILLADTE = { 'image/jpeg':1, 'image/png':1, 'image/webp':1 };
+
+  function lægOpBillede(turId, fil){
+    if(!TILLADTE[fil.type]){
+      return Promise.reject(new Error('“' + fil.name + '” er ikke et billede, vi kan tage imod. Brug JPG, PNG eller WEBP.'));
+    }
+    if(fil.size > MAKS_BILLEDE){
+      return Promise.reject(new Error('“' + fil.name + '” fylder '
+        + Math.round(fil.size / 1024 / 1024 * 10) / 10 + ' MB. Grænsen er 5 MB — tag et mindre, eller skaler det ned først.'));
+    }
+    var sti = billedSti(turId, fil);
+    return kaldRaa('/storage/v1/object/' + SPAND + '/' + sti, 'POST', fil, fil.type)
+      .then(function(r){
+        if(r.ok) return billedURL(sti);
+        return r.text().then(function(t){
+          var d = null; try{ d = JSON.parse(t); }catch(e){}
+          /* 403 her betyder næsten altid, at kontoen ikke er admin — se
+             0034. Det er værd at sige, frem for at vise serverens ord. */
+          if(r.status === 403) throw new Error('Din konto må ikke lægge billeder op. Det kræver en administrator.');
+          throw new Error((d && (d.message || d.error)) || ('Billedet blev afvist (' + r.status + ').'));
+        });
+      });
   }
 
   function json(sti, valg){
@@ -821,6 +1097,11 @@
     if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
     if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
     if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
+    /* Billederne hentes HVER gang - ikke én gang som de øvrige. Man
+       kommer typisk hertil lige efter at have lagt noget op på en tur,
+       og en liste, der viser tilstanden fra før, ville være forkert
+       præcis dér, hvor man kigger efter en bekræftelse. */
+    if(navn === 'billeder'){ hentBilleder(); }
   }
 
   $('faner').addEventListener('click', function(e){
@@ -1466,19 +1747,108 @@
       'Guiden holder turen op mod det, kunden valgte i trin 4. Står alle tre på “—”, vises der '
       + 'ingen matchlinje på turen — og det er noget andet end nul ud af tre.'));
 
-    // Billederne kan læses, ikke rettes. Det står der, frem for ikke at stå der.
-    if(t.billeder && t.billeder.length){
-      var bl = lav('div','billedliste');
-      bl.appendChild(lav('b', null, 'Billeder: '));
-      t.billeder.forEach(function(b, i){
-        if(i) bl.appendChild(document.createTextNode(' · '));
-        bl.appendChild(lav('code', null, String(b).replace(/^billeder\//, '')));
+    /* ---------- BILLEDERNE (17/9) ----------
+       Stod indtil nu som en liste, der kunne LAESES: "Filerne ligger i
+       appen og kan ikke skiftes herfra endnu."
+
+       De to slags staar side om side, og det er med vilje:
+         · en STI  (billeder/t5-....jpg) hoerer til de nitten gamle steder
+           og ligger i appens egen pakke. Den kan fjernes fra turen, men
+           filen bliver i appen - der er ikke noget at slette paa serveren.
+         · en URL ligger i spanden `stedbilleder` og kan baade fjernes fra
+           turen og slettes.
+       Appen goer ingen forskel: begge bliver til `src` paa et <img>. */
+    var billeder = (t.billeder || []).slice();
+
+    var bilBoks = lav('div','billedboks');
+    bilBoks.appendChild(lav('div','bb-titel','Billeder'));
+    var bilNet = lav('div','billednet');
+    bilBoks.appendChild(bilNet);
+
+    var bilStatus = lav('div','status');
+    var bilVælg = document.createElement('input');
+    bilVælg.type = 'file';
+    bilVælg.accept = 'image/jpeg,image/png,image/webp';
+    bilVælg.multiple = true;
+    bilVælg.id = 'bil-' + t.id;
+    bilVælg.className = 'sr-only';
+
+    var bilKnap = lav('label','knap rolig lille bb-vaelg','+ Vælg billeder');
+    bilKnap.setAttribute('for', bilVælg.id);
+
+    function tegnBilleder(){
+      tøm(bilNet);
+      if(!billeder.length){
+        bilNet.appendChild(lav('p','bb-tom','Ingen billeder endnu. Det første, du lægger op, bliver det, kunden ser på kortet.'));
+      }
+      billeder.forEach(function(b, i){
+        var erURL = /^https?:\/\//.test(b);
+        var flise = lav('div','bb-flise' + (erURL ? '' : ' lokal'));
+
+        var bil = document.createElement('img');
+        /* En sti uden vaert kan ikke vises her - filen ligger i APPEN,
+           ikke paa arytmi.com. Derfor et maerke i stedet for et brudt
+           billede, som ville ligne en fejl. */
+        if(erURL){ bil.src = b; bil.alt = ''; bil.loading = 'lazy'; flise.appendChild(bil); }
+        else { flise.appendChild(lav('div','bb-ifil','I appen')); }
+
+        if(i === 0) flise.appendChild(lav('span','bb-foerste','Vises først'));
+
+        var fjern = lav('button','bb-fjern','×');
+        fjern.type = 'button';
+        fjern.title = 'Fjern fra turen';
+        fjern.setAttribute('aria-label', 'Fjern billede ' + (i+1) + ' fra turen');
+        fjern.addEventListener('click', function(){
+          billeder.splice(i, 1);
+          tegnBilleder();
+          bilStatus.className = 'status';
+          bilStatus.textContent = 'Husk at gemme.';
+        });
+        flise.appendChild(fjern);
+        bilNet.appendChild(flise);
       });
-      var note = lav('div', null, 'Filerne ligger i appen og kan ikke skiftes herfra endnu.');
-      note.style.cssText = 'font-size:12px;margin-top:2px';
-      bl.appendChild(note);
-      krop.appendChild(bl);
     }
+    tegnBilleder();
+
+    bilVælg.addEventListener('change', function(){
+      var valgte = [].slice.call(bilVælg.files || []);
+      if(!valgte.length) return;
+      bilKnap.classList.add('arbejder');
+      bilStatus.className = 'status';
+      bilStatus.textContent = 'Lægger ' + valgte.length + (valgte.length === 1 ? ' billede op …' : ' billeder op …');
+
+      /* Én ad gangen, ikke alle paa én gang. En telefon paa en p-plads
+         har ikke baandbredde til fem parallelle uploads, og en fejl
+         midtvejs skal kunne siges praecist: "det tredje gik galt". */
+      var fejl = [];
+      valgte.reduce(function(kæde, fil){
+        return kæde.then(function(){
+          return lægOpBillede(t.id, fil)
+            .then(function(url){ billeder.push(url); tegnBilleder(); })
+            .catch(function(f){ fejl.push(f.message); });
+        });
+      }, Promise.resolve()).then(function(){
+        bilKnap.classList.remove('arbejder');
+        bilVælg.value = '';
+        if(fejl.length){
+          bilStatus.className = 'status fejl';
+          bilStatus.textContent = fejl.join(' ');
+        } else {
+          bilStatus.className = 'status god';
+          bilStatus.textContent = 'Lagt op. Husk at gemme turen.';
+        }
+      });
+    });
+
+    var bilLinje = lav('div','bb-linje');
+    bilLinje.appendChild(bilVælg);
+    bilLinje.appendChild(bilKnap);
+    bilLinje.appendChild(bilStatus);
+    bilBoks.appendChild(bilLinje);
+    bilBoks.appendChild(lav('div','hint',
+      'JPG, PNG eller WEBP — højst 5 MB pr. billede. Det første billede er '
+    + 'det, kunden ser på stedkortet. Billederne bliver først synlige i appen, når du udgiver.'));
+    krop.appendChild(bilBoks);
 
     var synlig = document.createElement('input');
     synlig.type = 'checkbox';
@@ -1544,6 +1914,11 @@
           oe_lys: vælgere.oe_lys.value,
           oe_natur: vælgere.oe_natur.value,
           oe_stemning: vælgere.oe_stemning.value,
+          /* Billederne skrives HER, sammen med resten. Et billede, der
+             blev gemt i samme oejeblik det var lagt op, ville efterlade
+             turen aendret, uden at nogen havde trykket Gem - og
+             "Fortryd" ville ikke kunne fortryde det. */
+          billeder: billeder,
           synlig: synlig.checked,
           klar: klar.checked
         }
@@ -1628,6 +2003,66 @@
   // -------------------------------------------------------------
   // Kunder
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Billeder — oversigten
+  //
+  // Listen bygges af TURENE og ikke af spanden. Det er den rigtige vej
+  // rundt: et billede uden et sted er ikke indhold, det er en fil. Vil
+  // man vide, hvad der ligger i spanden UDEN at være i brug, er det et
+  // oprydningsværktøj — og det er netop det, der ikke er bygget endnu.
+  // -------------------------------------------------------------
+  function hentBilleder(){
+    var v = $('billeder');
+    tøm(v);
+    v.appendChild(lav('p','tomt','Henter …'));
+
+    json('/rest/v1/indhold_tur?select=id,navn,billeder,synlig&order=raekkefoelge')
+      .then(function(rk){
+        tøm(v);
+        var medBilleder = (rk || []).filter(function(t){ return (t.billeder || []).length; });
+        var ialt = medBilleder.reduce(function(n, t){ return n + t.billeder.length; }, 0);
+        var lagtOp = medBilleder.reduce(function(n, t){
+          return n + t.billeder.filter(function(b){ return /^https?:\/\//.test(b); }).length;
+        }, 0);
+
+        $('billed-tæller').textContent = ialt
+          ? ialt + (ialt === 1 ? ' billede' : ' billeder') + ' · ' + lagtOp + ' lagt op herfra'
+          : 'ingen billeder endnu';
+
+        if(!medBilleder.length){
+          v.appendChild(lav('p','tomt','Der er ingen billeder på nogen tur endnu.'));
+          return;
+        }
+
+        medBilleder.forEach(function(t){
+          var flok = lav('div','skaerm-flok');
+          var h = lav('h3', null, t.navn || t.id);
+          if(!t.synlig) h.textContent += ' — ikke udgivet';
+          flok.appendChild(h);
+
+          var net = lav('div','billednet');
+          t.billeder.forEach(function(b){
+            var erURL = /^https?:\/\//.test(b);
+            var flise = lav('div','bb-flise' + (erURL ? '' : ' lokal'));
+            if(erURL){
+              var bil = document.createElement('img');
+              bil.src = b; bil.alt = ''; bil.loading = 'lazy';
+              flise.appendChild(bil);
+            } else {
+              flise.appendChild(lav('div','bb-ifil','I appen'));
+            }
+            net.appendChild(flise);
+          });
+          flok.appendChild(net);
+          v.appendChild(flok);
+        });
+      })
+      .catch(function(f){
+        tøm(v);
+        v.appendChild(lav('p','tomt', forklar(f)));
+      });
+  }
+
   function hentKunder(){
     json('/rest/v1/profiler?select=id,navn,telefon,rolle,oprettet,adgang(niveau,gyldig_til)'
        + '&order=oprettet.desc&limit=200')
