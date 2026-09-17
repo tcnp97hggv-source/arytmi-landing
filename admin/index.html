@@ -306,6 +306,37 @@
     font-variant-numeric:tabular-nums;
   }
 
+  /* ---------- HVAD VENTER? ---------- */
+  .ul-se{
+    flex:0 0 auto; background:none; border:1px solid rgba(176,121,78,.45);
+    color:var(--gran); border-radius:9px; padding:8px 12px;
+    font-size:13px; font-weight:600;
+  }
+  .ul-se:hover{ background:rgba(176,121,78,.12); }
+  .venter-liste{
+    position:sticky; top:59px; z-index:19;
+    background:var(--flade); border-bottom:1px solid var(--linje);
+    padding:16px 30px 18px; max-height:52vh; overflow:auto;
+  }
+  .vl-henter{ color:var(--dæmpet); font-size:13.5px; }
+  .vl-gruppe{ margin-bottom:16px; }
+  .vl-gruppe:last-child{ margin-bottom:0; }
+  .vl-gruppe h4{
+    font-family:var(--skrift-brød);
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:7px;
+  }
+  .vl-post{
+    display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 14px;
+    padding:8px 0; border-top:1px solid var(--linje-blød); align-items:baseline;
+  }
+  .vl-navn{ font-size:14px; color:var(--tekst); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vl-hvem{ font-size:12px; color:var(--dæmpet); white-space:nowrap; text-align:right; }
+  .vl-under{
+    grid-column:1/-1; font-family:var(--skrift-kode);
+    font-size:11.5px; color:var(--dæmpet);
+  }
+
   main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
   h2{ font-size:22px; margin-bottom:5px; }
   .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
@@ -452,7 +483,18 @@
   .bb-flise{
     position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden;
     background:#efece3; border:1px solid var(--linje-blød);
+    /* `touch-action:none` er ikke pynt: uden den ruller browseren siden,
+       naar man saetter fingeren paa en flise og bevaeger den - og saa kan
+       der aldrig traekkes paa en telefon. */
+    cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:box-shadow .14s, transform .14s;
   }
+  .bb-flise:hover{ box-shadow:var(--løft); }
+  .bb-flise.traekker{
+    cursor:grabbing; opacity:.85; transform:scale(1.04);
+    box-shadow:var(--løft-hævet); border-color:var(--rav); z-index:2;
+  }
+  .bb-flise img{ pointer-events:none; }
   .bb-flise img{ width:100%; height:100%; object-fit:cover; display:block; }
   /* De nitten gamle steder peger paa filer, der ligger i APPENS pakke.
      De kan ikke hentes herfra, og et brudt <img> ville ligne en fejl. */
@@ -685,8 +727,13 @@
         <span class="ul-ro">Rettelser bliver først synlige i appen, når du udgiver.</span>
         <span class="ul-venter">Der er ændringer, kunden ikke kan se endnu.</span>
       </div>
+      <!-- "Hvad venter?" — Kennet 17/9. Tallet paa knappen siger HVOR
+           MANGE; det siger ikke HVILKE. Og det er det andet, man skal
+           bruge, foer man trykker paa noget, alle kunder kan se. -->
+      <button type="button" class="ul-se" id="ul-se" aria-expanded="false" aria-controls="venter-liste" hidden>Hvad venter?</button>
       <button type="button" class="knap" id="udgiv"><span id="udgiv-ord">Udgiv</span><span id="udgiv-mærke" hidden></span></button>
     </div>
+    <div class="venter-liste" id="venter-liste" hidden></div>
 
   <main>
     <!-- ---------- OVERSIGT ---------- -->
@@ -1204,7 +1251,105 @@
     var m = $('udgiv-mærke');
     var n = (tekster.length || ture.length) ? venter() : 0;
     if(n > 0){ m.textContent = n; m.hidden = false; } else { m.hidden = true; }
+    $('ul-se').hidden = !(n > 0);
+    if(!(n > 0)){ $('venter-liste').hidden = true; $('ul-se').setAttribute('aria-expanded','false'); }
+    else if(!$('venter-liste').hidden) tegnVenter();
   }
+
+  /* ---------- HVAD VENTER? (KN 17/9) ----------
+     Knappen sagde kun et tal. Det, man skal bruge, foer man sender noget
+     ud til alle kunder, er HVAD der ryger med - og det er ogsaa den
+     hurtigste maade at opdage, at man kom til at rette noget, man ikke
+     mente.
+
+     Listen bygges af det samme som tallet: alt der er roert SIDEN sidste
+     udgivelse. `venter()` og den her funktion skal derfor altid aendres
+     sammen - staar de to og regner forskelligt, er det tallet, man tror
+     paa, og listen, man handler efter. */
+  function venterPoster(){
+    var siden = sidsteUdgivelse ? new Date(sidsteUdgivelse.udgivet_kl).getTime() : 0;
+    var nyere = function(x){ return new Date(x.opdateret).getTime() > siden; };
+    return {
+      tekster: tekster.filter(function(t){ return t.tekst !== null && nyere(t); }),
+      ture: ture.filter(nyere)
+    };
+  }
+
+  function tegnVenter(){
+    var v = $('venter-liste');
+    tøm(v);
+    var p = venterPoster();
+
+    /* ⚠️ Er en af de to ikke hentet endnu, kan listen ikke vaere hel - og
+       en ufuldstaendig liste er vaerre end ingen, fordi den ser hel ud.
+       Derfor siges det, og der hentes. */
+    var mangler = [];
+    if(!hentet.tekster) mangler.push('teksterne');
+    if(!hentet.ture)    mangler.push('turene');
+    if(mangler.length){
+      v.appendChild(lav('p','vl-henter', 'Henter ' + mangler.join(' og ') + ' …'));
+      var kæde = Promise.resolve();
+      if(!hentet.tekster){ hentet.tekster = true; kæde = kæde.then(hentTekster); }
+      if(!hentet.ture){    hentet.ture = true;    kæde = kæde.then(hentTure); }
+      kæde.then(function(){ if(!v.hidden) tegnVenter(); });
+      return;
+    }
+
+    if(!p.tekster.length && !p.ture.length){
+      v.appendChild(lav('p','vl-henter','Der er ikke noget, der venter.'));
+      return;
+    }
+
+    var visGruppe = function(titel, poster, linje){
+      if(!poster.length) return;
+      var g = lav('div','vl-gruppe');
+      g.appendChild(lav('h4', null, titel + ' (' + poster.length + ')'));
+      poster.forEach(function(x){
+        var r = lav('div','vl-post');
+        var l = linje(x);
+        r.appendChild(lav('span','vl-navn', l.navn));
+        if(l.under) r.appendChild(lav('span','vl-under', l.under));
+        r.appendChild(lav('span','vl-hvem', l.hvem));
+        g.appendChild(r);
+      });
+      v.appendChild(g);
+    };
+
+    visGruppe('Tekster', p.tekster, function(t){
+      return {
+        navn: (t.tekst || '').replace(/<[^>]*>/g, '').slice(0, 90) || '(tom)',
+        under: t.noegle,
+        hvem: (t.profiler && t.profiler.navn ? t.profiler.navn : '—') + ' · ' + kort(t.opdateret)
+      };
+    });
+    visGruppe('Ture', p.ture, function(t){
+      return {
+        navn: t.navn || '(uden navn endnu)',
+        under: t.synlig ? '' : 'ikke synlig — kommer ikke med ud',
+        hvem: (t.profiler && t.profiler.navn ? t.profiler.navn : '—') + ' · ' + kort(t.opdateret)
+      };
+    });
+  }
+
+  function kort(naar){
+    if(!naar) return '';
+    var d = new Date(naar);
+    var nu = new Date();
+    var samme = d.toDateString() === nu.toDateString();
+    var kl = ('0'+d.getHours()).slice(-2) + '.' + ('0'+d.getMinutes()).slice(-2);
+    if(samme) return 'i dag ' + kl;
+    var i = new Date(nu.getTime() - 864e5);
+    if(d.toDateString() === i.toDateString()) return 'i går ' + kl;
+    return ('0'+d.getDate()).slice(-2) + '.' + ('0'+(d.getMonth()+1)).slice(-2) + '. ' + kl;
+  }
+
+  $('ul-se').addEventListener('click', function(){
+    var v = $('venter-liste');
+    var åben = v.hidden;
+    v.hidden = !åben;
+    $('ul-se').setAttribute('aria-expanded', åben ? 'true' : 'false');
+    if(åben) tegnVenter();
+  });
 
   function udgiv(krop){
     var knap = $('udgiv');
@@ -1783,15 +1928,85 @@
         fjern.title = 'Fjern fra turen';
         fjern.setAttribute('aria-label', 'Fjern billede ' + (i+1) + ' fra turen');
         fjern.addEventListener('click', function(){
-          billeder.splice(i, 1);
+          var plads = billeder.indexOf(b);
+          if(plads > -1) billeder.splice(plads, 1);
           tegnBilleder();
           bilStatus.className = 'status';
           bilStatus.textContent = 'Husk at gemme.';
         });
         flise.appendChild(fjern);
+
+        /* Adressen gemmes paa selve flisen. Naar der er traekket rundt,
+           laeses den nye raekkefoelge af DOM'en - og saa skal hver flise
+           kunne sige, HVILKET billede den er. Et indeks ville pege forkert
+           i det oejeblik, noget flyttede sig. */
+        flise.dataset.adresse = b;
+        gørTrækbar(flise);
         bilNet.appendChild(flise);
       });
     }
+
+    /* ---------- TRÆK FOR AT VÆLGE FORSIDEN (KN 17/9) ----------
+       "Kan du lave det sådan at jeg kan vælge det billede som skal ligge
+       først? ... altså trække."
+
+       HVORFOR POINTER-HÆNDELSER OG IKKE draggable="true"
+       HTML5's egen træk-og-slip virker ikke med en finger. Oliivia og
+       Kennet retter indhold fra det, de har ved hånden — tit en telefon —
+       og en funktion, der kun virker med mus, ville være halvt bygget.
+       Pointer-hændelser dækker mus, finger og pen med den samme kode.
+
+       RÆKKEFØLGEN LÆSES AF DOM'EN TIL SIDST, ikke undervejs. Flyttes der
+       i arrayet for hver bevægelse, skal listen tegnes om hele tiden — og
+       så mister man det element, fingeren holder fast i. Her flyttes kun
+       NODEN, mens man trækker; arrayet rettes én gang, når man slipper. */
+    function gørTrækbar(flise){
+      flise.addEventListener('pointerdown', function(e){
+        // Krydset er en knap, ikke et håndtag.
+        if(e.target.closest('.bb-fjern')) return;
+        if(billeder.length < 2) return;
+        e.preventDefault();
+
+        flise.setPointerCapture(e.pointerId);
+        flise.classList.add('traekker');
+        var flyttet = false;
+
+        function bevæg(ev){
+          /* Flisen ligger under fingeren og ville altid vaere den, der
+             findes. Den skjules et oejeblik, saa naboen kan ses. */
+          flise.style.visibility = 'hidden';
+          var under = document.elementFromPoint(ev.clientX, ev.clientY);
+          flise.style.visibility = '';
+          var mål = under && under.closest('.bb-flise');
+          if(!mål || mål === flise || mål.parentNode !== bilNet) return;
+
+          var fliser = [].slice.call(bilNet.children);
+          var foer = fliser.indexOf(flise) < fliser.indexOf(mål);
+          bilNet.insertBefore(flise, foer ? mål.nextSibling : mål);
+          flyttet = true;
+        }
+
+        function slip(){
+          flise.removeEventListener('pointermove', bevæg);
+          flise.removeEventListener('pointerup', slip);
+          flise.removeEventListener('pointercancel', slip);
+          flise.classList.remove('traekker');
+          if(!flyttet) return;
+
+          billeder = [].slice.call(bilNet.children)
+            .filter(function(n){ return n.dataset && n.dataset.adresse; })
+            .map(function(n){ return n.dataset.adresse; });
+          tegnBilleder();
+          bilStatus.className = 'status';
+          bilStatus.textContent = 'Ny rækkefølge. Husk at gemme.';
+        }
+
+        flise.addEventListener('pointermove', bevæg);
+        flise.addEventListener('pointerup', slip);
+        flise.addEventListener('pointercancel', slip);
+      });
+    }
+
     tegnBilleder();
 
     bilVælg.addEventListener('change', function(){
@@ -1830,8 +2045,9 @@
     bilLinje.appendChild(bilStatus);
     bilBoks.appendChild(bilLinje);
     bilBoks.appendChild(lav('div','hint',
-      'JPG, PNG eller WEBP — højst 5 MB pr. billede. Det første billede er '
-    + 'det, kunden ser på stedkortet. Billederne bliver først synlige i appen, når du udgiver.'));
+      'Træk et billede for at flytte det — det første er det, kunden ser på stedkortet. '
+    + 'JPG, PNG eller WEBP, højst 5 MB pr. billede. '
+    + 'Billederne bliver først synlige i appen, når du udgiver.'));
     krop.appendChild(bilBoks);
 
     var synlig = document.createElement('input');
