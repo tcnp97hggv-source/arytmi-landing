@@ -2387,7 +2387,7 @@
       ? 'Administratorer kan rette alt indhold og se alle konti.'
       : 'En kunde ser kun sit eget.'));
     g1.appendChild(knapFor(erAdmin ? 'Gør til kunde' : 'Gør til administrator', 'knap rolig lille', function(){
-      var ny = erAdmin ? 'kunde' : 'admin';
+      var ny = erAdmin ? 'bruger' : 'admin';
       if(!window.confirm((erAdmin
         ? 'Fjern administratorrettighederne fra ' + (k.navn || k.email) + '?'
         : 'Gør ' + (k.navn || k.email) + ' til administrator?\n\nSå kan hun rette alt indhold og se alle konti.'))) return;
