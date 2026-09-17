@@ -378,6 +378,28 @@
     word-break:break-all; user-select:all; -webkit-user-select:all; color:var(--gran);
   }
 
+  /* ---------- VÆLG PLACERING (17/9) ---------- */
+  .placering{
+    background:#f7f5ee; border:1px solid var(--linje-blød);
+    border-radius:14px; padding:14px 16px 15px; margin-bottom:14px;
+  }
+  .pl-titel{
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:9px;
+  }
+  .pl-linje{ display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+  .pl-linje input[type=search]{ flex:1 1 220px; min-width:0; }
+  .pl-linje .knap{ flex:0 0 auto; }
+  .pl-forslag{ display:flex; flex-direction:column; gap:5px; margin-top:9px; }
+  .pl-forslag-knap{
+    text-align:left; background:#fff; border:1px solid var(--linje);
+    border-radius:10px; padding:9px 12px; font-size:13.5px; color:var(--tekst);
+  }
+  .pl-forslag-knap:hover{ border-color:var(--rav); background:#fdfaf5; }
+  .pl-status{ font-size:12.5px; color:var(--dæmpet); margin-top:8px; line-height:1.5; }
+  .pl-status.god{ color:var(--god); }
+  .pl-status.fejl{ color:var(--fejl); }
+
   main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
   h2{ font-size:22px; margin-bottom:5px; }
   .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
@@ -1844,6 +1866,125 @@
 
   function afsnit(krop, navn){ krop.appendChild(lav('div','afsnit', navn)); }
 
+  /* ---------- VÆLG PLACERING (KN 17/9) ----------
+     "Vi skal bare kunne vælge vores placering, og det er det samme i appen."
+
+     To talfelter med seks decimaler er ikke noget, man udfylder — det er
+     noget, man taster forkert, og en forkert decimal sender et par 50 km
+     galt om aftenen.
+
+     TO VEJE IND, og de dækker hver sin virkelighed:
+       · SØG EN ADRESSE — til et sted, der HAR en adresse. Går gennem
+         `slaa-adresse-op`, ikke direkte mod DAWA: bagrummets
+         indholdspolitik tillader kun forbindelser til Supabase, og et
+         direkte opslag ville blive blokeret af browseren, LYDLØST.
+       · BRUG MIN PLACERING — til en p-plads i en skov, der ikke har en
+         adresse. Browserens egen geolokation: intet netværk, ingen
+         tredjepart, ingen politik at røre. Står man PÅ stedet med en
+         telefon, er det ét tryk.
+
+     Talfeltene bliver stående og kan stadig rettes. `0028` lader
+     bagrummet læse kundernes egne adresser, og det er sådan nye steder
+     findes — man skal kunne kontrollere tallene, bare ikke opfinde dem. */
+  function placeringVælger(latFelt, lonFelt){
+    var boks = lav('div','placering');
+    boks.appendChild(lav('div','pl-titel','Vælg placering'));
+
+    var linje = lav('div','pl-linje');
+    var søg = document.createElement('input');
+    søg.type = 'search';
+    søg.placeholder = 'Søg en adresse …';
+    søg.autocomplete = 'off';
+    søg.spellcheck = false;
+    linje.appendChild(søg);
+
+    var minKnap = lav('button','knap rolig lille','Brug min placering');
+    minKnap.type = 'button';
+    linje.appendChild(minKnap);
+    boks.appendChild(linje);
+
+    var liste = lav('div','pl-forslag');
+    boks.appendChild(liste);
+    var status = lav('div','pl-status');
+    boks.appendChild(status);
+
+    var sig = function(t, slags){
+      status.className = 'pl-status' + (slags ? ' ' + slags : '');
+      status.textContent = t || '';
+    };
+
+    /* Sætter begge felter og siger HVAD der blev valgt. Uden den sidste
+       halvdel ville to tal skifte på skærmen, uden at nogen kunne se
+       hvorfor — og så tør man ikke stole på dem. */
+    var sæt = function(la, lo, hvad){
+      latFelt.value = Number(la).toFixed(6);
+      lonFelt.value = Number(lo).toFixed(6);
+      tøm(liste);
+      søg.value = '';
+      sig(hvad, 'god');
+    };
+
+    // ---- søg en adresse ----
+    var timer = null;
+    søg.addEventListener('input', function(){
+      var q = søg.value.trim();
+      clearTimeout(timer);
+      if(q.length < 3){ tøm(liste); sig(''); return; }
+      /* Der ventes, til man holder pause. Uden den ville hvert tastetryk
+         blive et opslag — seks kald for at skrive "Testrupvej". */
+      timer = setTimeout(function(){
+        sig('Søger …');
+        json('/functions/v1/slaa-adresse-op', { method:'POST', body:{ q: q } })
+          .then(function(d){
+            tøm(liste);
+            var f = (d && d.forslag) || [];
+            if(!f.length){
+              sig('Den adresse kender registret ikke. Tjek stavemåden — eller stå på stedet og brug din placering.');
+              return;
+            }
+            sig('');
+            f.forEach(function(a){
+              var b = lav('button','pl-forslag-knap', a.tekst);
+              b.type = 'button';
+              b.addEventListener('click', function(){
+                sæt(a.lat, a.lon, 'Sat til ' + a.tekst + '.');
+              });
+              liste.appendChild(b);
+            });
+          })
+          .catch(function(fe){ tøm(liste); sig(forklar(fe), 'fejl'); });
+      }, 350);
+    });
+
+    // ---- brug min placering ----
+    minKnap.addEventListener('click', function(){
+      if(!navigator.geolocation){
+        sig('Din browser kan ikke finde din placering.', 'fejl');
+        return;
+      }
+      sig('Finder din placering …');
+      navigator.geolocation.getCurrentPosition(
+        function(p){
+          /* Nøjagtigheden siges HØJT. En placering fra en bærbar uden GPS
+             kan være tusind meter ved siden af, og det skal man kunne se,
+             før man gemmer den som et sted, folk skal køre hen til. */
+          var m = Math.round(p.coords.accuracy);
+          sæt(p.coords.latitude, p.coords.longitude,
+            'Sat til din placering — nøjagtighed ca. ' + m + ' m.'
+            + (m > 100 ? ' Det er upræcist. Tjek tallene, hvis du ikke står på stedet.' : ''));
+        },
+        function(f){
+          sig(f.code === 1
+            ? 'Du sagde nej til at dele din placering. Tilladelsen gives i browserens adresselinje.'
+            : 'Din placering kunne ikke findes. Prøv en adresse i stedet.', 'fejl');
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+    });
+
+    return boks;
+  }
+
   function turKort(t, åben){
     var kort = lav('div','tur' + (t.synlig ? '' : ' skjult'));
 
@@ -1900,10 +2041,17 @@
     krop.appendChild(par2);
 
     afsnit(krop, 'Sted');
-    var par3 = lav('div','par');
-    var lat = tekstFelt('Bredde (lat)', t.lat, 'Fx 55.905. Appen regner stedets plads på kortet ud af de to.');
+
+    var lat = tekstFelt('Bredde (lat)', t.lat, 'Sættes af søgningen ovenfor — du kan rette den, hvis du ved bedre.');
     var lon = tekstFelt('Længde (lon)', t.lon, 'Fx 8.117.');
     var rkf = tekstFelt('Rækkefølge', t.raekkefoelge, 'Lavest først.');
+
+    /* Vælgeren står FØR de to talfelter. Rækkefølgen er hele pointen:
+       det, man skal gøre, kommer først, og tallene er det, man kigger på
+       bagefter for at se, at det passer. */
+    krop.appendChild(placeringVælger(lat.felt, lon.felt));
+
+    var par3 = lav('div','par');
     par3.appendChild(lat); par3.appendChild(lon); par3.appendChild(rkf);
     krop.appendChild(par3);
 
