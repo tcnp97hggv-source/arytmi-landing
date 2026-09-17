@@ -623,10 +623,15 @@
     gerne staa et andet sted, end de gjorde.
 
     IKONERNE ER APPENS EGNE. Stierne er kopieret fra IKONER i app.js -
-    hjem, blyant, kort og folk. Kun "billeder" er ny, og den er tegnet i
-    samme system: 24x24, kun konturer, ingen fyld, saa den arver farven.
-    Det er et UI-ikon, ikke brandgrafik - der gentegnes ikke noget af
-    Kennets.
+    hjem, blyant, kort og folk. Der gentegnes ikke noget af Kennets.
+
+    FIRE PUNKTER, IKKE FEM. Der var en Billeder-fane et par timer 17/9.
+    Den blev fjernet igen samme dag paa Kennets spoergsmaal - "kan de ikke
+    bare ligge under turene?" - og han havde ret: et billede hoerer altid
+    til ET STED, det laegges op paa turen, og det ses paa turen. En fane
+    mere ville vaere det samme indhold et sted til.
+    Det ene, den kunne, som turene ikke kan, var at vise hvilke steder der
+    MANGLER billeder. Den oplysning staar nu paa turlinjen i stedet.
   -->
   <aside class="skinne">
     <div class="sk-maerke">
@@ -650,10 +655,6 @@
       <button type="button" data-fane="kunder">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="8.5" r="2.4" opacity=".7"/><path d="M15 13.6c2 .2 3.6 1.7 4.2 4.4" opacity=".7"/></svg>
         <span>Kunder</span>
-      </button>
-      <button type="button" data-fane="billeder">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="13" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 16.5 4-4 3.5 3.5 2.5-2.5 4 4" opacity=".7"/></svg>
-        <span>Billeder</span>
       </button>
     </nav>
 
@@ -766,24 +767,6 @@
       </div>
     </section>
 
-    <!-- ---------- BILLEDER ---------- -->
-    <section id="fane-billeder" hidden>
-      <h2>Billeder</h2>
-      <p class="under">
-        Alt, hvad der er lagt op til turene. Billederne lægges op <b>inde på den enkelte tur</b>,
-        under Vores ture — det er dér, man ved, hvilket sted de hører til.
-      </p>
-      <div class="værktøjslinje">
-        <span class="tæller" id="billed-tæller"></span>
-      </div>
-      <div id="billeder"><p class="tomt">Henter …</p></div>
-      <div class="advarsel" style="margin-top:24px">
-        <b>Der kan ikke slettes herfra endnu.</b> Et billede kan tages af en tur — det gør du på
-        turen — men filen bliver liggende. Det er med vilje, indtil der er en måde at se,
-        hvad der <em>bruger</em> et billede, før nogen fjerner det. En fil, der forsvinder
-        under et udgivet sted, er værre end en fil for meget.
-      </div>
-    </section>
   </main>
   </div><!-- .ark -->
 </div>
@@ -1097,11 +1080,6 @@
     if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
     if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
     if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
-    /* Billederne hentes HVER gang - ikke én gang som de øvrige. Man
-       kommer typisk hertil lige efter at have lagt noget op på en tur,
-       og en liste, der viser tilstanden fra før, ville være forkert
-       præcis dér, hvor man kigger efter en bekræftelse. */
-    if(navn === 'billeder'){ hentBilleder(); }
   }
 
   $('faner').addEventListener('click', function(e){
@@ -1688,7 +1666,13 @@
     var smaa = [];
     if(!t.synlig) smaa.push(t.navn ? 'ikke synlig' : 'kladde');
     if(!t.klar) smaa.push('måske');
+    /* Antallet OG fravaeret. Der var en Billeder-fane et par timer 17/9,
+       og det ene, den kunne, som turene ikke kunne, var at vise hvilke
+       steder der MANGLER billeder. Kennet: "kan de ikke bare ligge under
+       turene?" - jo, og saa hoerer den oplysning til her, paa linjen man
+       alligevel kigger paa, naar man leder efter noget at rette. */
     if(t.billeder && t.billeder.length) smaa.push(t.billeder.length + ' billeder');
+    else smaa.push('ingen billeder');
     linje.appendChild(lav('span','smaa', smaa.join(' · ')));
     var pil = lav('span','pil', åben ? '▲' : '▼');
     linje.appendChild(pil);
@@ -2003,66 +1987,6 @@
   // -------------------------------------------------------------
   // Kunder
   // -------------------------------------------------------------
-  // -------------------------------------------------------------
-  // Billeder — oversigten
-  //
-  // Listen bygges af TURENE og ikke af spanden. Det er den rigtige vej
-  // rundt: et billede uden et sted er ikke indhold, det er en fil. Vil
-  // man vide, hvad der ligger i spanden UDEN at være i brug, er det et
-  // oprydningsværktøj — og det er netop det, der ikke er bygget endnu.
-  // -------------------------------------------------------------
-  function hentBilleder(){
-    var v = $('billeder');
-    tøm(v);
-    v.appendChild(lav('p','tomt','Henter …'));
-
-    json('/rest/v1/indhold_tur?select=id,navn,billeder,synlig&order=raekkefoelge')
-      .then(function(rk){
-        tøm(v);
-        var medBilleder = (rk || []).filter(function(t){ return (t.billeder || []).length; });
-        var ialt = medBilleder.reduce(function(n, t){ return n + t.billeder.length; }, 0);
-        var lagtOp = medBilleder.reduce(function(n, t){
-          return n + t.billeder.filter(function(b){ return /^https?:\/\//.test(b); }).length;
-        }, 0);
-
-        $('billed-tæller').textContent = ialt
-          ? ialt + (ialt === 1 ? ' billede' : ' billeder') + ' · ' + lagtOp + ' lagt op herfra'
-          : 'ingen billeder endnu';
-
-        if(!medBilleder.length){
-          v.appendChild(lav('p','tomt','Der er ingen billeder på nogen tur endnu.'));
-          return;
-        }
-
-        medBilleder.forEach(function(t){
-          var flok = lav('div','skaerm-flok');
-          var h = lav('h3', null, t.navn || t.id);
-          if(!t.synlig) h.textContent += ' — ikke udgivet';
-          flok.appendChild(h);
-
-          var net = lav('div','billednet');
-          t.billeder.forEach(function(b){
-            var erURL = /^https?:\/\//.test(b);
-            var flise = lav('div','bb-flise' + (erURL ? '' : ' lokal'));
-            if(erURL){
-              var bil = document.createElement('img');
-              bil.src = b; bil.alt = ''; bil.loading = 'lazy';
-              flise.appendChild(bil);
-            } else {
-              flise.appendChild(lav('div','bb-ifil','I appen'));
-            }
-            net.appendChild(flise);
-          });
-          flok.appendChild(net);
-          v.appendChild(flok);
-        });
-      })
-      .catch(function(f){
-        tøm(v);
-        v.appendChild(lav('p','tomt', forklar(f)));
-      });
-  }
-
   function hentKunder(){
     json('/rest/v1/profiler?select=id,navn,telefon,rolle,oprettet,adgang(niveau,gyldig_til)'
        + '&order=oprettet.desc&limit=200')
