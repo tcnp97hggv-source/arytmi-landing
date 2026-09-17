@@ -61,28 +61,77 @@
   er en HELT anden ting og må aldrig herind.
 -->
 <style>
+  /* =============================================================
+     BAGRUMMETS UDSEENDE — omskrevet 17/9 2026
+     =============================================================
+
+     Den forrige udgave var ren og læselig, og den var ikke ARYTMI. Den
+     lånte paletten og intet andet: systemsans hele vejen, flade kort,
+     faner i 14 px dæmpet grå. Den kunne have hørt til et hvilket som
+     helst produkt.
+
+     Tre ting er lavet om, og de er alle tre begrundet i noget, appen
+     allerede gør — ikke i smag:
+
+     1 · SKRIFTEN. Appen sætter overskrifter og TAL med serif og brødtekst
+         med sans (ARKITEKTUR.md). Bagrummet gør nu det samme. Der hentes
+         INGEN fontfil: appens egen faldbak-stak er systemskrifter
+         ("Iowan Old Style", Palatino, Georgia), så der skal hverken
+         lægges en binær fil i et offentligt repo eller åbnes `font-src`
+         i indholdspolitikken. Fraunces står først, hvis den en dag
+         kommer med — indtil da falder den ned i stakken, præcis som
+         appen gør det.
+
+     2 · UDGIV ER DEN VIGTIGSTE KNAP I HUSET, og den så ud som "Log ud".
+         Alt, hvad der rettes, er usynligt for kunden, til der trykkes
+         på den. Nu er den kobber, den er større end sine naboer, og når
+         der ER noget at udgive, kan man ikke overse den. En knap, hvis
+         eneste opgave er at gøre arbejdet virkeligt, skal ikke gemme sig.
+
+     3 · FLADERNE HAR FÅET DYBDE. Før var alt en 1 px streg på samme
+         baggrund. Nu ligger kortene en anelse over bunden med en meget
+         blød skygge, og bunden er trukket et par grader varmere. Det er
+         den samme ro som i appen — ikke mere pynt, men mere hierarki.
+
+     ⚠️ KLASSENAVNENE ER URØRT. Ikke ét er omdøbt, og der er ikke
+     tilføjet nogen, som JavaScriptet skal kende. Filen nedenfor kan
+     rulles tilbage alene, uden at røre de 1.100 linjer JavaScript.
+     ============================================================= */
   :root{
     --gran:#3a3227;
     --gran-mørk:#241f18;
     --fjord:#5f6353;
     --rav:#b0794e;
-    --bund:#eceae3;
-    --flade:#faf9f5;
+    --rav-mørk:#96653e;
+    --bund:#eeece5;
+    --flade:#fdfcf9;
     --tekst:#2e2a24;
-    --dæmpet:#8e8a7f;
-    --linje:#ddd8cb;
+    --dæmpet:#8a8579;
+    --linje:#e0dbcf;
+    --linje-blød:#ebe7dc;
     --fejl:#9c4221;
     --god:#4f6b4a;
+
+    /* Appens egen stak. Fraunces er ikke hentet her — den står først,
+       så siden følger med af sig selv, hvis filen en dag lægges ind. */
+    --skrift-display:'Fraunces',"Iowan Old Style","Palatino Linotype","Palatino","Georgia",serif;
+    --skrift-brød:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    --skrift-kode:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+    /* Én skygge, brugt overalt. To ville blive til fem. */
+    --løft:0 1px 2px rgba(58,50,39,.04), 0 4px 14px rgba(58,50,39,.05);
+    --løft-hævet:0 2px 4px rgba(58,50,39,.06), 0 10px 26px rgba(58,50,39,.09);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{min-height:100%}
   body{
     background:var(--bund);
     color:var(--tekst);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-family:var(--skrift-brød);
     font-size:15px;
     line-height:1.55;
     -webkit-text-size-adjust:100%;
+    -webkit-font-smoothing:antialiased;
   }
   .sr-only{
     position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
@@ -92,93 +141,135 @@
   input,textarea,select{font:inherit;color:inherit}
   [hidden]{display:none !important}
 
+  /* Overskrifter og tal i serif — som i appen. */
+  h1,h2,h3{ font-family:var(--skrift-display); font-weight:600; letter-spacing:.1px; color:var(--gran); }
+
   /* ---------- LOGIN ---------- */
   #login{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px; }
-  #login .kort{ width:100%; max-width:380px; }
-  #login .logo{ width:min(170px,48vw); margin:0 auto 26px; display:block; }
-  .flade{ background:var(--flade); border:1px solid var(--linje); border-radius:16px; padding:24px 22px; }
-  h1{ font-size:20px; font-weight:600; line-height:1.3; }
+  #login .kort{ width:100%; max-width:390px; }
+  #login .logo{ width:min(180px,50vw); margin:0 auto 30px; display:block; }
+  .flade{
+    background:var(--flade); border:1px solid var(--linje);
+    border-radius:18px; padding:28px 26px; box-shadow:var(--løft);
+  }
+  h1{ font-size:23px; line-height:1.25; }
   label{
-    display:block; font-size:13px; font-weight:600;
-    letter-spacing:.02em; color:var(--fjord); margin:16px 0 6px;
+    display:block; font-size:12.5px; font-weight:600;
+    letter-spacing:.03em; color:var(--fjord); margin:18px 0 6px;
   }
   input[type=email],input[type=password],input[type=search],input[type=text],textarea,select{
     width:100%; background:#fff; border:1px solid var(--linje);
-    border-radius:10px; padding:11px 13px; color:var(--tekst);
+    border-radius:11px; padding:11px 13px; color:var(--tekst);
+    transition:border-color .15s, box-shadow .15s;
   }
+  input:hover,textarea:hover,select:hover{ border-color:#cfc8b8; }
   input:focus,textarea:focus,button:focus-visible,select:focus{
     outline:2px solid var(--rav); outline-offset:1px; border-color:transparent;
   }
   textarea{ resize:vertical; line-height:1.5; }
+
   .knap{
     display:inline-flex; align-items:center; justify-content:center; gap:7px;
     background:var(--gran); color:#f7f5ef; border:1px solid var(--gran);
-    border-radius:10px; padding:11px 18px; font-weight:600; font-size:14px;
+    border-radius:11px; padding:11px 18px; font-weight:600; font-size:14px;
+    transition:background .15s, box-shadow .15s, transform .1s;
   }
-  .knap:hover{ background:var(--gran-mørk); }
-  .knap[disabled]{ opacity:.45; cursor:default; }
-  .knap.bred{ width:100%; margin-top:22px; }
+  .knap:hover{ background:var(--gran-mørk); border-color:var(--gran-mørk); }
+  .knap:active{ transform:translateY(1px); }
+  .knap[disabled]{ opacity:.45; cursor:default; transform:none; }
+  .knap.bred{ width:100%; margin-top:24px; padding:13px 18px; }
   .knap.rolig{ background:transparent; color:var(--fjord); border-color:var(--linje); }
-  .knap.rolig:hover{ background:#f1efe7; color:var(--tekst); }
-  .knap.lille{ padding:7px 13px; font-size:13px; border-radius:8px; }
+  .knap.rolig:hover{ background:#f1efe7; color:var(--tekst); border-color:#cfc8b8; }
+  .knap.lille{ padding:8px 13px; font-size:13px; border-radius:9px; }
   .knap.fare{ color:var(--fejl); border-color:#e6cfc4; background:transparent; }
-  .knap.fare:hover{ background:#f7e9e3; color:var(--fejl); }
+  .knap.fare:hover{ background:#f7e9e3; color:var(--fejl); border-color:#d9b9a9; }
 
-  .besked{ margin-top:16px; font-size:14px; padding:11px 13px; border-radius:10px; }
+  .besked{ margin-top:16px; font-size:14px; padding:12px 14px; border-radius:11px; }
   .besked.fejl{ background:#f7e9e3; color:var(--fejl); border:1px solid #e6cfc4; }
   .besked.god{ background:#e9efe7; color:var(--god); border:1px solid #cfdcca; }
 
   /* ---------- RAMMEN ---------- */
   header.top{
-    background:var(--flade); border-bottom:1px solid var(--linje);
+    background:rgba(253,252,249,.88);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--linje);
     position:sticky; top:0; z-index:20;
   }
   .top .indre{
-    max-width:1060px; margin:0 auto; padding:11px 20px;
+    max-width:1100px; margin:0 auto; padding:13px 22px;
     display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   }
-  .top .mærke{ font-weight:700; letter-spacing:.06em; font-size:14px; text-transform:uppercase; }
-  .top .mærke span{ color:var(--dæmpet); font-weight:500; text-transform:none; letter-spacing:0; margin-left:9px; }
-  .top .højre{ margin-left:auto; display:flex; align-items:center; gap:10px; font-size:13px; color:var(--dæmpet); }
-  .top .højre b{ color:var(--tekst); font-weight:600; }
-  #udgiv-mærke{
-    display:inline-block; min-width:19px; padding:0 6px;
-    background:var(--rav); color:#fff; border-radius:9px;
-    font-size:11px; font-weight:700; line-height:18px; text-align:center;
+  .top .mærke{
+    font-family:var(--skrift-display); font-weight:600;
+    letter-spacing:.14em; font-size:14px; text-transform:uppercase; color:var(--gran);
   }
+  .top .mærke span{
+    font-family:var(--skrift-brød); color:var(--dæmpet); font-weight:500;
+    text-transform:none; letter-spacing:0; margin-left:10px; font-size:13.5px;
+  }
+  .top .højre{ margin-left:auto; display:flex; align-items:center; gap:11px; font-size:13px; color:var(--dæmpet); }
+  .top .højre b{ color:var(--tekst); font-weight:600; }
+  .top .mail{ color:var(--dæmpet); }
+
+  /* UDGIV — husets vigtigste knap.
+     Den er kobber, fordi kobber er logoets accent og bruges til ét
+     formål i appen: det, man skal lægge mærke til. Mærket ved siden af
+     er ANTALLET af ting, der venter; er det der, pulserer kanten svagt,
+     så den kan ses ud af øjenkrogen uden at larme. */
+  #udgiv{
+    background:var(--rav); border-color:var(--rav); color:#fffaf4;
+    padding:9px 16px; font-size:13.5px;
+  }
+  #udgiv:hover{ background:var(--rav-mørk); border-color:var(--rav-mørk); }
+  #udgiv-mærke{
+    display:inline-block; min-width:20px; padding:0 6px; margin-left:2px;
+    background:rgba(255,255,255,.22); color:#fffaf4; border-radius:9px;
+    font-size:11.5px; font-weight:700; line-height:19px; text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  #udgiv:has(#udgiv-mærke:not([hidden])){ box-shadow:0 0 0 3px rgba(176,121,78,.18); }
 
   nav.faner{
-    max-width:1060px; margin:0 auto; padding:0 20px;
-    display:flex; gap:2px; overflow-x:auto;
+    max-width:1100px; margin:0 auto; padding:0 22px;
+    display:flex; gap:4px; overflow-x:auto;
+    scrollbar-width:none;
   }
+  nav.faner::-webkit-scrollbar{ display:none; }
   nav.faner button{
-    background:none; border:0; padding:11px 14px;
-    font-size:14px; font-weight:600; color:var(--dæmpet);
+    background:none; border:0; padding:12px 14px 11px;
+    font-size:14.5px; font-weight:600; color:var(--dæmpet);
     border-bottom:2px solid transparent; white-space:nowrap;
+    transition:color .15s, border-color .15s;
   }
-  nav.faner button:hover{ color:var(--tekst); }
+  nav.faner button:hover{ color:var(--tekst); border-bottom-color:var(--linje); }
   nav.faner button[aria-current=page]{ color:var(--gran); border-bottom-color:var(--rav); }
 
-  main{ max-width:1060px; margin:0 auto; padding:26px 20px 90px; }
-  h2{ font-size:18px; font-weight:600; margin-bottom:4px; }
-  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:20px; max-width:60ch; }
+  main{ max-width:1100px; margin:0 auto; padding:30px 22px 100px; }
+  h2{ font-size:22px; margin-bottom:5px; }
+  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
   .afsnit{
-    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--dæmpet); margin-top:22px; margin-bottom:2px;
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--dæmpet); margin-top:24px; margin-bottom:2px;
   }
 
   /* ---------- OVERSIGT ---------- */
-  .tal{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-bottom:26px; }
-  .tal .felt{ background:var(--flade); border:1px solid var(--linje); border-radius:14px; padding:18px 18px 16px; }
-  .tal .felt .stor{ font-size:30px; font-weight:700; line-height:1.1; letter-spacing:-.02em; }
-  .tal .felt .navn{ font-size:13px; color:var(--dæmpet); margin-top:5px; }
-  .tal .felt .note{ font-size:12px; color:var(--dæmpet); margin-top:9px; line-height:1.4; }
+  .tal{ display:grid; gap:13px; grid-template-columns:repeat(auto-fit,minmax(172px,1fr)); margin-bottom:30px; }
+  .tal .felt{
+    background:var(--flade); border:1px solid var(--linje-blød); border-radius:16px;
+    padding:20px 20px 18px; box-shadow:var(--løft);
+  }
+  .tal .felt .stor{
+    font-family:var(--skrift-display); font-size:36px; font-weight:600; line-height:1.05;
+    letter-spacing:-.01em; color:var(--gran); font-variant-numeric:tabular-nums lining-nums;
+  }
+  .tal .felt .navn{ font-size:13px; color:var(--fjord); margin-top:7px; font-weight:600; }
+  .tal .felt .note{ font-size:12px; color:var(--dæmpet); margin-top:8px; line-height:1.45; }
 
   /* ---------- VÆRKTØJSLINJE ---------- */
-  .værktøjslinje{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
-  .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:340px; }
-  .værktøjslinje select{ background:#fff; border:1px solid var(--linje); border-radius:10px; padding:10px 12px; width:auto; }
-  .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; }
+  .værktøjslinje{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:18px; }
+  .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:360px; }
+  .værktøjslinje select{ background:#fff; border:1px solid var(--linje); border-radius:11px; padding:10px 12px; width:auto; }
+  .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; font-variant-numeric:tabular-nums; }
 
   /* ---------- SKAERMENE ----------
      Foer 13/9 stod her tre kategori-piller og derunder ALLE teksterne i
@@ -189,119 +280,152 @@
      Nu er der to trin: vaelg skaermen, ret teksterne. Man lander paa et
      overblik over appen og trykker sig ind paa "Forsiden" eller
      "Pakkelisten" - de ord, man selv bruger om dem. */
-  .skaerm-flok{ margin-bottom:26px; }
+  .skaerm-flok{ margin-bottom:30px; }
   .skaerm-flok > h3{
-    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    font-family:var(--skrift-brød);
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
     color:var(--dæmpet); margin-bottom:4px;
   }
-  .skaerm-flok > p.om{ color:var(--dæmpet); font-size:13px; margin:0 0 11px; max-width:66ch; }
-  .skaermliste{ display:grid; gap:9px; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); }
+  .skaerm-flok > p.om{ color:var(--dæmpet); font-size:13px; margin:0 0 12px; max-width:66ch; }
+  .skaermliste{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(278px,1fr)); }
   .skaermkort{
     display:flex; align-items:flex-start; gap:12px; text-align:left; width:100%;
-    background:var(--flade); border:1px solid var(--linje); border-radius:12px;
-    padding:14px 15px; color:inherit;
+    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
+    padding:15px 16px; color:inherit; box-shadow:var(--løft);
+    transition:border-color .15s, box-shadow .15s, transform .12s;
   }
-  .skaermkort:hover{ border-color:var(--rav); background:#f3f1e9; }
+  .skaermkort:hover{
+    border-color:var(--rav); box-shadow:var(--løft-hævet); transform:translateY(-1px);
+  }
   .skaermkort .krop{ flex:1 1 auto; min-width:0; }
-  .skaermkort .navn{ font-weight:600; font-size:15px; display:block; }
-  .skaermkort .om{ color:var(--dæmpet); font-size:12.5px; margin-top:3px; line-height:1.45; }
+  .skaermkort .navn{ font-weight:600; font-size:15.5px; display:block; color:var(--gran); }
+  .skaermkort .om{ color:var(--dæmpet); font-size:12.5px; margin-top:4px; line-height:1.5; }
   /* Hedder .antal og ikke .tal: .tal er allerede statistik-fliserne paa
      Oversigt (display:grid), og de to kolliderede - pillen blev et gitter,
      der aad hele kortets bredde. Set paa foerste skaermbillede 13/9. */
   .skaermkort .antal{
     display:block; flex:0 0 auto; font-size:12.5px; color:var(--fjord);
     font-variant-numeric:tabular-nums; white-space:nowrap;
-    background:#eceadf; border-radius:999px; padding:3px 9px; font-weight:600;
+    background:#eeebe0; border-radius:999px; padding:3px 10px; font-weight:600;
   }
-  .skaermkort .antal.rettet{ background:var(--rav); color:#241c10; }
+  .skaermkort .antal.rettet{ background:var(--rav); color:#fffaf4; }
   .skaermkort.tom .antal{ opacity:.45; }
 
   /* Hovedet, naar EN skaerm er valgt. */
-  .skaerm-hoved{ margin-bottom:16px; }
+  .skaerm-hoved{ margin-bottom:18px; }
   .tilbagelink{
     background:none; border:0; padding:0; color:var(--fjord);
-    font-size:13.5px; font-weight:600; margin-bottom:9px;
+    font-size:13.5px; font-weight:600; margin-bottom:10px;
   }
   .tilbagelink:hover{ color:var(--tekst); text-decoration:underline; }
-  .skaerm-hoved h3{ font-size:19px; margin:0; }
-  .skaerm-hoved .om{ color:var(--dæmpet); font-size:13.5px; margin:5px 0 0; max-width:66ch; }
+  .skaerm-hoved h3{ font-size:21px; margin:0; }
+  .skaerm-hoved .om{ color:var(--dæmpet); font-size:13.5px; margin:6px 0 0; max-width:66ch; line-height:1.6; }
 
   /* ---------- TEKSTRÆKKER ---------- */
-  .gruppe{ margin-bottom:24px; }
+  .gruppe{ margin-bottom:26px; }
   .gruppe > h3{
-    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:9px; padding-left:2px;
+    font-family:var(--skrift-brød);
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:10px; padding-left:2px;
   }
-  .rk{ background:var(--flade); border:1px solid var(--linje); border-radius:12px; padding:14px 16px; margin-bottom:8px; }
+  .rk{
+    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
+    padding:15px 17px; margin-bottom:9px; box-shadow:var(--løft);
+  }
   .rk.rettet{ border-left:3px solid var(--rav); }
   .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .rk .nøgle{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px; color:var(--dæmpet); }
+  .rk .nøgle{ font-family:var(--skrift-kode); font-size:11.5px; color:var(--dæmpet); }
   /* Overskriften paa en raekke er TEKSTEN, ikke noeglen. Man leder efter et
      ord, man har set paa en skaerm - ikke efter "turdato.afgangstid". */
-  .rk .vist{ font-size:14.5px; font-weight:600; line-height:1.4; flex:1 1 100%; }
-  .rk .mærkat{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--rav); }
+  .rk .vist{ font-size:15px; font-weight:600; line-height:1.45; flex:1 1 100%; color:var(--gran); }
+  .rk .mærkat{ font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--rav); }
   .rk .af{ font-size:12px; color:var(--dæmpet); margin-left:auto; }
-  .rk .oprind{ font-size:13px; color:var(--dæmpet); margin-top:7px; padding-left:11px; border-left:2px solid var(--linje); }
+  .rk .oprind{ font-size:13px; color:var(--dæmpet); margin-top:8px; padding-left:12px; border-left:2px solid var(--linje); line-height:1.6; }
   .rk .oprind::before{ content:"Står i koden: "; font-weight:600; color:var(--fjord); }
-  .rk textarea{ margin-top:10px; min-height:52px; }
-  .rk .bund{ display:flex; align-items:center; gap:9px; margin-top:10px; min-height:32px; flex-wrap:wrap; }
+  .rk textarea{ margin-top:11px; min-height:54px; }
+  .rk .bund{ display:flex; align-items:center; gap:9px; margin-top:11px; min-height:32px; flex-wrap:wrap; }
   .rk .bund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
   .rk .bund .status.fejl{ color:var(--fejl); }
   .rk .bund .status.god{ color:var(--god); }
 
   /* ---------- TURE ---------- */
-  .tur{ background:var(--flade); border:1px solid var(--linje); border-radius:12px; margin-bottom:9px; overflow:hidden; }
+  .tur{
+    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
+    margin-bottom:10px; overflow:hidden; box-shadow:var(--løft);
+  }
   .tur.skjult .navn{ color:var(--dæmpet); }
   .tur > .linje{
-    display:flex; align-items:center; gap:11px; width:100%;
-    padding:13px 16px; background:none; border:0; text-align:left;
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:14px 17px; background:none; border:0; text-align:left;
+    transition:background .12s;
   }
-  .tur > .linje:hover{ background:#f3f1e9; }
+  .tur > .linje:hover{ background:#f5f3ec; }
   .tur .prik{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--god); }
   .tur .prik.ude{ background:var(--dæmpet); }
-  .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gran); }
   .tur .smaa{ font-size:12.5px; color:var(--dæmpet); flex:0 0 auto; }
   .tur .pil{ color:var(--dæmpet); font-size:11px; flex:0 0 auto; }
 
-  .turkrop{ padding:2px 16px 16px; border-top:1px solid var(--linje); }
-  .par{ display:grid; gap:0 14px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
-  .felt .hint{ font-size:12px; color:var(--dæmpet); margin-top:5px; line-height:1.45; }
-  .afkryds{ display:flex; align-items:center; gap:9px; margin-top:14px; font-size:14px; }
+  .turkrop{ padding:2px 17px 17px; border-top:1px solid var(--linje-blød); }
+  .par{ display:grid; gap:0 15px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+  .felt .hint{ font-size:12px; color:var(--dæmpet); margin-top:5px; line-height:1.5; }
+  .afkryds{ display:flex; align-items:center; gap:9px; margin-top:15px; font-size:14px; }
   .afkryds input{ width:17px; height:17px; accent-color:var(--gran); flex:0 0 auto; }
   .afkryds .hint{ color:var(--dæmpet); font-size:12.5px; }
   .turbund{
-    display:flex; align-items:center; gap:9px; margin-top:18px;
-    padding-top:14px; border-top:1px solid var(--linje); flex-wrap:wrap;
+    display:flex; align-items:center; gap:9px; margin-top:19px;
+    padding-top:15px; border-top:1px solid var(--linje-blød); flex-wrap:wrap;
   }
   .turbund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
   .turbund .status.fejl{ color:var(--fejl); }
   .turbund .status.god{ color:var(--god); }
-  .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:18px; line-height:1.8; }
-  .billedliste code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; }
+  .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:19px; line-height:1.85; }
+  .billedliste code{ font-family:var(--skrift-kode); font-size:12px; }
 
   /* ---------- TABEL ---------- */
-  .rulle{ overflow-x:auto; border:1px solid var(--linje); border-radius:12px; background:var(--flade); }
+  .rulle{
+    overflow-x:auto; border:1px solid var(--linje-blød); border-radius:14px;
+    background:var(--flade); box-shadow:var(--løft);
+  }
   table{ border-collapse:collapse; width:100%; min-width:640px; }
-  th,td{ text-align:left; padding:11px 14px; border-bottom:1px solid var(--linje); font-size:14px; }
-  th{ font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--dæmpet); font-weight:700; white-space:nowrap; }
+  th,td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--linje-blød); font-size:14px; }
+  th{
+    font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--dæmpet);
+    font-weight:700; white-space:nowrap; background:#f7f5ee;
+  }
+  tbody tr{ transition:background .12s; }
+  tbody tr:hover{ background:#f7f5ee; }
   tbody tr:last-child td{ border-bottom:0; }
   td.dæmp{ color:var(--dæmpet); }
-  td.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
+  td.tal-h,th.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
   .prik{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--god); margin-right:7px; vertical-align:1px; }
   .prik.ude{ background:var(--dæmpet); }
 
-  .tomt{ color:var(--dæmpet); font-size:14px; padding:26px 4px; text-align:center; }
+  .tomt{ color:var(--dæmpet); font-size:14px; padding:30px 4px; text-align:center; }
   .advarsel{
-    background:#f6f1e6; border:1px solid #e3d8c2; border-radius:12px;
-    padding:14px 16px; font-size:14px; color:var(--gran); margin-bottom:20px;
+    background:#f7f2e7; border:1px solid #e3d8c2; border-radius:14px;
+    padding:15px 17px; font-size:14px; color:var(--gran); margin-bottom:22px; line-height:1.6;
   }
   .advarsel b{ font-weight:700; }
-  .advarsel code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; }
+  .advarsel code{ font-family:var(--skrift-kode); font-size:12.5px; }
 
-  @media (max-width:560px){
+  /* ---------- SMÅ SKÆRME ----------
+     Oliivia retter tekster fra det, hun har ved hånden. Fanerne bliver
+     derfor klæbende hele vejen ned — skal man fra "Tekster" til "Ture"
+     efter at have rullet gennem tre hundrede linjer, skal man ikke
+     rulle op igen først. */
+  @media (max-width:640px){
+    .top .indre{ padding:11px 16px; gap:10px; }
     .top .mail{ display:none; }
-    main{ padding:20px 16px 80px; }
+    .top .højre{ gap:8px; }
+    main{ padding:22px 16px 90px; }
+    h2{ font-size:20px; }
     nav.faner{ padding:0 10px; }
+    .tal .felt .stor{ font-size:32px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; animation:none !important; }
+    .skaermkort:hover{ transform:none; }
   }
 </style>
 </head>
