@@ -25,13 +25,61 @@
   altsaa ikke kommet en ny part til - kun en ny slags anmodning til en
   part, siden i forvejen taler med.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<!--
+  ⚠️ `img-src` har OGSAA faaet OpenStreetMaps fliseserver 17/9, og DEN er
+  en ny part. Det skal staa tydeligt, for det er den foerste.
+
+  Hvorfor den maatte med: kortet ved "Vaelg placering" tegner fliser, og
+  fliser er billeder fra et fremmed domaene. Uden linjen ville kortet vaere
+  et graat felt - og LYDLOEST, som alting er, naar en CSP siger nej.
+
+  Hvorfor lige den: `tile.openstreetmap.org` henter appen allerede fra
+  (app.js:4956), og det samme goer `arytmi.com/rekognoscering`. Der kommer
+  altsaa ikke en ny part til PRODUKTET - kun til den her sides politik.
+  Havde vi valgt en anden udbyder for bagrummets skyld, ville der vaere to
+  at holde styr paa i stedet for én.
+
+  🔸 OG DEN ER IKKE DEN RIGTIGE PAA SIGT. C4 i `docs/oversete-ting.md`
+  (Arytmi-repoet) siger det rent ud: OSM's fliser er drevet af frivillige
+  og er ikke beregnet til apps med rigtige brugere, og CARTO stempler
+  allerede "API KEY REQUIRED" tvaers over sine. Den dag OSM goer det
+  samme, forsvinder kortet BEGGE steder paa én gang. Svaret i C4 er en
+  noegle i Supabases secrets og en Edge-funktion, der henter flisen - og
+  det er en beslutning, ikke en detalje. Den hoerer til Kennet.
+
+  `data:` er OGSAA kommet med, og den er ikke en part - den er ingen.
+  `data:` betyder "billedet staar i selve linjen", altsaa bytes fra vores
+  egen side, ikke en adresse nogen kan svare paa. Grunden er konkret:
+  Leaflet saetter en flises `src` til en 1x1 gennemsigtig GIF som
+  `data:`-adresse, naar den AFBRYDER en hentning, man er scrollet forbi.
+  Blev den blokeret, virkede kortet stadig - men konsollen fyldtes med en
+  raekke roede CSP-fejl for HVER flise. Og en konsol fuld af stoej er en
+  konsol, hvor den aegte fejl ikke kan ses. Det er faelde 4 i status, og
+  den er dyrere end den her linje.
+
+  (Nej, den kan ikke loeses ved at pege Leaflet paa en lokal fil:
+  `L.Util.emptyImageUrl` er kun en KOPI i den minificerede udgave -
+  motoren laeser sin egen variabel, og at rette i `vendor/` ville vaere at
+  redigere tredjepartskode, vi ikke selv vedligeholder.)
+
+  `connect-src` er URØRT. Kortet henter kun billeder.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arytmi — bagrummet</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../apple-touch-icon-180.png">
+<!--
+  Leaflet 1.9.4, lokalt og ikke fra et CDN - samme grund som i appen: det
+  er tredjepartskode i produktionsstien, som en fremmed server ellers kan
+  skifte ud under os. `script-src 'self'` ville i oevrigt ogsaa naegte et
+  CDN. Samme fil som `rekognoscering/vendor/`, kopieret ind her, saa
+  bagrummet ikke gaar i stykker den dag, rekognosceringen bliver flyttet.
+-->
+<link rel="stylesheet" href="vendor/leaflet.css?v=20260917">
+<script src="vendor/leaflet.js?v=20260917"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -399,6 +447,22 @@
   .pl-status{ font-size:12.5px; color:var(--dæmpet); margin-top:8px; line-height:1.5; }
   .pl-status.god{ color:var(--god); }
   .pl-status.fejl{ color:var(--fejl); }
+  /* ---------- KORTET (17/9) ----------
+     Til stederne UDEN adresse. En p-plads i en skov har ingen vej at slå
+     op, og "Brug min placering" hjælper kun den, der står der. */
+  .pl-kort{
+    height:260px; margin-top:11px; border-radius:12px; overflow:hidden;
+    border:1px solid var(--linje); background:#e8e6dd;
+  }
+  .pl-kort .leaflet-container{ height:100%; width:100%; background:#e8e6dd; font:inherit; }
+  /* Naalen. Samme kobber som resten af fladen, tegnet i CSS og ikke som en
+     billedfil - Leaflets egne markoerbilleder ligger i en `images/`-mappe,
+     vi saa ville skulle slaebe med. En divIcon har ingen. */
+  .pl-naal{
+    width:17px; height:17px; border-radius:50% 50% 50% 2px; transform:rotate(-45deg);
+    background:var(--rav); border:2.5px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.4);
+  }
+  .pl-kort-hint{ font-size:12px; color:var(--dæmpet); margin-top:7px; line-height:1.5; }
 
   main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
   h2{ font-size:22px; margin-bottom:5px; }
@@ -1873,15 +1937,23 @@
      noget, man taster forkert, og en forkert decimal sender et par 50 km
      galt om aftenen.
 
-     TO VEJE IND, og de dækker hver sin virkelighed:
+     TRE VEJE IND, og de dækker hver sin virkelighed:
        · SØG EN ADRESSE — til et sted, der HAR en adresse. Går gennem
-         `slaa-adresse-op`, ikke direkte mod DAWA: bagrummets
+         `slaa-adresse-op`, ikke direkte mod registret: bagrummets
          indholdspolitik tillader kun forbindelser til Supabase, og et
          direkte opslag ville blive blokeret af browseren, LYDLØST.
-       · BRUG MIN PLACERING — til en p-plads i en skov, der ikke har en
-         adresse. Browserens egen geolokation: intet netværk, ingen
-         tredjepart, ingen politik at røre. Står man PÅ stedet med en
-         telefon, er det ét tryk.
+       · BRUG MIN PLACERING — til et sted uden adresse, som man STÅR på.
+         Browserens egen geolokation: intet netværk, ingen tredjepart,
+         ingen politik at røre. Ét tryk, hvis man er der.
+       · SÆT EN NÅL PÅ KORTET (17/9) — til det sted uden adresse, man
+         IKKE står på. En p-plads i en skov, et udsigtspunkt, en
+         sti-begyndelse. Det var det sidste hul: indtil kortet kom, kunne
+         de steder kun oprettes ved at køre derhen.
+
+     ⚠️ ADRESSEREGISTRET SKIFTEDE DØR 17/9. Det var DAWA, og DAWA lukker
+     1. oktober 2026 kl. 10 — hele registret. Afløseren hedder
+     Adressevælgeren og svarer ikke med koordinater i søgningen, kun med
+     et id. Derfor er der nu to kald, hvor der før var ét: se `vælg()`.
 
      Talfeltene bliver stående og kan stadig rettes. `0028` lader
      bagrummet læse kundernes egne adresser, og det er sådan nye steder
@@ -1908,6 +1980,20 @@
     var status = lav('div','pl-status');
     boks.appendChild(status);
 
+    /* ---- kortet (17/9) ----
+       Den tredje vej ind, og den eneste, der virker til et sted UDEN
+       adresse: en p-plads i en skov, et udsigtspunkt, en sti-begyndelse.
+       Adressesøgningen kan ikke slå den op, for den har ingen vej, og
+       "Brug min placering" hjælper kun den, der står der i forvejen.
+
+       Kortet staar UNDER de to andre, fordi det er det langsomste af de
+       tre. Har stedet en adresse, er den hurtigere - og mere praecis end
+       et oeje paa en flise. */
+    var kortEl = lav('div','pl-kort');
+    boks.appendChild(kortEl);
+    boks.appendChild(lav('div','pl-kort-hint',
+      'Klik på kortet, eller træk nålen, hvis stedet ikke har en adresse.'));
+
     var sig = function(t, slags){
       status.className = 'pl-status' + (slags ? ' ' + slags : '');
       status.textContent = t || '';
@@ -1922,7 +2008,72 @@
       tøm(liste);
       søg.value = '';
       sig(hvad, 'god');
+      flytNål(la, lo, true);
     };
+
+    /* ---- kortet, når Leaflet er der ----
+       `if(!window.L)` er ikke forsigtighed for forsigtighedens skyld:
+       falder `vendor/leaflet.js` ud, skal RESTEN af vælgeren blive ved at
+       virke. Adressesøgning og "Brug min placering" er de to veje, der
+       bruges oftest — de skal ikke tages ned af et kort, der ikke kom. */
+    var kort = null, nål = null;
+
+    function flytNål(la, lo, følgEfter){
+      if(!kort) return;
+      var p = [Number(la), Number(lo)];
+      if(!isFinite(p[0]) || !isFinite(p[1])) return;
+      if(nål) nål.setLatLng(p);
+      else {
+        nål = L.marker(p, {
+          draggable: true,
+          icon: L.divIcon({ className:'', iconSize:[17,17], iconAnchor:[8,8], html:'<div class="pl-naal"></div>' })
+        }).addTo(kort);
+        /* Trækkes nålen, er DEN sandheden. Talfelterne følger med, men
+           søgefeltet ryddes IKKE: det, man skrev, er tit den nærmeste
+           adresse, man søgte efter for at komme i nærheden. */
+        nål.on('dragend', function(){
+          var q = nål.getLatLng();
+          latFelt.value = q.lat.toFixed(6);
+          lonFelt.value = q.lng.toFixed(6);
+          sig('Sat til nålen på kortet.', 'god');
+        });
+      }
+      if(følgEfter) kort.setView(p, Math.max(kort.getZoom(), 14));
+    }
+
+    function tegnKort(){
+      if(!window.L){
+        kortEl.style.display = 'none';
+        return;
+      }
+      var la = parseFloat(latFelt.value), lo = parseFloat(lonFelt.value);
+      var harSted = isFinite(la) && isFinite(lo) && (la !== 0 || lo !== 0);
+      kort = L.map(kortEl, { attributionControl:true })
+        .setView(harSted ? [la, lo] : [56.1, 10.5], harSted ? 14 : 6);
+      /* Ingen {s}-underdomæner: OSM anbefaler selv det enkelte vaertsnavn
+         nu, og så skal der kun staa ÉT navn i indholdspolitikken i stedet
+         for et jokertegn. Se noten ved CSP'en i toppen. */
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© OpenStreetMap'
+      }).addTo(kort);
+      if(harSted) flytNål(la, lo, false);
+
+      kort.on('click', function(e){
+        latFelt.value = e.latlng.lat.toFixed(6);
+        lonFelt.value = e.latlng.lng.toFixed(6);
+        flytNål(e.latlng.lat, e.latlng.lng, false);
+        sig('Sat til punktet på kortet.', 'god');
+      });
+
+      /* ⚠️ Kortet tegnes, FØR boksen er i dokumentet. Leaflet måler
+         beholderen ved opstart, og en beholder, der ikke er vist endnu,
+         måler 0 — så bliver kortet et gråt felt med fliserne i et hjørne.
+         `invalidateSize` efter at fladen er tegnet er hele rettelsen, og
+         det er en fejl, der ser ud som et CSP-problem, hvis man ikke ved
+         det. */
+      setTimeout(function(){ if(kort) kort.invalidateSize(); }, 0);
+    }
+    setTimeout(tegnKort, 0);
 
     // ---- søg en adresse ----
     var timer = null;
@@ -1938,23 +2089,74 @@
           .then(function(d){
             tøm(liste);
             var f = (d && d.forslag) || [];
-            if(!f.length){
-              sig('Den adresse kender registret ikke. Tjek stavemåden — eller stå på stedet og brug din placering.');
+            var veje = (d && d.vejnavne) || [];
+            if(!f.length && !veje.length){
+              sig('Den adresse kender registret ikke. Tjek stavemåden — eller sæt en nål på kortet.');
               return;
             }
             sig('');
             f.forEach(function(a){
               var b = lav('button','pl-forslag-knap', a.tekst);
               b.type = 'button';
-              b.addEventListener('click', function(){
-                sæt(a.lat, a.lon, 'Sat til ' + a.tekst + '.');
-              });
+              b.addEventListener('click', function(){ vælg(a, b); });
               liste.appendChild(b);
             });
+            /* Vejene siges ALTID, naar der er nogen - ogsaa naar der staar
+               et forslag ovenover. "Testrupvej" giver ét forslag i Aars og
+               ser ud som svaret, men vejen findes ogsaa i Maarslet,
+               Hovedgaard og Aalestrup. Ét enligt forslag er den farligste
+               slags, fordi det ligner en bekraeftelse. */
+            if(veje.length){
+              var p = lav('div','pl-kort-hint',
+                (f.length ? 'Samme vejnavn findes også her — skriv husnummeret med: '
+                          : 'Skriv også husnummeret. Vejen findes her: ')
+                + veje.slice(0,4).join(' · '));
+              liste.appendChild(p);
+            }
           })
           .catch(function(fe){ tøm(liste); sig(forklar(fe), 'fejl'); });
       }, 350);
     });
+
+    /* ---- fra et forslag til et punkt ----
+       ⚠️ DER ER TO UDGAVER AF SVARET, og det er med vilje, at begge er
+       med her.
+
+       DAWA sendte koordinaterne med i søgningen. Adressevælgeren, der
+       overtager 1. oktober 2026, sender kun et id — punktet skal hentes
+       bagefter. Funktionen `slaa-adresse-op` er skrevet om, men den
+       RULLES UD som en særskilt handling, og bagrummet udgives, så snart
+       nogen pusher. De to ting rammer aldrig samme sekund.
+
+       Har forslaget lat/lon, er det den gamle funktion, der stadig er
+       ude, og så bruges tallene. Har det kun et id, er det den nye. Uden
+       de to linjer ville der være et vindue, hvor bagrummet ikke kunne
+       finde en adresse — og ingen ville kunne se hvorfor.
+
+       Den halvdel, der læser `a.lat`, kan fjernes, når funktionen er
+       rullet ud og har virket en uges tid. */
+    function vælg(a, knap){
+      if(isFinite(a.lat) && isFinite(a.lon)){
+        sæt(a.lat, a.lon, 'Sat til ' + a.tekst + '.');
+        return;
+      }
+      if(!a.id){ sig('Forslaget har hverken koordinater eller id.', 'fejl'); return; }
+      knap.disabled = true;
+      sig('Henter stedet …');
+      json('/functions/v1/slaa-adresse-op', { method:'POST', body:{ id: a.id } })
+        .then(function(p){
+          if(!p || !p.fundet || !isFinite(p.lat) || !isFinite(p.lon)){
+            /* Adressen findes — det var punktet, der ikke kom. Det sker
+               for foreløbige adresser. At sige "findes ikke" ville være
+               forkert, og så ville nogen lede efter en stavefejl. */
+            sig('Vi fandt adressen, men ikke stedet på kortet. Sæt en nål i stedet.', 'fejl');
+            knap.disabled = false;
+            return;
+          }
+          sæt(p.lat, p.lon, 'Sat til ' + (p.tekst || a.tekst) + '.');
+        })
+        .catch(function(fe){ knap.disabled = false; sig(forklar(fe), 'fejl'); });
+    }
 
     // ---- brug min placering ----
     minKnap.addEventListener('click', function(){
