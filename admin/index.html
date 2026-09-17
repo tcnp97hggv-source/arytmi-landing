@@ -337,6 +337,47 @@
     font-size:11.5px; color:var(--dæmpet);
   }
 
+  /* ---------- BRUGERNE (17/9) ---------- */
+  .k-navn{ font-weight:600; }
+  .k-mail{ font-size:12.5px; color:var(--dæmpet); }
+  .k-venter{ font-size:11.5px; color:var(--fejl); margin-top:2px; }
+  .k-rolle{
+    font-size:11.5px; font-weight:700; letter-spacing:.04em;
+    background:#eeebe0; color:var(--fjord); border-radius:999px; padding:3px 9px;
+  }
+  .k-rolle.admin{ background:var(--gran); color:#f7f5ef; }
+  .k-handling{ text-align:right; white-space:nowrap; }
+
+  .bruger-boks{
+    background:var(--flade); border:1px solid var(--linje); border-radius:16px;
+    padding:20px 22px; margin-bottom:18px; box-shadow:var(--løft);
+  }
+  .bruger-boks h3{ font-size:19px; }
+  .bruger-boks > .under{ margin-bottom:6px; }
+  .bb-gruppe{ padding:15px 0; border-top:1px solid var(--linje-blød); }
+  .bb-gruppe h4{
+    font-family:var(--skrift-brød);
+    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--dæmpet); margin-bottom:5px;
+  }
+  .bb-gruppe .hint{ font-size:13px; color:var(--dæmpet); margin-bottom:10px; line-height:1.55; }
+  .bb-gruppe .bb-linje{ display:flex; gap:8px; flex-wrap:wrap; }
+  /* Den uigenkaldelige gruppe skal SES som noget andet end de øvrige. */
+  .bb-gruppe.fare{ border-top-color:#e6cfc4; }
+  .bb-gruppe.fare h4{ color:var(--fejl); }
+  .bb-luk{ margin-top:14px; }
+  .bruger-boks .status{ font-size:13.5px; color:var(--dæmpet); margin-top:12px; }
+  .bruger-boks .status.fejl{ color:var(--fejl); }
+  .bruger-boks .status.god{ color:var(--god); }
+  .k-link{
+    margin-top:14px; padding:13px 15px; background:#f7f2e7;
+    border:1px solid #e3d8c2; border-radius:12px; font-size:13px;
+  }
+  .k-linktekst{
+    display:block; margin-top:7px; font-family:var(--skrift-kode); font-size:12px;
+    word-break:break-all; user-select:all; -webkit-user-select:all; color:var(--gran);
+  }
+
   main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
   h2{ font-size:22px; margin-bottom:5px; }
   .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
@@ -795,21 +836,24 @@
     <!-- ---------- KUNDER ---------- -->
     <section id="fane-kunder" hidden>
       <h2>Kunder</h2>
-      <p class="under">De nyeste først. Listen kommer fra serveren med dit eget login — ser du den, er det fordi din konto må.</p>
-      <div class="advarsel">
-        <b>Ikke færdig endnu.</b> Her kan kun læses. Der kan ikke oprettes en kunde herfra, og
-        mailadressen kan ikke vises — den ligger i login-tabellen, som den her side ikke har
-        adgang til. Begge dele kræver en funktion mere på serveren.
-      </div>
+      <p class="under">
+        De nyeste først. Roller, adgang og oprettelse går gennem en funktion på serveren —
+        ikke gennem den her side. Det er serveren, der afgør, hvad du må.
+      </p>
       <div class="værktøjslinje">
         <label for="søg-kunde" class="sr-only">Søg blandt kunder</label>
-        <input type="search" id="søg-kunde" placeholder="Søg i navn eller telefon …" autocapitalize="off" spellcheck="false">
+        <input type="search" id="søg-kunde" placeholder="Søg i navn, mail eller telefon …" autocapitalize="off" spellcheck="false">
+        <button type="button" class="knap" id="ny-kunde">+ Ny kunde</button>
         <span class="tæller" id="kunde-tæller"></span>
       </div>
+      <!-- Handlingerne for ÉN bruger. Ligger her og ikke som seks knapper
+           pr. raekke: i en tabel staar raekkerne taet, og "Slet" skal ikke
+           altid vaere ét greb vaek. -->
+      <div class="bruger-boks" id="bruger-boks" hidden></div>
       <div class="rulle">
         <table>
-          <thead><tr><th>Navn</th><th>Telefon</th><th>Adgang</th><th>Oprettet</th><th>Rolle</th></tr></thead>
-          <tbody id="kunder"><tr><td colspan="5" class="tomt">Henter …</td></tr></tbody>
+          <thead><tr><th>Navn</th><th>Telefon</th><th>Adgang</th><th>Oprettet</th><th>Rolle</th><th></th></tr></thead>
+          <tbody id="kunder"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -2203,24 +2247,45 @@
   // -------------------------------------------------------------
   // Kunder
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Brugerne (KN 17/9) — "Jeg skal kunne håndtere alt der har med
+  // brugere at gøre her."
+  //
+  // ALT GÅR GENNEM `admin-brugere`, og ikke gennem PostgREST. Det er
+  // ikke en omvej: `authenticated` har kun UPDATE på navn, foedselsdag
+  // og notifikationer i `profiler`. `rolle`, `email`, `telefon` og
+  // `partner_laast` kan ingen logget ind bruger røre — heller ikke en
+  // administrator. Låsen kom i 0006, efter at enhver bruger 7/9 kunne
+  // gøre sig selv til admin, og den skal blive stående.
+  //
+  // Fladen her viser altså knapper til noget, PostgREST siger nej til.
+  // Det er rigtigt sådan: serveren afgør, fladen foreslår.
+  // -------------------------------------------------------------
+  function brugerKald(krop){
+    return json('/functions/v1/admin-brugere', { method:'POST', body: krop });
+  }
+
   function hentKunder(){
-    json('/rest/v1/profiler?select=id,navn,telefon,rolle,oprettet,adgang(niveau,gyldig_til)'
-       + '&order=oprettet.desc&limit=200')
-      .then(function(rk){ kunder = rk || []; tegnKunder(); })
+    brugerKald({ handling:'liste' })
+      .then(function(d){ kunder = (d && d.brugere) || []; tegnKunder(); })
       .catch(function(f){
         var krop = $('kunder'); tøm(krop);
-        var tr = lav('tr'); var td = lav('td','tomt', forklar(f)); td.colSpan = 5;
+        var tr = lav('tr'); var td = lav('td','tomt', forklar(f)); td.colSpan = 6;
         tr.appendChild(td); krop.appendChild(tr);
       });
   }
 
-  /* Gyldig nu = ingen slutdato, eller en slutdato ude i fremtiden. Der
-     regnes på det, serveren sendte, og ikke på et felt, nogen har sat i
-     hånden — så kan en udløbet adgang ikke stå og se aktiv ud. */
-  function harAdgang(k){
-    return (k.adgang || []).some(function(a){
+  function harAdgang(k){ return !!k.adgang; }
+
+  /* Hvornår løber adgangen ud? Den seneste slutdato af dem, der stadig
+     gælder — og `null`, hvis en af dem er uden slutdato. */
+  function adgangTil(k){
+    var mine = (k.adgange || []).filter(function(a){
       return !a.gyldig_til || new Date(a.gyldig_til).getTime() > Date.now();
     });
+    if(!mine.length) return false;
+    if(mine.some(function(a){ return !a.gyldig_til; })) return null;   // uden ende
+    return mine.map(function(a){ return a.gyldig_til; }).sort().pop();
   }
 
   function tegnKunder(){
@@ -2228,36 +2293,214 @@
     var synlige = kunder.filter(function(k){
       if(!s) return true;
       return (k.navn||'').toLowerCase().indexOf(s) >= 0
+          || (k.email||'').toLowerCase().indexOf(s) >= 0
           || (k.telefon||'').toLowerCase().indexOf(s) >= 0;
     });
 
     $('kunde-tæller').textContent = synlige.length === kunder.length
-      ? kunder.length + ' konti'
+      ? kunder.length + (kunder.length === 1 ? ' konto' : ' konti')
       : synlige.length + ' af ' + kunder.length;
 
     var krop = $('kunder');
     tøm(krop);
     if(!synlige.length){
       var tr0 = lav('tr'); var td0 = lav('td','tomt','Ingen konti passer på det, du søgte efter.');
-      td0.colSpan = 5; tr0.appendChild(td0); krop.appendChild(tr0);
+      td0.colSpan = 6; tr0.appendChild(td0); krop.appendChild(tr0);
       return;
     }
 
     synlige.forEach(function(k){
       var tr = lav('tr');
-      tr.appendChild(lav('td', null, k.navn || '(uden navn)'));
+
+      var n = lav('td');
+      n.appendChild(lav('div','k-navn', k.navn || '(uden navn)'));
+      n.appendChild(lav('div','k-mail', k.email || '—'));
+      /* Et uindløst aktiveringslink er svaret på "jeg kan ikke komme
+         ind" — og det er den oplysning, man ellers skal i Supabase for. */
+      if(k.venter_paa_aktivering){
+        n.appendChild(lav('div','k-venter','Har ikke aktiveret endnu'));
+      }
+      tr.appendChild(n);
+
       tr.appendChild(lav('td','dæmp', k.telefon || '—'));
+
       var a = lav('td');
       var aktiv = harAdgang(k);
       a.appendChild(lav('span','prik' + (aktiv ? '' : ' ude')));
-      a.appendChild(document.createTextNode(aktiv ? 'Aktiv' : 'Ingen'));
+      var til = adgangTil(k);
+      a.appendChild(document.createTextNode(
+        !aktiv ? 'Ingen' : (til === null ? 'Uden slutdato' : 'Til ' + dato(til).split(' kl.')[0])));
       tr.appendChild(a);
+
       tr.appendChild(lav('td','dæmp', dato(k.oprettet)));
-      tr.appendChild(lav('td','dæmp', k.rolle === 'admin' ? 'Administrator' : 'Kunde'));
+
+      var r = lav('td');
+      r.appendChild(lav('span','k-rolle' + (k.rolle === 'admin' ? ' admin' : ''),
+        k.rolle === 'admin' ? 'Administrator' : 'Kunde'));
+      tr.appendChild(r);
+
+      var h = lav('td','k-handling');
+      h.appendChild(knapFor('Rediger', 'knap rolig lille', function(){ åbnBruger(k); }));
+      tr.appendChild(h);
+
       krop.appendChild(tr);
     });
   }
 
+  function knapFor(tekst, klasse, handling){
+    var b = lav('button', klasse, tekst);
+    b.type = 'button';
+    b.addEventListener('click', handling);
+    return b;
+  }
+
+  /* ---------- ÉN BRUGER, ÅBNET ----------
+     Handlingerne ligger bag et klik og ikke i tabellen. Seks knapper pr.
+     række ville betyde, at en fejlklikket "Slet" altid er ét greb væk —
+     og i en tabel står rækkerne tæt. */
+  function åbnBruger(k){
+    var b = $('bruger-boks');
+    tøm(b);
+    b.hidden = false;
+
+    b.appendChild(lav('h3', null, k.navn || k.email || '(uden navn)'));
+    b.appendChild(lav('p','under', (k.email || 'uden mailadresse')
+      + (k.telefon ? ' · ' + k.telefon : '')
+      + ' · oprettet ' + dato(k.oprettet)));
+
+    var status = lav('div','status');
+    var sig = function(t, slags){ status.className = 'status' + (slags ? ' ' + slags : ''); status.textContent = t; };
+    var arbejd = function(krop, ordner){
+      sig('Arbejder …');
+      return brugerKald(krop).then(function(d){
+        sig(ordner(d) || 'Gjort.', 'god');
+        hentKunder();
+        return d;
+      }).catch(function(f){ sig(forklar(f), 'fejl'); });
+    };
+
+    // ---- rolle ----
+    var g1 = lav('div','bb-gruppe');
+    g1.appendChild(lav('h4', null, 'Rolle'));
+    var erAdmin = k.rolle === 'admin';
+    g1.appendChild(lav('p','hint', erAdmin
+      ? 'Administratorer kan rette alt indhold og se alle konti.'
+      : 'En kunde ser kun sit eget.'));
+    g1.appendChild(knapFor(erAdmin ? 'Gør til kunde' : 'Gør til administrator', 'knap rolig lille', function(){
+      var ny = erAdmin ? 'kunde' : 'admin';
+      if(!window.confirm((erAdmin
+        ? 'Fjern administratorrettighederne fra ' + (k.navn || k.email) + '?'
+        : 'Gør ' + (k.navn || k.email) + ' til administrator?\n\nSå kan hun rette alt indhold og se alle konti.'))) return;
+      arbejd({ handling:'rolle', id:k.id, rolle:ny }, function(){ return 'Rollen er ændret.'; });
+    }));
+    b.appendChild(g1);
+
+    // ---- adgang ----
+    var g2 = lav('div','bb-gruppe');
+    g2.appendChild(lav('h4', null, 'Adgang'));
+    var til = adgangTil(k);
+    g2.appendChild(lav('p','hint', !harAdgang(k) ? 'Ingen gyldig adgang lige nu.'
+      : til === null ? 'Adgang uden slutdato.' : 'Adgang til ' + dato(til).split(' kl.')[0] + '.'));
+    var linje = lav('div','bb-linje');
+    [['Forlæng et år', 365], ['Forlæng 30 dage', 30]].forEach(function(v){
+      linje.appendChild(knapFor(v[0], 'knap rolig lille', function(){
+        arbejd({ handling:'adgang', id:k.id, hvad:'forlaeng', dage:v[1] },
+          function(d){ return 'Adgang til ' + dato(d.gyldig_til).split(' kl.')[0] + '.'; });
+      }));
+    });
+    linje.appendChild(knapFor('Luk adgangen', 'knap fare lille', function(){
+      if(!window.confirm('Luk adgangen for ' + (k.navn || k.email) + '?\n\nHun kan stadig logge ind, men appen vil sige, at adgangen er udløbet.')) return;
+      arbejd({ handling:'adgang', id:k.id, hvad:'luk' }, function(){ return 'Adgangen er lukket.'; });
+    }));
+    g2.appendChild(linje);
+    b.appendChild(g2);
+
+    // ---- rejsemakker ----
+    var g3 = lav('div','bb-gruppe');
+    g3.appendChild(lav('h4', null, 'Rejsemakker'));
+    g3.appendChild(lav('p','hint', k.partner_laast
+      ? 'Låst. “Én partner, én gang” — låsen kan kun åbnes herfra.'
+      : 'Ikke låst. Hun kan invitere en rejsemakker.'));
+    if(k.partner_laast){
+      g3.appendChild(knapFor('Nulstil rejsemakker', 'knap rolig lille', function(){
+        if(!k.email){ sig('Kontoen har ingen mailadresse, og nulstillingen slår op på den.', 'fejl'); return; }
+        if(!window.confirm('Nulstil rejsemakkeren for ' + k.email + '?\n\nPartnerskabet afsluttes, og begge kan vælge en ny.')) return;
+        arbejd({ handling:'nulstil_partner', email:k.email }, function(){ return 'Låsen er åbnet.'; });
+      }));
+    }
+    b.appendChild(g3);
+
+    // ---- slet ----
+    var g4 = lav('div','bb-gruppe fare');
+    g4.appendChild(lav('h4', null, 'Slet kontoen'));
+    g4.appendChild(lav('p','hint',
+      'Alt, hun ejer, forsvinder: ture, lister, afholdte ture og anmeldelser — også fra hendes '
+    + 'rejsemakkers telefon. Det kan ikke fortrydes. Bruges, når nogen beder om at blive slettet '
+    + 'og ikke selv kan logge ind.'));
+    g4.appendChild(knapFor('Slet ' + (k.navn || k.email), 'knap fare lille', function(){
+      if(!window.confirm('SLET ' + (k.navn || k.email) + ' for altid?\n\nAlt hun ejer forsvinder — også fra hendes rejsemakkers telefon.\n\nDet kan ikke fortrydes.')) return;
+      arbejd({ handling:'slet', id:k.id }, function(){ b.hidden = true; return 'Kontoen er slettet.'; });
+    }));
+    b.appendChild(g4);
+
+    b.appendChild(status);
+    b.appendChild(knapFor('Luk', 'knap rolig lille bb-luk', function(){ b.hidden = true; }));
+    b.scrollIntoView({ block:'nearest' });
+  }
+
+  /* ---------- NY KUNDE ----------
+     Kennets valg 17/9: uden mail. Kontoen laves, og linket kommer tilbage,
+     så det kan gives videre i hånden.
+     ⚠️ Et aktiveringslink er i praksis en nulstilling af kodeordet for
+     den, der har det. Derfor står advarslen ved siden af feltet — ikke i
+     en note nogen steder. */
+  function nyKunde(){
+    var b = $('bruger-boks');
+    tøm(b); b.hidden = false;
+    b.appendChild(lav('h3', null, 'Ny kunde'));
+    b.appendChild(lav('p','under',
+      'Kontoen laves med det samme. Der bliver IKKE sendt en mail — du får et aktiveringslink, '
+    + 'du selv giver videre.'));
+
+    var mail = document.createElement('input');
+    mail.type = 'email'; mail.autocomplete = 'off'; mail.spellcheck = false;
+    mail.placeholder = 'mail@eksempel.dk';
+    var navn = document.createElement('input');
+    navn.type = 'text'; navn.placeholder = 'Fornavn (valgfrit)';
+
+    var l1 = lav('label', null, 'Mailadresse'); l1.appendChild(mail);
+    var l2 = lav('label', null, 'Navn'); l2.appendChild(navn);
+    b.appendChild(l1); b.appendChild(l2);
+
+    var status = lav('div','status');
+    var ud = lav('div','k-link'); ud.hidden = true;
+
+    b.appendChild(knapFor('Opret kunden', 'knap', function(){
+      var e = mail.value.trim().toLowerCase();
+      if(!e){ status.className = 'status fejl'; status.textContent = 'Skriv en mailadresse.'; return; }
+      status.className = 'status'; status.textContent = 'Opretter …';
+      brugerKald({ handling:'opret', email:e, navn:navn.value.trim() })
+        .then(function(d){
+          status.className = 'status god';
+          status.textContent = 'Kontoen er oprettet.';
+          tøm(ud); ud.hidden = false;
+          ud.appendChild(lav('b', null, 'Aktiveringslink — giv det videre, og kun til hende:'));
+          var kode = lav('code','k-linktekst', d.aktiveringslink);
+          ud.appendChild(kode);
+          ud.appendChild(lav('div','hint',
+            'Gyldigt til ' + dato(d.udloeber) + '. Den, der har linket, kan sætte kontoens kodeord.'));
+          hentKunder();
+        })
+        .catch(function(f){ status.className = 'status fejl'; status.textContent = forklar(f); });
+    }));
+    b.appendChild(status);
+    b.appendChild(ud);
+    b.appendChild(knapFor('Luk', 'knap rolig lille bb-luk', function(){ b.hidden = true; }));
+    b.scrollIntoView({ block:'nearest' });
+    mail.focus();
+  }
+
+  $('ny-kunde').addEventListener('click', nyKunde);
   $('søg-kunde').addEventListener('input', tegnKunder);
 
   // -------------------------------------------------------------
