@@ -1161,7 +1161,21 @@
     return rent + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.' + endelse;
   }
 
-  var MAKS_BILLEDE = 5 * 1024 * 1024;
+  /* KN 21/9, fra turen: "jeg kan ikke uploade mere end 5 mb billeder …
+     billeder fra mit kamera er større." Haevet til 25 MB, baade her og paa
+     spanden (0038). Et kamera-JPEG fylder 15-40 MB.
+
+     ⚠️ DER SKALERES IKKE NED. Billedet lægges op RAAT, som filen ligger
+     paa disken, og `stedbilleder` er offentligt laesbar — saa et 25 MB
+     billede bliver hentet ned paa hver eneste kundes telefon, hver gang
+     turkortet vises. Der er 67 steder.
+
+     Det er kendt og parkeret MED VILJE: Kennet 21/9, "saa maa vi kigge paa
+     komprimering naar vi er tilbage". Der er ingen rigtige kunder endnu,
+     saa prisen betales ikke af nogen i dag. Men den skal betales, foer der
+     kommer kunder — og saa hoerer nedskaleringen hjemme HER i fladen, foer
+     uploaden, ikke i en hoejere graense. */
+  var MAKS_BILLEDE = 25 * 1024 * 1024;
   var TILLADTE = { 'image/jpeg':1, 'image/png':1, 'image/webp':1 };
 
   function lægOpBillede(turId, fil){
@@ -1170,7 +1184,7 @@
     }
     if(fil.size > MAKS_BILLEDE){
       return Promise.reject(new Error('“' + fil.name + '” fylder '
-        + Math.round(fil.size / 1024 / 1024 * 10) / 10 + ' MB. Grænsen er 5 MB — tag et mindre, eller skaler det ned først.'));
+        + Math.round(fil.size / 1024 / 1024 * 10) / 10 + ' MB. Grænsen er 25 MB — tag et mindre, eller skaler det ned først.'));
     }
     var sti = billedSti(turId, fil);
     return kaldRaa('/storage/v1/object/' + SPAND + '/' + sti, 'POST', fil, fil.type)
@@ -2757,7 +2771,7 @@
     bilBoks.appendChild(bilLinje);
     bilBoks.appendChild(lav('div','hint',
       'Træk et billede for at flytte det — det første er det, kunden ser på stedkortet. '
-    + 'JPG, PNG eller WEBP, højst 5 MB pr. billede. '
+    + 'JPG, PNG eller WEBP, højst 25 MB pr. billede. '
     + 'Billederne bliver først synlige i appen, når du udgiver.'));
     krop.appendChild(bilBoks);
 
