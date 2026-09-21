@@ -755,7 +755,7 @@
     <img src="../logo.png" alt="Arytmi" class="logo" width="340" height="120">
     <div class="flade">
       <h1>Bagrummet</h1>
-      <p style="color:var(--fjord);font-size:14px;margin-top:8px">Log ind med din Arytmi-konto.</p>
+      <p style="color:var(--fjord);font-size:14px;margin-top:8px" id="login-under">Log ind med din Arytmi-konto.</p>
       <form id="login-form" novalidate>
         <label for="mail">Mail</label>
         <input type="email" id="mail" autocomplete="username" required inputmode="email" autocapitalize="off" spellcheck="false">
@@ -763,6 +763,26 @@
         <input type="password" id="kode" autocomplete="current-password" required>
         <button type="submit" class="knap bred" id="login-knap">Log ind</button>
       </form>
+
+      <!-- ANDET TRIN (0037). Vises KUN, hvis kontoen har en bekraeftet
+           faktor. Har den ingen, ses den her aldrig, og login er som foer.
+
+           `autocomplete="one-time-code"` er ikke pynt: den faar baade iOS
+           og Android til at tilbyde koden fra tastaturet, saa man slipper
+           for at skifte app med seks cifre i hovedet. -->
+      <form id="mfa-form" novalidate hidden>
+        <p style="color:var(--fjord);font-size:14px;margin:2px 0 14px">
+          Åbn din autentificeringsapp og skriv den sekscifrede kode.
+        </p>
+        <label for="mfa-kode">Engangskode</label>
+        <input type="text" id="mfa-kode" required maxlength="6"
+               inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+               autocapitalize="off" spellcheck="false">
+        <button type="submit" class="knap bred" id="mfa-knap">Bekræft</button>
+        <button type="button" class="knap rolig bred" id="mfa-fortryd"
+                style="margin-top:8px">Log ind som en anden</button>
+      </form>
+
       <div id="login-besked" class="besked" hidden role="alert"></div>
     </div>
   </div>
@@ -824,6 +844,10 @@
       <button type="button" data-fane="kunder">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="8.5" r="2.4" opacity=".7"/><path d="M15 13.6c2 .2 3.6 1.7 4.2 4.4" opacity=".7"/></svg>
         <span>Kunder</span>
+      </button>
+      <button type="button" data-fane="sikkerhed">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6 5.6 6.2v5.3c0 4 2.6 7.6 6.4 8.9 3.8-1.3 6.4-4.9 6.4-8.9V6.2Z"/><path d="m9.3 12.3 1.9 1.9 3.5-3.7" opacity=".55"/></svg>
+        <span>Sikkerhed</span>
       </button>
     </nav>
 
@@ -942,6 +966,62 @@
           <tbody id="kunder"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
         </table>
       </div>
+    </section>
+
+    <!-- =========================================================
+         SIKKERHED — to-faktor (0037, 21/9)
+         =========================================================
+         Fladen her TILMELDER en faktor. Den håndhæver ingenting: kravet
+         ligger i `er_admin_bekraeftet()` i databasen og i de to
+         Edge-funktioner. Fjerner nogen knappen i sin egen browser, sker
+         der derfor ingenting — præcis som med rollekontrollen længere
+         oppe. Det er serveren, der siger fra.
+
+         QR-koden vises som et <img> med en data:-URI, ikke som indsat
+         SVG. To grunde: siden bygger konsekvent DOM med textContent og
+         rører aldrig innerHTML, og `img-src 'self' data:` står allerede
+         i indholdspolitikken. Hemmeligheden vises ALTID som tekst ved
+         siden af — et kamera, der ikke vil fokusere, må ikke kunne
+         spærre nogen ude fra sin egen tilmelding. -->
+    <section id="fane-sikkerhed" hidden>
+      <h2>Sikkerhed</h2>
+      <p class="under">
+        To-faktor beskytter det, der er farligt: kundelisten, adgange, roller, sletning
+        og udgivelse. At <em>læse</em> teksterne og turene kræver den ikke — en tom skærm
+        forklarer ingenting, men en afvist gemning kan vi sætte ord på.
+      </p>
+
+      <div class="bb-gruppe" id="mfa-status-boks">
+        <h4>Din to-faktor</h4>
+        <p class="hint" id="mfa-status">Henter …</p>
+        <div class="bb-linje" id="mfa-knapper"></div>
+      </div>
+
+      <!-- Tilmeldingen. Skjult, indtil nogen trykker "Slå to-faktor til". -->
+      <div class="bb-gruppe" id="mfa-tilmeld" hidden>
+        <h4>Scan koden</h4>
+        <p class="hint">
+          Åbn din autentificeringsapp — Google Authenticator, 1Password, Bitwarden eller
+          en anden — og scan firkanten. Kan kameraet ikke, så skriv nøglen nedenunder ind
+          i hånden.
+        </p>
+        <img id="mfa-qr" alt="QR-kode til din autentificeringsapp" width="200" height="200"
+             style="background:#fff;padding:10px;border-radius:10px;border:1px solid var(--linje)">
+        <p class="hint" style="margin-top:10px">
+          Nøglen, hvis du skriver den selv:<br>
+          <code id="mfa-hemmelighed"
+                style="font-size:14px;letter-spacing:.5px;word-break:break-all;user-select:all"></code>
+        </p>
+        <label for="mfa-tilmeld-kode">Skriv koden fra appen, så vi ved den virker</label>
+        <input type="text" id="mfa-tilmeld-kode" maxlength="6" inputmode="numeric"
+               pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="off" spellcheck="false">
+        <div class="bb-linje">
+          <button type="button" class="knap lille" id="mfa-tilmeld-gem">Slå til</button>
+          <button type="button" class="knap rolig lille" id="mfa-tilmeld-fortryd">Fortryd</button>
+        </div>
+      </div>
+
+      <div id="mfa-besked" class="besked" hidden role="alert"></div>
     </section>
 
   </main>
@@ -1171,7 +1251,13 @@
       refresh: d.refresh_token,
       udløber: (krav && krav.exp ? krav.exp * 1000 : Date.now() + 55*60*1000),
       sub: krav && krav.sub,
-      mail: krav && krav.email
+      mail: krav && krav.email,
+      /* aal siger, HVOR meget sessionen har bevist: aal1 = kodeord,
+         aal2 = kodeord + en faktor. Det er ikke fladen, der bruger tallet
+         til at afgøre noget — serveren læser det samme krav ud af tokenet
+         og siger fra. Her står det kun, så "Sikkerhed" kan skrive sandt,
+         hvad tilstanden er, i stedet for at gætte. */
+      aal: (krav && krav.aal) || 'aal1'
     };
     try{ sessionStorage.setItem(NØGLE, JSON.stringify(session)); }catch(e){}
   }
@@ -1184,6 +1270,14 @@
     $('rum').hidden = true;
     $('login').hidden = false;
     $('kode').value = '';
+    /* To-faktor-trinnet ryddes med. Uden de fire linjer ville et log-ud
+       midt i et engangskode-trin efterlade kodefeltet på skærmen OG et
+       faktor-id i hukommelsen — og næste login ville se ud som om den
+       allerede var halvvejs igennem. */
+    ventendeFaktor = null;
+    tilmeldFaktor = null;
+    $('mfa-kode').value = '';
+    visKodetrin(false);
   }
 
   $('login-form').addEventListener('submit', function(e){
@@ -1203,7 +1297,23 @@
     }).then(function(s){
       if(!s.ok) throw new Error('Mailen eller kodeordet passer ikke.');
       gemSession(s.d);
-      return start();
+
+      /* ANDET TRIN (0037). Kodeordet gav en session paa aal1. Har kontoen
+         en bekraeftet faktor, raekker den ikke til noget farligt, og saa
+         spoerges der om engangskoden her — frem for at lukke ind til fem
+         skaerme, der svarer tomt.
+
+         Faktorerne hentes fra SERVEREN med det friske token og laeses ikke
+         ud af loginsvaret: det er ét kald, og det er det samme sted,
+         databasen selv kigger. */
+      return hentFaktorer().then(function(faktorer){
+        var bekraeftet = faktorer.filter(function(f){ return f.status === 'verified'; });
+        if(!bekraeftet.length) return start();
+        ventendeFaktor = bekraeftet[0].id;
+        visKodetrin(true);
+        $('mfa-kode').value = '';
+        $('mfa-kode').focus();
+      });
     }).catch(function(f){
       glem();
       vis(besked, f.message || 'Der gik noget galt. Prøv igen.', 'fejl');
@@ -1211,6 +1321,207 @@
       knap.disabled = false;
       knap.textContent = 'Log ind';
     });
+  });
+
+  /* =============================================================
+     TO-FAKTOR (0037, 21/9)
+     =============================================================
+     ⚠️ INTET HER BESKYTTER NOGET. Det er `er_admin_bekraeftet()` i
+     databasen og `_shared/tofaktor.ts` i de to Edge-funktioner, der
+     kræver aal2. Fjerner nogen linjerne her i sin egen browser, får hun
+     en tom kundeliste og en afvist gemning — nøjagtig som med
+     rollekontrollen længere oppe. Fladen findes for at give et ordentligt
+     svar, ikke for at sige nej.
+
+     GoTrue-endepunkterne, for den der skal læse det igen:
+       GET    /auth/v1/user                     kontoens faktorer
+       POST   /auth/v1/factors                  tilmeld, giver QR + nøgle
+       POST   /auth/v1/factors/{id}/challenge   bed om en udfordring
+       POST   /auth/v1/factors/{id}/verify      svar med koden -> ny session
+       DELETE /auth/v1/factors/{id}             meld fra
+     ============================================================= */
+
+  /* Ét sted til at skifte mellem de to trin i loginkortet. Tre steder
+     skiftede foer hver for sig, og det fjerde glemte underteksten - som
+     saa stod og sagde "Log ind med din Arytmi-konto" over et kodefelt. */
+  function visKodetrin(paa){
+    $('login-form').hidden = paa;
+    $('login-under').hidden = paa;
+    $('mfa-form').hidden = !paa;
+  }
+
+  var ventendeFaktor = null;   // faktoren, der skal bevises ved login
+  var tilmeldFaktor = null;    // faktoren, der er ved at blive tilmeldt
+
+  function hentFaktorer(){
+    return kald('/auth/v1/user').then(function(r){
+      if(!r.ok) throw new Error('Kontoen kunne ikke hentes.');
+      return r.json();
+    }).then(function(d){ return (d && d.factors) || []; });
+  }
+
+  /* Udfordring og svar i ét. Bruges baade ved login og som sidste trin i
+     en tilmelding — det er den samme handling: bevis, at du har appen.
+     Svaret er en NY session, og den er paa aal2. */
+  function besvarFaktor(faktorId, kode){
+    return kald('/auth/v1/factors/' + faktorId + '/challenge', { method:'POST', body:{} })
+      .then(function(r){
+        if(!r.ok) throw new Error('Kunne ikke starte to-faktor. Prøv igen.');
+        return r.json();
+      })
+      .then(function(u){
+        return kald('/auth/v1/factors/' + faktorId + '/verify', {
+          method:'POST', body:{ challenge_id: u.id, code: kode }
+        });
+      })
+      .then(function(r){
+        return r.json().then(function(d){
+          if(!r.ok) throw new Error(
+            (d && (d.msg || d.error_description || d.message)) || 'Koden passer ikke. Prøv den næste.');
+          return d;
+        });
+      })
+      .then(function(d){ gemSession(d); return d; });
+  }
+
+  $('mfa-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var knap = $('mfa-knap');
+    var besked = $('login-besked');
+    var kode = $('mfa-kode').value.replace(/\s+/g, '');
+    if(kode.length < 6){ vis(besked, 'Koden er seks cifre.', 'fejl'); return; }
+
+    besked.hidden = true;
+    knap.disabled = true;
+    knap.textContent = 'Bekræfter …';
+
+    besvarFaktor(ventendeFaktor, kode).then(function(){
+      visKodetrin(false);
+      return start();
+    }).catch(function(f){
+      /* Der logges IKKE ud paa en forkert kode. Sessionen er aegte, den er
+         bare ikke bevist nok endnu — og at smide folk tilbage til
+         mailfeltet, fordi de ramte et ciffer forkert, er at straffe dem
+         for en tastefejl. */
+      vis(besked, f.message || 'Koden passer ikke.', 'fejl');
+      $('mfa-kode').value = '';
+      $('mfa-kode').focus();
+    }).then(function(){
+      knap.disabled = false;
+      knap.textContent = 'Bekræft';
+    });
+  });
+
+  $('mfa-fortryd').addEventListener('click', function(){ glem(); });
+
+  // ---------- Fanen "Sikkerhed" ----------
+
+  function tegnSikkerhed(){
+    var status = $('mfa-status');
+    var knapper = $('mfa-knapper');
+    tøm(knapper);
+    status.textContent = 'Henter …';
+    $('mfa-besked').hidden = true;
+
+    hentFaktorer().then(function(faktorer){
+      var bekraeftet = faktorer.filter(function(f){ return f.status === 'verified'; });
+
+      if(bekraeftet.length){
+        status.textContent = session && session.aal === 'aal2'
+          ? 'To-faktor er slået til, og den er bekræftet i den her session.'
+          : 'To-faktor er slået til, men IKKE bekræftet i den her session — '
+            + 'kundelisten og alt der gemmer vil blive afvist. Log ud og ind igen.';
+        knapper.appendChild(knapFor('Slå to-faktor fra', 'knap fare lille', function(){
+          if(!window.confirm('Slå to-faktor fra?\n\nSå er et kodeord igen det eneste, '
+            + 'der står mellem en fremmed og kundelisten.')) return;
+          kald('/auth/v1/factors/' + bekraeftet[0].id, { method:'DELETE' })
+            .then(function(r){
+              if(!r.ok) throw new Error('Kunne ikke slå den fra.');
+              vis($('mfa-besked'), 'To-faktor er slået fra.', 'god');
+              tegnSikkerhed();
+            })
+            .catch(function(f){ vis($('mfa-besked'), f.message, 'fejl'); });
+        }));
+      } else {
+        status.textContent = 'To-faktor er ikke slået til på din konto.';
+        knapper.appendChild(knapFor('Slå to-faktor til', 'knap lille', startTilmelding));
+      }
+    }).catch(function(f){
+      status.textContent = 'Kunne ikke hente dine faktorer: ' + (f.message || '');
+    });
+  }
+
+  function startTilmelding(){
+    $('mfa-besked').hidden = true;
+
+    /* Halvfaerdige tilmeldinger ryddes FOERST. Lukker man fanen midt i en
+       tilmelding, bliver faktoren staaende som `unverified`. Den laaser
+       ingen ude (baade databasen og funktionerne ser kun efter
+       `verified`), men GoTrue har et loft over antal faktorer, og en
+       bunke halve ville til sidst blokere en rigtig tilmelding. */
+    hentFaktorer().then(function(faktorer){
+      var halve = faktorer.filter(function(f){ return f.status !== 'verified'; });
+      return Promise.all(halve.map(function(f){
+        return kald('/auth/v1/factors/' + f.id, { method:'DELETE' }).catch(function(){});
+      }));
+    }).then(function(){
+      return kald('/auth/v1/factors', {
+        method:'POST',
+        body:{ factor_type:'totp', friendly_name:'Bagrummet ' + new Date().getFullYear() }
+      });
+    }).then(function(r){
+      return r.json().then(function(d){
+        if(!r.ok) throw new Error((d && (d.msg || d.message)) || 'Tilmeldingen kunne ikke startes.');
+        return d;
+      });
+    }).then(function(d){
+      tilmeldFaktor = d.id;
+      var totp = d.totp || {};
+
+      /* QR'en kommer som SVG. Er den allerede en data:-URI, bruges den
+         som den er; ellers pakkes den til én her. Begge veje ender i et
+         <img>, saa siden aldrig roerer innerHTML — og `img-src 'self'
+         data:` staar allerede i indholdspolitikken. */
+      var qr = totp.qr_code || '';
+      $('mfa-qr').src = qr.indexOf('data:') === 0
+        ? qr
+        : 'data:image/svg+xml;utf8,' + encodeURIComponent(qr);
+
+      $('mfa-hemmelighed').textContent = totp.secret || '(ingen nøgle i svaret)';
+      $('mfa-tilmeld-kode').value = '';
+      $('mfa-tilmeld').hidden = false;
+      $('mfa-tilmeld-kode').focus();
+    }).catch(function(f){
+      vis($('mfa-besked'), f.message || 'Tilmeldingen kunne ikke startes.', 'fejl');
+    });
+  }
+
+  $('mfa-tilmeld-gem').addEventListener('click', function(){
+    var kode = $('mfa-tilmeld-kode').value.replace(/\s+/g, '');
+    if(kode.length < 6){ vis($('mfa-besked'), 'Koden er seks cifre.', 'fejl'); return; }
+    var knap = this;
+    knap.disabled = true;
+
+    besvarFaktor(tilmeldFaktor, kode).then(function(){
+      /* Svaret er en ny session paa aal2, og den er allerede gemt. Man er
+         altsaa bekraeftet med det samme og skal ikke logge ind igen for
+         at bruge det, man lige har slaaet til. */
+      $('mfa-tilmeld').hidden = true;
+      vis($('mfa-besked'), 'To-faktor er slået til. Fra nu af skal du bruge appen, når du logger ind.', 'god');
+      tegnSikkerhed();
+    }).catch(function(f){
+      vis($('mfa-besked'), f.message || 'Koden passer ikke. Prøv den næste.', 'fejl');
+      $('mfa-tilmeld-kode').value = '';
+      $('mfa-tilmeld-kode').focus();
+    }).then(function(){ knap.disabled = false; });
+  });
+
+  $('mfa-tilmeld-fortryd').addEventListener('click', function(){
+    $('mfa-tilmeld').hidden = true;
+    if(tilmeldFaktor){
+      kald('/auth/v1/factors/' + tilmeldFaktor, { method:'DELETE' }).catch(function(){});
+      tilmeldFaktor = null;
+    }
   });
 
   $('ud').addEventListener('click', function(){
@@ -1257,6 +1568,12 @@
     if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
     if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
     if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
+    /* Sikkerhed hentes HVER gang og caches ikke i `hentet`. Tilstanden
+       kan have flyttet sig, siden man sidst kiggede — man kan have slået
+       to-faktor til i en anden fane eller på en anden maskine — og en
+       skærm, der påstår "ikke slået til" om en konto, der har den, er
+       værre end et kald for meget. */
+    if(navn === 'sikkerhed'){ tegnSikkerhed(); }
   }
 
   $('faner').addEventListener('click', function(e){
@@ -2860,7 +3177,27 @@
     var gemt = sessionStorage.getItem(NØGLE);
     if(gemt){
       session = JSON.parse(gemt);
-      start().catch(function(){ glem(); });
+
+      /* ⚠️ EN GENINDLAESNING SKAL IKKE LANDE ÉN I ET HALVT BAGRUM.
+         Sessionen i sessionStorage kan vaere paa aal1 — man kan have
+         genindlaest midt i engangskode-trinnet, eller have gemt den, foer
+         to-faktor blev slaaet til. Uden kontrollen her ville `start()`
+         lykkes (man maa laese SIN EGEN profil paa aal1, med vilje), og
+         saa stod man i bagrummet med tomme lister og ingen forklaring.
+
+         Derfor spoerges der om faktorerne foerst, og koden bliver bedt
+         om igen, hvis der er noget at bevise. */
+      (session.aal === 'aal2'
+        ? Promise.resolve([])
+        : hentFaktorer()
+      ).then(function(faktorer){
+        var bekraeftet = faktorer.filter(function(f){ return f.status === 'verified'; });
+        if(!bekraeftet.length) return start();
+        ventendeFaktor = bekraeftet[0].id;
+        visKodetrin(true);
+        $('login').hidden = false;
+        $('mfa-kode').focus();
+      }).catch(function(){ glem(); });
     }
   }catch(e){ glem(); }
 
