@@ -63,8 +63,16 @@
   redigere tredjepartskode, vi ikke selv vedligeholder.)
 
   `connect-src` er URØRT. Kortet henter kun billeder.
+
+  24/9 — NUMMERPLADERNE (nummerplader.js) kræver to ting mere, og ikke én
+  mere end det:
+    · `'wasm-unsafe-eval'` i script-src. Motoren er WebAssembly, og en
+      browser oversætter ikke wasm uden. Den tillader IKKE eval() af
+      JavaScript — det er netop derfor, nøgleordet findes.
+    · `'self'` i connect-src. Motoren henter sin .wasm og modellen med
+      fetch, fra vores egen vært. Ingen fremmed adresse er kommet til.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arytmi — bagrummet</title>
 <meta name="robots" content="noindex, nofollow">
@@ -80,6 +88,9 @@
 -->
 <link rel="stylesheet" href="vendor/leaflet.css?v=20260917">
 <script src="vendor/leaflet.js?v=20260917"></script>
+<!-- Nummerpladerne (24/9). Filen er lille; motoren og modellen (22 MB)
+     hentes først, når nogen lægger et billede op. -->
+<script src="nummerplader.js?v=20260924"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1219,11 +1230,21 @@
     });
   }
 
-  function lægOpBillede(turId, fil){
+  /* Svarer med { url, plader }. `sloer` er fluebenet "Slør nummerplader",
+     der står på som standard. Det er der for den sjældne gang, et skilt
+     bliver sløret ved en fejl — og ikke som en genvej: kan pladerne ikke
+     sløres, fordi motoren ikke kan hentes, lægges billedet IKKE op. Et
+     billede med en skarp plade i en offentlig spand er værre end et, der
+     venter. */
+  function lægOpBillede(turId, fil, sloer){
     if(!TILLADTE[fil.type]){
       return Promise.reject(new Error('“' + fil.name + '” er ikke et billede, vi kan tage imod. Brug JPG, PNG eller WEBP.'));
     }
+    var plader = 0;
     return skalerBillede(fil).then(function(data){
+      if(!sloer) return data;
+      return window.sloerPlader(data).then(function(svar){ plader = svar.antal; return svar.data; });
+    }).then(function(data){
       if(data.size > MAKS_BILLEDE){
         throw new Error('“' + fil.name + '” fylder stadig '
           + Math.round(data.size / 1024 / 1024 * 10) / 10 + ' MB efter nedskalering. Grænsen er 25 MB.');
@@ -1231,7 +1252,7 @@
       var sti = billedSti(turId, data);
       return kaldRaa('/storage/v1/object/' + SPAND + '/' + sti, 'POST', data, data.type)
         .then(function(r){
-          if(r.ok) return billedURL(sti);
+          if(r.ok) return { url: billedURL(sti), plader: plader };
           return r.text().then(function(t){
             var d = null; try{ d = JSON.parse(t); }catch(e){}
             /* 403 her betyder næsten altid, at kontoen ikke er admin — se
@@ -2214,14 +2235,34 @@
   // -------------------------------------------------------------
   // Turene
   // -------------------------------------------------------------
-  var TUR_FELTER = 'id,navn,ord,kort,beskrivelse,fac_toilet,fac_handel,fac_aftensmad,'
-                 + 'fac_morgen,lat,lon,klar,oe_lys,oe_natur,oe_stemning,billeder,synlig,'
-                 + 'raekkefoelge,opdateret,profiler(navn)';
+  /* fac_handel, fac_aftensmad og fac_morgen hentes og gemmes ikke længere
+     (KN 24/9: "Fjern indkøb, morgenmad og aftensmad fra ruterne"). Det,
+     der står i dem, bliver i databasen — et PATCH uden feltet rører det
+     ikke. Slet ikke, parkér. */
+  var TUR_FELTER = 'id,navn,ord,kort,beskrivelse,fac_toilet,'
+                 + 'lat,lon,klar,oe_lys,oe_natur,oe_stemning,billeder,synlig,'
+                 + 'anbefalet,stjerner,raekkefoelge,opdateret,profiler(navn)';
 
+  /* "Begge" og "ingen" (KN 24/9, 0041). Tom er IKKE det samme som ingen:
+     tom = ikke kategoriseret, og appen læser det som begge. "Ingen" findes
+     kun på lyset — et sted ligger altid ved vand eller på land. */
   var ØNSKER = [
-    ['oe_lys',      'Lys',      [['','—'],['solopgang','Solopgang'],['solnedgang','Solnedgang']]],
-    ['oe_natur',    'Natur',    [['','—'],['vand','Vand'],['land','Land']]],
+    ['oe_lys',      'Lys',      [['','Ikke valgt (= begge)'],['solopgang','Solopgang'],['solnedgang','Solnedgang'],
+                                 ['begge','Begge'],['ingen','Ingen af dem']]],
+    ['oe_natur',    'Natur',    [['','Ikke valgt (= begge)'],['vand','Vand'],['land','Land'],['begge','Begge']]],
     ['oe_stemning', 'Stemning', [['','—'],['isoleret','Isoleret'],['livligt','Livligt']]]
+  ];
+
+  /* STJERNESKALAEN (KN 24/9). Den SAMME står i app.js (stjerneSkala()), hvor
+     kunden kan trykke "Hvad betyder stjernerne?". Rettes den ene, skal den
+     anden rettes med. Kennets krav til fem: god udsigt, minimal trafik og
+     toilet — resten tæller de tre ned. */
+  var STJERNE_SKALA = [
+    [5, 'Det hele: god udsigt, minimal trafik og toilet.'],
+    [4, 'To af de tre.'],
+    [3, 'Én af de tre, og et sted vi gerne kommer tilbage til.'],
+    [2, 'Ingen af de tre, men en rolig nat.'],
+    [1, 'En nødløsning, når alt andet er fuldt.']
   ];
 
   function hentTure(){
@@ -2559,6 +2600,9 @@
     var smaa = [];
     if(!t.synlig) smaa.push(t.navn ? 'ikke synlig' : 'kladde');
     if(!t.klar) smaa.push('måske');
+    // Vurderingen på linjen (24/9), så man kan se hvilke steder der mangler en.
+    smaa.push(t.stjerner ? '★★★★★'.slice(0, t.stjerner) : 'ikke vurderet');
+    if(t.anbefalet) smaa.push('anbefalet');
     /* Antallet OG fravaeret. Der var en Billeder-fane et par timer 17/9,
        og det ene, den kunne, som turene ikke kunne, var at vise hvilke
        steder der MANGLER billeder. Kennet: "kan de ikke bare ligge under
@@ -2594,14 +2638,34 @@
     krop.appendChild(lang);
 
     afsnit(krop, 'Faciliteter');
-    var par2 = lav('div','par');
-    var toilet = tekstFelt('Toilet', t.fac_toilet, 'Tomt = vi ved det ikke, og så vises linjen ikke.');
-    var handel = tekstFelt('Indkøb', t.fac_handel, 'Tomt = vises ikke.');
-    var aften  = tekstFelt('Aftensmad', t.fac_aftensmad, 'Tomt = vises ikke.');
-    var morgen = tekstFelt('Morgenkaffe', t.fac_morgen, 'Tomt = vises ikke.');
-    par2.appendChild(toilet); par2.appendChild(handel);
-    par2.appendChild(aften);  par2.appendChild(morgen);
-    krop.appendChild(par2);
+    var toilet = tekstFelt('Toilet', t.fac_toilet, 'Tomt = vi ved det ikke, og så står der “Ikke noteret”.');
+    krop.appendChild(toilet);
+
+    /* ---------- VURDERINGEN (KN 24/9, 0041) ----------
+       Stjernerne og "Anbefalet af Arytmi" er to forskellige ting med vilje:
+       et sted med fire stjerner kan være anbefalet, et med fem kan lade
+       være. Skalaen står lige under vælgeren, så den ikke skal huskes. */
+    afsnit(krop, 'Vores vurdering');
+    var stjerner = vælgFelt('Stjerner', t.stjerner == null ? '' : String(t.stjerner),
+      [['','Ikke vurderet endnu']].concat(STJERNE_SKALA.map(function(s){
+        return [String(s[0]), '★★★★★'.slice(0, s[0]) + '  ' + s[0] + ' — ' + s[1]];
+      })));
+    krop.appendChild(stjerner);
+    var skala = lav('div','hint');
+    skala.appendChild(lav('b', null, 'Skalaen: '));
+    skala.appendChild(document.createTextNode(STJERNE_SKALA.map(function(s){
+      return s[0] + ' ★ ' + s[1];
+    }).join('  ·  ')));
+    krop.appendChild(skala);
+
+    var anbefalet = document.createElement('input');
+    anbefalet.type = 'checkbox';
+    anbefalet.checked = !!t.anbefalet;
+    var rA = lav('div','afkryds');
+    rA.appendChild(anbefalet);
+    rA.appendChild(lav('span', null, 'Anbefalet af Arytmi'));
+    rA.appendChild(lav('span','hint','— et mærke på stedet i appen, uafhængigt af stjernerne'));
+    krop.appendChild(rA);
 
     afsnit(krop, 'Sted');
 
@@ -2628,8 +2692,9 @@
     });
     krop.appendChild(par4);
     krop.appendChild(lav('div','hint',
-      'Guiden holder turen op mod det, kunden valgte i trin 4. Står alle tre på “—”, vises der '
-      + 'ingen matchlinje på turen — og det er noget andet end nul ud af tre.'));
+      'Guiden holder stedet op mod det, kunden valgte i trin 4. “Ikke valgt” på lys og natur '
+      + 'tæller som begge, så stedet dukker op for begge ønsker. “Ingen af dem” er noget andet: '
+      + 'et sted, hvor man hverken ser solen stå op eller gå ned.'));
 
     /* ---------- BILLEDERNE (17/9) ----------
        Stod indtil nu som en liste, der kunne LAESES: "Filerne ligger i
@@ -2774,34 +2839,49 @@
       /* Én ad gangen, ikke alle paa én gang. En telefon paa en p-plads
          har ikke baandbredde til fem parallelle uploads, og en fejl
          midtvejs skal kunne siges praecist: "det tredje gik galt". */
-      var fejl = [];
+      var fejl = [], plader = 0;
       valgte.reduce(function(kæde, fil){
         return kæde.then(function(){
-          return lægOpBillede(t.id, fil)
-            .then(function(url){ billeder.push(url); tegnBilleder(); })
+          return lægOpBillede(t.id, fil, bilSlør.checked)
+            .then(function(svar){ billeder.push(svar.url); plader += svar.plader; tegnBilleder(); })
             .catch(function(f){ fejl.push(f.message); });
         });
       }, Promise.resolve()).then(function(){
         bilKnap.classList.remove('arbejder');
         bilVælg.value = '';
+        /* Antallet siges HØJT. Er der sløret noget, der ikke var en plade
+           — et skilt — er det her, man opdager det og kigger på billedet. */
+        var sløret = plader ? ' ' + plader + (plader === 1 ? ' nummerplade er sløret' : ' nummerplader er sløret')
+          + ' — kig på billedet, om det var det rigtige.' : '';
         if(fejl.length){
           bilStatus.className = 'status fejl';
-          bilStatus.textContent = fejl.join(' ');
+          bilStatus.textContent = fejl.join(' ') + sløret;
         } else {
           bilStatus.className = 'status god';
-          bilStatus.textContent = 'Lagt op. Husk at gemme turen.';
+          bilStatus.textContent = 'Lagt op.' + sløret + ' Husk at gemme turen.';
         }
       });
     });
+
+    var bilSlør = document.createElement('input');
+    bilSlør.type = 'checkbox';
+    bilSlør.checked = true;
+    var bilSløRække = lav('label','afkryds');
+    bilSløRække.appendChild(bilSlør);
+    bilSløRække.appendChild(lav('span', null, 'Slør nummerplader'));
+    bilSløRække.appendChild(lav('span','hint',
+      '— slå kun fra, hvis et skilt blev sløret ved en fejl. Smid det billede ud, og læg det op igen.'));
 
     var bilLinje = lav('div','bb-linje');
     bilLinje.appendChild(bilVælg);
     bilLinje.appendChild(bilKnap);
     bilLinje.appendChild(bilStatus);
     bilBoks.appendChild(bilLinje);
+    bilBoks.appendChild(bilSløRække);
     bilBoks.appendChild(lav('div','hint',
       'Træk et billede for at flytte det — det første er det, kunden ser på stedkortet. '
-    + 'JPG, PNG eller WEBP — store kamerabilleder skaleres selv ned, før de lægges op. '
+    + 'JPG, PNG eller WEBP — store kamerabilleder skaleres selv ned, og nummerplader sløres, før de lægges op. '
+    + 'Første gang tager det lidt længere: motoren til nummerpladerne skal hentes (22 MB). '
     + 'Billederne bliver først synlige i appen, når du udgiver.'));
     krop.appendChild(bilBoks);
 
@@ -2860,9 +2940,8 @@
           kort: kortT.felt.value.trim(),
           beskrivelse: lang.felt.value.trim(),
           fac_toilet: toilet.felt.value.trim(),
-          fac_handel: handel.felt.value.trim(),
-          fac_aftensmad: aften.felt.value.trim(),
-          fac_morgen: morgen.felt.value.trim(),
+          stjerner: stjerner.felt.value === '' ? null : Number(stjerner.felt.value),
+          anbefalet: anbefalet.checked,
           lat: tal(lat.felt.value),
           lon: tal(lon.felt.value),
           raekkefoelge: r,
