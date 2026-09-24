@@ -2241,7 +2241,7 @@
      ikke. Slet ikke, parkér. */
   var TUR_FELTER = 'id,navn,ord,kort,beskrivelse,fac_toilet,'
                  + 'lat,lon,klar,oe_lys,oe_natur,oe_stemning,billeder,synlig,'
-                 + 'anbefalet,stjerner,raekkefoelge,opdateret,profiler(navn)';
+                 + 'anbefalet,stjerner,god_til_boern,raekkefoelge,opdateret,profiler(navn)';
 
   /* "Begge" og "ingen" (KN 24/9, 0041). Tom er IKKE det samme som ingen:
      tom = ikke kategoriseret, og appen læser det som begge. "Ingen" findes
@@ -2603,6 +2603,7 @@
     // Vurderingen på linjen (24/9), så man kan se hvilke steder der mangler en.
     smaa.push(t.stjerner ? '★★★★★'.slice(0, t.stjerner) : 'ikke vurderet');
     if(t.anbefalet) smaa.push('anbefalet');
+    if(t.god_til_boern) smaa.push('god til børn');
     /* Antallet OG fravaeret. Der var en Billeder-fane et par timer 17/9,
        og det ene, den kunne, som turene ikke kunne, var at vise hvilke
        steder der MANGLER billeder. Kennet: "kan de ikke bare ligge under
@@ -2666,6 +2667,17 @@
     rA.appendChild(lav('span', null, 'Anbefalet af Arytmi'));
     rA.appendChild(lav('span','hint','— et mærke på stedet i appen, uafhængigt af stjernerne'));
     krop.appendChild(rA);
+
+    /* "God til børn" (KN 24/9, 0042). Samme slags flueben som anbefalet.
+       Uden flueben siger appen intet — det er ikke en advarsel. */
+    var børn = document.createElement('input');
+    børn.type = 'checkbox';
+    børn.checked = !!t.god_til_boern;
+    var rB = lav('div','afkryds');
+    rB.appendChild(børn);
+    rB.appendChild(lav('span', null, 'God til børn'));
+    rB.appendChild(lav('span','hint','— står på stedet i appen; uden flueben siges intet'));
+    krop.appendChild(rB);
 
     afsnit(krop, 'Sted');
 
@@ -2942,6 +2954,7 @@
           fac_toilet: toilet.felt.value.trim(),
           stjerner: stjerner.felt.value === '' ? null : Number(stjerner.felt.value),
           anbefalet: anbefalet.checked,
+          god_til_boern: børn.checked,
           lat: tal(lat.felt.value),
           lon: tal(lon.felt.value),
           raekkefoelge: r,
