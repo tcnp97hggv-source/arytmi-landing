@@ -1161,43 +1161,86 @@
     return rent + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '.' + endelse;
   }
 
-  /* KN 21/9, fra turen: "jeg kan ikke uploade mere end 5 mb billeder …
-     billeder fra mit kamera er større." Haevet til 25 MB, baade her og paa
-     spanden (0038). Et kamera-JPEG fylder 15-40 MB.
+  /* BILLEDET SKALERES NED HER, FØR DET LÆGGES OP (24/9).
 
-     ⚠️ DER SKALERES IKKE NED. Billedet lægges op RAAT, som filen ligger
-     paa disken, og `stedbilleder` er offentligt laesbar — saa et 25 MB
-     billede bliver hentet ned paa hver eneste kundes telefon, hver gang
-     turkortet vises. Der er 67 steder.
+     Kennet 21/9 fra turen: kamerafilerne var større end 5 MB, og grænsen
+     blev hævet til 25 MB (0038) — men billedet gik op RÅT. Tre dage senere
+     fyldte `stedbilleder` 1.169 MB, over gratisplanens 1 GB, og hvert
+     billede blev hentet ned på hver kundes telefon. Kennet 24/9: "Du skal
+     bare få nedskaleret billederne."
 
-     Det er kendt og parkeret MED VILJE: Kennet 21/9, "saa maa vi kigge paa
-     komprimering naar vi er tilbage". Der er ingen rigtige kunder endnu,
-     saa prisen betales ikke af nogen i dag. Men den skal betales, foer der
-     kommer kunder — og saa hoerer nedskaleringen hjemme HER i fladen, foer
-     uploaden, ikke i en hoejere graense. */
+     ⚠️ DE TO TAL ER DE SAMME SOM I `vaerktoej/skaler-billeder.mjs` i
+     app-repoet, der skalerede de 220 billeder, der allerede lå deroppe.
+     Rettes det ene sted, skal det andet rettes med.
+
+     Grænsen gælder det, der lægges OP — ikke filen på disken. Et kamera-
+     JPEG på 40 MB bliver til omkring 600 kB og kommer fint igennem. */
   var MAKS_BILLEDE = 25 * 1024 * 1024;
+  var MAKS_SIDE = 1920;
+  var KVALITET = 0.82;
+  var LILLE_NOK = 2 * 1024 * 1024;   // under den OG under MAKS_SIDE: roeres ikke
   var TILLADTE = { 'image/jpeg':1, 'image/png':1, 'image/webp':1 };
+
+  /* Svarer med en Blob, der er klar til at lægge op — eller med filen selv,
+     når den allerede er lille nok. En ny JPEG af en JPEG er altid lidt
+     dårligere end den, den blev lavet af, så et lille billede røres ikke.
+
+     `imageOrientation: 'from-image'` er ikke pynt: et telefonbillede taget
+     på højkant ligger NED i filen og står kun op, fordi EXIF siger det. Et
+     lærred har ingen EXIF — så drejningen skal ske i afkodningen, ellers
+     ligger billedet ned på hver telefon. Og EXIF forsvinder dermed, også
+     positionen fra kameraets GPS. */
+  function skalerBillede(fil){
+    if(typeof createImageBitmap !== 'function'){
+      return Promise.reject(new Error('Browseren kan ikke skalere billeder. Brug en nyere Chrome, Safari eller Firefox.'));
+    }
+    return createImageBitmap(fil, { imageOrientation: 'from-image' }).then(function(bm){
+      var b = bm.width, h = bm.height;
+      if(Math.max(b, h) <= MAKS_SIDE && fil.size <= LILLE_NOK){ bm.close(); return fil; }
+      var f = Math.min(1, MAKS_SIDE / Math.max(b, h));
+      var lær = document.createElement('canvas');
+      lær.width = Math.round(b * f);
+      lær.height = Math.round(h * f);
+      var c = lær.getContext('2d');
+      c.fillStyle = '#fff';   // en PNG med gennemsigtighed ville ellers få en sort baggrund i JPEG
+      c.fillRect(0, 0, lær.width, lær.height);
+      c.imageSmoothingEnabled = true;
+      c.imageSmoothingQuality = 'high';
+      c.drawImage(bm, 0, 0, lær.width, lær.height);
+      bm.close();
+      return new Promise(function(ok, nej){
+        lær.toBlob(function(blob){
+          if(!blob) return nej(new Error('“' + fil.name + '” kunne ikke skaleres ned.'));
+          ok(blob.size < fil.size ? blob : fil);
+        }, 'image/jpeg', KVALITET);
+      });
+    }, function(){
+      throw new Error('“' + fil.name + '” kunne ikke læses som et billede.');
+    });
+  }
 
   function lægOpBillede(turId, fil){
     if(!TILLADTE[fil.type]){
       return Promise.reject(new Error('“' + fil.name + '” er ikke et billede, vi kan tage imod. Brug JPG, PNG eller WEBP.'));
     }
-    if(fil.size > MAKS_BILLEDE){
-      return Promise.reject(new Error('“' + fil.name + '” fylder '
-        + Math.round(fil.size / 1024 / 1024 * 10) / 10 + ' MB. Grænsen er 25 MB — tag et mindre, eller skaler det ned først.'));
-    }
-    var sti = billedSti(turId, fil);
-    return kaldRaa('/storage/v1/object/' + SPAND + '/' + sti, 'POST', fil, fil.type)
-      .then(function(r){
-        if(r.ok) return billedURL(sti);
-        return r.text().then(function(t){
-          var d = null; try{ d = JSON.parse(t); }catch(e){}
-          /* 403 her betyder næsten altid, at kontoen ikke er admin — se
-             0034. Det er værd at sige, frem for at vise serverens ord. */
-          if(r.status === 403) throw new Error('Din konto må ikke lægge billeder op. Det kræver en administrator.');
-          throw new Error((d && (d.message || d.error)) || ('Billedet blev afvist (' + r.status + ').'));
+    return skalerBillede(fil).then(function(data){
+      if(data.size > MAKS_BILLEDE){
+        throw new Error('“' + fil.name + '” fylder stadig '
+          + Math.round(data.size / 1024 / 1024 * 10) / 10 + ' MB efter nedskalering. Grænsen er 25 MB.');
+      }
+      var sti = billedSti(turId, data);
+      return kaldRaa('/storage/v1/object/' + SPAND + '/' + sti, 'POST', data, data.type)
+        .then(function(r){
+          if(r.ok) return billedURL(sti);
+          return r.text().then(function(t){
+            var d = null; try{ d = JSON.parse(t); }catch(e){}
+            /* 403 her betyder næsten altid, at kontoen ikke er admin — se
+               0034. Det er værd at sige, frem for at vise serverens ord. */
+            if(r.status === 403) throw new Error('Din konto må ikke lægge billeder op. Det kræver en administrator.');
+            throw new Error((d && (d.message || d.error)) || ('Billedet blev afvist (' + r.status + ').'));
+          });
         });
-      });
+    });
   }
 
   function json(sti, valg){
@@ -2450,27 +2493,14 @@
     });
 
     /* ---- fra et forslag til et punkt ----
-       ⚠️ DER ER TO UDGAVER AF SVARET, og det er med vilje, at begge er
-       med her.
+       Adressevælgeren sender kun et id i søgningen — punktet hentes først
+       her, når nogen har valgt. Ét kald i stedet for fem.
 
-       DAWA sendte koordinaterne med i søgningen. Adressevælgeren, der
-       overtager 1. oktober 2026, sender kun et id — punktet skal hentes
-       bagefter. Funktionen `slaa-adresse-op` er skrevet om, men den
-       RULLES UD som en særskilt handling, og bagrummet udgives, så snart
-       nogen pusher. De to ting rammer aldrig samme sekund.
-
-       Har forslaget lat/lon, er det den gamle funktion, der stadig er
-       ude, og så bruges tallene. Har det kun et id, er det den nye. Uden
-       de to linjer ville der være et vindue, hvor bagrummet ikke kunne
-       finde en adresse — og ingen ville kunne se hvorfor.
-
-       Den halvdel, der læser `a.lat`, kan fjernes, når funktionen er
-       rullet ud og har virket en uges tid. */
+       Indtil 24/9 tålte funktionen også DAWA's gamle svar med lat/lon i
+       selve forslaget, så bagrummet kunne udgives før `slaa-adresse-op`
+       v3 var rullet ud. Den var ude 17/9 og har virket siden; den halvdel
+       er fjernet. */
     function vælg(a, knap){
-      if(isFinite(a.lat) && isFinite(a.lon)){
-        sæt(a.lat, a.lon, 'Sat til ' + a.tekst + '.');
-        return;
-      }
       if(!a.id){ sig('Forslaget har hverken koordinater eller id.', 'fejl'); return; }
       knap.disabled = true;
       sig('Henter stedet …');
@@ -2771,7 +2801,7 @@
     bilBoks.appendChild(bilLinje);
     bilBoks.appendChild(lav('div','hint',
       'Træk et billede for at flytte det — det første er det, kunden ser på stedkortet. '
-    + 'JPG, PNG eller WEBP, højst 25 MB pr. billede. '
+    + 'JPG, PNG eller WEBP — store kamerabilleder skaleres selv ned, før de lægges op. '
     + 'Billederne bliver først synlige i appen, når du udgiver.'));
     krop.appendChild(bilBoks);
 
