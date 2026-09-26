@@ -221,6 +221,7 @@
     line-height:1.6;
     border-radius:10px;
     padding:13px 15px;
+    overflow-wrap:anywhere;   /* en lang mailadresse må ikke gå ud over kanten */
   }
   .besked.fejl{
     color:var(--fejl);
@@ -253,6 +254,28 @@
     text-decoration:none;
     border-bottom:1px solid var(--linje);
   }
+  .skridt{
+    margin:18px 0 0 20px;
+    font-size:15px;
+    line-height:1.6;
+    color:var(--fjord);
+  }
+  .skridt li + li{ margin-top:14px; }
+  .skridt b{ color:var(--gran); }
+  .butikker{ margin-top:10px; }
+  a.butik{
+    display:block;
+    text-align:center;
+    font-size:16px;
+    font-weight:600;
+    color:#fff;
+    background:var(--gran);
+    border-radius:10px;
+    padding:14px;
+    text-decoration:none;
+  }
+  a.butik:hover{ background:var(--gran-mørk); }
+  a.butik + a.butik{ margin-top:10px; }
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -294,11 +317,25 @@
       <p class="hjaelp">Vi stiller ingen krav om store bogstaver eller specialtegn — længden er det, der tæller. Fire tilfældige ord i træk er både stærkere og nemmere at huske.</p>
     </section>
 
-    <!-- 2 · færdig -->
+    <!-- 2 · færdig. Kunderejsens trin 4-5: hvor appen hentes, og at hun
+         logger ind med det, hun lige har valgt. Indtil 26/9 stod der kun
+         "Åbn Arytmi", og ingen fortalte, hvor den lå. -->
     <section class="flade" id="trin-faerdig" hidden>
       <h2>Din konto er klar</h2>
       <div class="besked ok" id="faerdig-besked" role="status">Kodeordet er gemt.</div>
-      <p>Åbn Arytmi og log ind med din mailadresse og dit nye kodeord.</p>
+
+      <ol class="skridt">
+        <li>
+          <b>Hent Arytmi</b> på din telefon.
+          <div class="butikker">
+            <a class="butik" id="butik-ios" hidden>Hent i App Store</a>
+            <a class="butik" id="butik-android" hidden>Hent i Google Play</a>
+          </div>
+        </li>
+        <li><b>Log ind</b> med din mailadresse og det kodeord, du lige har valgt.</li>
+      </ol>
+
+      <p class="hjaelp" id="computer-hjaelp" hidden>Sidder du ved en computer? Åbn mailen fra os på din telefon — der står linket til appen også.</p>
       <p class="hjaelp">Linket i din ordrebekræftelse er brugt op nu. Det er med vilje — det kunne kun bruges én gang.</p>
     </section>
 
@@ -320,6 +357,15 @@
   var ANON = 'sb_publishable_NQvNdYWs3PZrHGai2l0rgw_Vz1KCCLP';
   var MIN_KODEORD = 12;
 
+  /* HVOR APPEN HENTES. De SAMME to adresser står i velkomstmailen, i
+     `opret-kunde` i app-repoet (BUTIK_GOOGLE_PLAY / BUTIK_APP_STORE). Ret begge.
+     Google Play bygger på appId `com.arytmi.app`, som aldrig ændres, men
+     virker først, når appen er udgivet. App Store-adressen findes først,
+     når appen er oprettet i App Store Connect — står den tom, vises
+     knappen ikke. */
+  var BUTIK_APP_STORE = '';
+  var BUTIK_GOOGLE_PLAY = 'https://play.google.com/store/apps/details?id=com.arytmi.app';
+
   var el = function (id) { return document.getElementById(id); };
   var form = el('form'), felt = el('kodeord'), send = el('send');
   var maaler = el('maaler'), fejl = el('fejl');
@@ -333,6 +379,25 @@
   }
 
   var token = tokenFraAdressen();
+
+  /* Kun den butik, der passer til telefonen. En iPhone-ejer, der får to
+     knapper, skal selv regne ud, hvilken der er hendes. Ved en computer —
+     eller en telefon, vi ikke kan genkende — vises dem, der findes.
+     iPad melder sig som Mac, men har touch; derfor maxTouchPoints. */
+  function visButikker() {
+    var ua = navigator.userAgent || '';
+    var ios = /iPhone|iPad|iPod/i.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var android = /Android/i.test(ua);
+    var knapper = [['butik-ios', BUTIK_APP_STORE, ios], ['butik-android', BUTIK_GOOGLE_PLAY, android]];
+    var telefonHarEn = knapper.some(function (k) { return k[1] && k[2]; });
+    knapper.forEach(function (k) {
+      var a = el(k[0]);
+      a.hidden = !(k[1] && (telefonHarEn ? k[2] : true));
+      if (!a.hidden) a.href = k[1];
+    });
+    el('computer-hjaelp').hidden = ios || android;
+  }
 
   function vis(trin) {
     ['trin-tjekker', 'trin-kodeord', 'trin-faerdig', 'trin-intet'].forEach(function (id) {
@@ -458,6 +523,7 @@
          deler skærmen. */
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       felt.value = '';
+      visButikker();
       vis('trin-faerdig');
     }).catch(function () {
       visFejl('Ingen forbindelse. Tjek nettet, og prøv igen.');
