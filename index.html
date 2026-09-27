@@ -50,22 +50,23 @@
 <link rel="apple-touch-icon" href="apple-touch-icon-180.png">
 <style>
   @charset "UTF-8";
+  /* Ny udgave 27/9 2026: appens palette, logo og signaturbil, så siden ser
+     ud som appen. Farverne er Oliivias palette (samme som app.css); de
+     afledte (dæmpet tekst, streger) er brun blandet i creme, som i appen. */
   :root{
-    --gran:#3a3227;
-    --gran-mørk:#241f18;
-    --fjord:#5f6353;
-    --rav:#b0794e;
-    --bund:#eceae3;
-    --flade:#faf9f5;
-    --tekst:#2e2a24;
-    --dæmpet:#8e8a7f;
-    --linje:#ddd8cb;
+    --brun:#4a2417;          /* Deep Brown */
+    --creme:#f7efe4;         /* Warm Cream */
+    --sand:#e9ddcf;          /* Soft Sand */
+    --rust:#8e4333;          /* Warm Rust Red — 5,2:1 på sand */
+    --cta:#e8935a;           /* CTA Orange */
+    --daempet:#6f5245;       /* brun i creme — 5,9:1 på creme */
+    --linje:rgba(74,36,23,.16);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
   body{
-    background:var(--bund);
-    color:var(--tekst);
+    background:var(--creme);
+    color:var(--brun);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     display:flex;
     align-items:center;
@@ -73,15 +74,22 @@
     min-height:100dvh;
     position:relative;
     overflow:hidden;
-    padding:24px;
+    padding:24px 24px 120px;
   }
+  /* Landskabet fra appens baggrund (.app-baggrund i appens index.html):
+     varm hvisken øverst, bakker og to træer nederst. */
+  .landskab{position:absolute;inset:0;pointer-events:none;z-index:0}
+  .landskab::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;
+    background:linear-gradient(to bottom,rgba(232,147,90,.14),rgba(232,147,90,.04) 52%,transparent)}
+  .landskab svg{position:absolute;bottom:0;left:0;width:100%;height:200px}
+  /* Signaturbilen som stregtegning — den ægte illustration kørt gennem
+     brand/lav-stregtegning.py i app-repoet. Står på bakkerne, bag dem. */
   .bil{
     position:absolute;
-    bottom:-30px;
-    right:-40px;
-    width:min(70vw,520px);
-    opacity:.14;
-    filter:grayscale(1);
+    bottom:34px;
+    right:max(-30px, calc(50% - 460px));
+    width:min(64vw,420px);
+    opacity:.2;
     pointer-events:none;
   }
   .indhold{
@@ -91,9 +99,9 @@
     max-width:420px;
   }
   .logo{
-    width:min(230px,60vw);
+    width:min(240px,62vw);
     height:auto;
-    margin:0 auto 32px;
+    margin:0 auto 30px;
     display:block;
   }
   .sr-only{
@@ -103,42 +111,54 @@
   p.lead{
     font-size:16px;
     line-height:1.6;
-    color:var(--fjord);
-    margin-bottom:34px;
+    color:var(--daempet);
+    margin-bottom:32px;
   }
   .etiket{
     display:inline-block;
     font-size:11px;
     letter-spacing:2.4px;
     text-transform:uppercase;
-    color:var(--rav);
-    font-weight:600;
+    color:var(--rust);
+    font-weight:700;
     border:1px solid var(--linje);
     border-radius:20px;
     padding:8px 18px;
-    background:var(--flade);
+    background:var(--sand);
   }
   footer{
     position:absolute;
-    bottom:24px;
+    bottom:22px;
     left:0;
     right:0;
     text-align:center;
     font-size:13px;
-    color:var(--dæmpet);
+    color:var(--daempet);
+    z-index:1;
   }
   footer a{
-    color:var(--gran);
+    color:var(--brun);
     text-decoration:none;
-    border-bottom:1px solid var(--linje);
+    border-bottom:1px solid var(--cta);
   }
 </style>
 </head>
 <body>
-  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+  <div class="landskab" aria-hidden="true">
+    <img class="bil" src="signaturbil-streg.png" alt="">
+    <svg viewBox="0 0 430 170" preserveAspectRatio="none">
+      <path d="M0 54 C60 30 120 44 180 36 C250 27 300 50 350 40 C390 33 415 40 430 36 V170 H0 Z" fill="#4a2417" opacity=".05"/>
+      <path d="M0 88 C70 68 130 84 200 74 C280 63 330 86 430 70 V170 H0 Z" fill="#4a2417" opacity=".07"/>
+      <path d="M0 126 C90 110 180 126 270 118 C340 112 400 122 430 116 V170 H0 Z" fill="#4a2417" opacity=".09"/>
+      <g fill="#4a2417" opacity=".08">
+        <path d="m36 92 8-16 8 16zM38 79l6-12 6 12z"/>
+        <path d="m388 84 7-14 7 14zM390 73l5-10 5 10z"/>
+      </g>
+    </svg>
+  </div>
   <div class="indhold">
     <h1 class="sr-only">Arytmi</h1>
-    <img class="logo" src="logo.png" alt="Arytmi">
+    <img class="logo" src="logo-2026.svg" alt="Arytmi">
     <p class="lead">En ny måde at planlægge de små, spontane ture på — væk fra hverdagen, uden at det kræver en hel ferie.</p>
     <span class="etiket">Kommer snart</span>
   </div>
