@@ -169,18 +169,20 @@
      tilføjet nogen, som JavaScriptet skal kende. Filen nedenfor kan
      rulles tilbage alene, uden at røre de 1.100 linjer JavaScript.
      ============================================================= */
+  /* Ny palette 27/9 2026 — Oliivias, som appen og arytmi.com. Navnene er de
+     gamle, så resten af CSS'en er urørt; kun værdierne er skiftet. */
   :root{
-    --gran:#3a3227;
-    --gran-mørk:#241f18;
-    --fjord:#5f6353;
-    --rav:#b0794e;
-    --rav-mørk:#96653e;
-    --bund:#eeece5;
-    --flade:#fdfcf9;
-    --tekst:#2e2a24;
-    --dæmpet:#8a8579;
-    --linje:#e0dbcf;
-    --linje-blød:#ebe7dc;
+    --gran:#4a2417;
+    --gran-mørk:#3a1a10;
+    --fjord:#6f5245;
+    --rav:#8e4333;
+    --rav-mørk:#74362a;
+    --bund:#f4ebdf;
+    --flade:#fcf8f2;
+    --tekst:#4a2417;
+    --dæmpet:#7e6154;
+    --linje:#e6d8c8;
+    --linje-blød:#eee3d6;
     --fejl:#9c4221;
     --god:#4f6b4a;
 
@@ -191,8 +193,8 @@
     --skrift-kode:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 
     /* Én skygge, brugt overalt. To ville blive til fem. */
-    --løft:0 1px 2px rgba(58,50,39,.04), 0 4px 14px rgba(58,50,39,.05);
-    --løft-hævet:0 2px 4px rgba(58,50,39,.06), 0 10px 26px rgba(58,50,39,.09);
+    --løft:0 1px 2px rgba(74,36,23,.04), 0 4px 14px rgba(74,36,23,.05);
+    --løft-hævet:0 2px 4px rgba(74,36,23,.06), 0 10px 26px rgba(74,36,23,.09);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{min-height:100%}
@@ -219,7 +221,7 @@
   /* ---------- LOGIN ---------- */
   #login{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px; }
   #login .kort{ width:100%; max-width:390px; }
-  #login .logo{ width:min(180px,50vw); margin:0 auto 30px; display:block; }
+  #login .logo{ width:min(170px,46vw); height:auto; margin:0 auto 30px; display:block; }
   .flade{
     background:var(--flade); border:1px solid var(--linje);
     border-radius:18px; padding:28px 26px; box-shadow:var(--løft);
@@ -234,7 +236,7 @@
     border-radius:11px; padding:11px 13px; color:var(--tekst);
     transition:border-color .15s, box-shadow .15s;
   }
-  input:hover,textarea:hover,select:hover{ border-color:#cfc8b8; }
+  input:hover,textarea:hover,select:hover{ border-color:#d6c6b4; }
   input:focus,textarea:focus,button:focus-visible,select:focus{
     outline:2px solid var(--rav); outline-offset:1px; border-color:transparent;
   }
@@ -242,7 +244,7 @@
 
   .knap{
     display:inline-flex; align-items:center; justify-content:center; gap:7px;
-    background:var(--gran); color:#f7f5ef; border:1px solid var(--gran);
+    background:var(--gran); color:#f8f1e7; border:1px solid var(--gran);
     border-radius:11px; padding:11px 18px; font-weight:600; font-size:14px;
     transition:background .15s, box-shadow .15s, transform .1s;
   }
@@ -251,7 +253,7 @@
   .knap[disabled]{ opacity:.45; cursor:default; transform:none; }
   .knap.bred{ width:100%; margin-top:24px; padding:13px 18px; }
   .knap.rolig{ background:transparent; color:var(--fjord); border-color:var(--linje); }
-  .knap.rolig:hover{ background:#f1efe7; color:var(--tekst); border-color:#cfc8b8; }
+  .knap.rolig:hover{ background:#f2e9dd; color:var(--tekst); border-color:#d6c6b4; }
   .knap.lille{ padding:8px 13px; font-size:13px; border-radius:9px; }
   .knap.fare{ color:var(--fejl); border-color:#e6cfc4; background:transparent; }
   .knap.fare:hover{ background:#f7e9e3; color:var(--fejl); border-color:#d9b9a9; }
@@ -282,10 +284,8 @@
     padding:22px 14px 16px;
   }
   .sk-maerke{ padding:0 10px 22px; display:flex; flex-direction:column; gap:1px; }
-  .sk-ord{
-    font-family:var(--skrift-display); font-weight:600; color:var(--gran);
-    letter-spacing:.14em; font-size:15px; text-transform:uppercase;
-  }
+  /* Det nye logo (27/9) i stedet for navnet sat med versaler. */
+  .sk-ord{ display:block; width:112px; height:auto; margin-bottom:4px; }
   .sk-under{ font-size:13px; color:var(--dæmpet); }
 
   nav.faner{ display:flex; flex-direction:column; gap:2px; }
@@ -302,8 +302,8 @@
     stroke-linecap:round; stroke-linejoin:round;
     opacity:.75;
   }
-  nav.faner button:hover{ background:#f1efe6; color:var(--tekst); }
-  nav.faner button[aria-current=page]{ background:var(--gran); color:#f7f5ef; }
+  nav.faner button:hover{ background:#f2e9dd; color:var(--tekst); }
+  nav.faner button[aria-current=page]{ background:var(--gran); color:#f8f1e7; }
   nav.faner button[aria-current=page] .ik{ opacity:1; }
 
   /* Kontoen og udgangen i bunden - vaek fra det, man arbejder med.
@@ -332,7 +332,7 @@
     position:sticky; top:0; z-index:20;
     display:flex; align-items:center; gap:16px; flex-wrap:wrap;
     padding:13px 30px;
-    background:rgba(253,252,249,.9);
+    background:rgba(252,248,242,.9);
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     border-bottom:1px solid var(--linje);
     transition:background .2s, border-color .2s;
@@ -340,8 +340,8 @@
   .ul-tekst{ flex:1 1 auto; min-width:0; font-size:13.5px; color:var(--dæmpet); }
   .ul-venter{ display:none; }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])){
-    background:linear-gradient(180deg,rgba(210,169,126,.2),rgba(176,121,78,.13));
-    border-bottom-color:rgba(176,121,78,.32);
+    background:linear-gradient(180deg,rgba(232,147,90,.2),rgba(142,67,51,.13));
+    border-bottom-color:rgba(142,67,51,.32);
   }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-ro{ display:none; }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-venter{ display:inline; }
@@ -354,24 +354,24 @@
      ANTALLET, der venter. */
   #udgiv{
     flex:0 0 auto;
-    background:var(--rav); border-color:var(--rav); color:#fffaf4;
+    background:#e8935a; border-color:#e8935a; color:var(--gran);  /* CTA Orange, som i appen */
     padding:9px 18px; font-size:13.5px;
   }
-  #udgiv:hover{ background:var(--rav-mørk); border-color:var(--rav-mørk); }
+  #udgiv:hover{ background:#dc8249; border-color:#dc8249; }
   #udgiv-mærke{
     display:inline-block; min-width:20px; padding:0 6px; margin-left:4px;
-    background:rgba(255,255,255,.24); color:#fffaf4; border-radius:9px;
+    background:rgba(74,36,23,.14); color:var(--gran); border-radius:9px;
     font-size:11.5px; font-weight:700; line-height:19px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
 
   /* ---------- HVAD VENTER? ---------- */
   .ul-se{
-    flex:0 0 auto; background:none; border:1px solid rgba(176,121,78,.45);
+    flex:0 0 auto; background:none; border:1px solid rgba(142,67,51,.45);
     color:var(--gran); border-radius:9px; padding:8px 12px;
     font-size:13px; font-weight:600;
   }
-  .ul-se:hover{ background:rgba(176,121,78,.12); }
+  .ul-se:hover{ background:rgba(142,67,51,.12); }
   .venter-liste{
     position:sticky; top:59px; z-index:19;
     background:var(--flade); border-bottom:1px solid var(--linje);
@@ -402,9 +402,9 @@
   .k-venter{ font-size:11.5px; color:var(--fejl); margin-top:2px; }
   .k-rolle{
     font-size:11.5px; font-weight:700; letter-spacing:.04em;
-    background:#eeebe0; color:var(--fjord); border-radius:999px; padding:3px 9px;
+    background:#efe5d8; color:var(--fjord); border-radius:999px; padding:3px 9px;
   }
-  .k-rolle.admin{ background:var(--gran); color:#f7f5ef; }
+  .k-rolle.admin{ background:var(--gran); color:#f8f1e7; }
   .k-handling{ text-align:right; white-space:nowrap; }
 
   .bruger-boks{
@@ -429,8 +429,8 @@
   .bruger-boks .status.fejl{ color:var(--fejl); }
   .bruger-boks .status.god{ color:var(--god); }
   .k-link{
-    margin-top:14px; padding:13px 15px; background:#f7f2e7;
-    border:1px solid #e3d8c2; border-radius:12px; font-size:13px;
+    margin-top:14px; padding:13px 15px; background:#f7efe4;
+    border:1px solid #e3d2bd; border-radius:12px; font-size:13px;
   }
   .k-linktekst{
     display:block; margin-top:7px; font-family:var(--skrift-kode); font-size:12px;
@@ -439,7 +439,7 @@
 
   /* ---------- VÆLG PLACERING (17/9) ---------- */
   .placering{
-    background:#f7f5ee; border:1px solid var(--linje-blød);
+    background:#f8f1e7; border:1px solid var(--linje-blød);
     border-radius:14px; padding:14px 16px 15px; margin-bottom:14px;
   }
   .pl-titel{
@@ -454,7 +454,7 @@
     text-align:left; background:#fff; border:1px solid var(--linje);
     border-radius:10px; padding:9px 12px; font-size:13.5px; color:var(--tekst);
   }
-  .pl-forslag-knap:hover{ border-color:var(--rav); background:#fdfaf5; }
+  .pl-forslag-knap:hover{ border-color:var(--rav); background:#fcf8f2; }
   .pl-status{ font-size:12.5px; color:var(--dæmpet); margin-top:8px; line-height:1.5; }
   .pl-status.god{ color:var(--god); }
   .pl-status.fejl{ color:var(--fejl); }
@@ -463,9 +463,9 @@
      op, og "Brug min placering" hjælper kun den, der står der. */
   .pl-kort{
     height:260px; margin-top:11px; border-radius:12px; overflow:hidden;
-    border:1px solid var(--linje); background:#e8e6dd;
+    border:1px solid var(--linje); background:#e9ddcf;
   }
-  .pl-kort .leaflet-container{ height:100%; width:100%; background:#e8e6dd; font:inherit; }
+  .pl-kort .leaflet-container{ height:100%; width:100%; background:#e9ddcf; font:inherit; }
   /* Naalen. Samme kobber som resten af fladen, tegnet i CSS og ikke som en
      billedfil - Leaflets egne markoerbilleder ligger i en `images/`-mappe,
      vi saa ville skulle slaebe med. En divIcon har ingen. */
@@ -537,7 +537,7 @@
   .skaermkort .antal{
     display:block; flex:0 0 auto; font-size:12.5px; color:var(--fjord);
     font-variant-numeric:tabular-nums; white-space:nowrap;
-    background:#eeebe0; border-radius:999px; padding:3px 10px; font-weight:600;
+    background:#efe5d8; border-radius:999px; padding:3px 10px; font-weight:600;
   }
   .skaermkort .antal.rettet{ background:var(--rav); color:#fffaf4; }
   .skaermkort.tom .antal{ opacity:.45; }
@@ -590,7 +590,7 @@
     padding:14px 17px; background:none; border:0; text-align:left;
     transition:background .12s;
   }
-  .tur > .linje:hover{ background:#f5f3ec; }
+  .tur > .linje:hover{ background:#f6eee3; }
   .tur .prik{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--god); }
   .tur .prik.ude{ background:var(--dæmpet); }
   .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gran); }
@@ -620,7 +620,7 @@
   .billednet{ display:grid; gap:9px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
   .bb-flise{
     position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden;
-    background:#efece3; border:1px solid var(--linje-blød);
+    background:#efe5d8; border:1px solid var(--linje-blød);
     /* `touch-action:none` er ikke pynt: uden den ruller browseren siden,
        naar man saetter fingeren paa en flise og bevaeger den - og saa kan
        der aldrig traekkes paa en telefon. */
@@ -643,13 +643,13 @@
   }
   .bb-foerste{
     position:absolute; left:6px; bottom:6px;
-    background:rgba(36,31,24,.78); color:#f7f5ef;
+    background:rgba(40,18,11,.78); color:#f8f1e7;
     font-size:10.5px; font-weight:700; letter-spacing:.04em;
     padding:2px 7px; border-radius:999px;
   }
   .bb-fjern{
     position:absolute; top:5px; right:5px; width:24px; height:24px;
-    border:0; border-radius:50%; background:rgba(36,31,24,.72); color:#fff;
+    border:0; border-radius:50%; background:rgba(40,18,11,.72); color:#fff;
     font-size:15px; line-height:22px; text-align:center; padding:0;
     opacity:0; transition:opacity .14s;
   }
@@ -673,10 +673,10 @@
   th,td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--linje-blød); font-size:14px; }
   th{
     font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--dæmpet);
-    font-weight:700; white-space:nowrap; background:#f7f5ee;
+    font-weight:700; white-space:nowrap; background:#f8f1e7;
   }
   tbody tr{ transition:background .12s; }
-  tbody tr:hover{ background:#f7f5ee; }
+  tbody tr:hover{ background:#f8f1e7; }
   tbody tr:last-child td{ border-bottom:0; }
   td.dæmp{ color:var(--dæmpet); }
   td.tal-h,th.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
@@ -685,7 +685,7 @@
 
   .tomt{ color:var(--dæmpet); font-size:14px; padding:30px 4px; text-align:center; }
   .advarsel{
-    background:#f7f2e7; border:1px solid #e3d8c2; border-radius:14px;
+    background:#f7efe4; border:1px solid #e3d2bd; border-radius:14px;
     padding:15px 17px; font-size:14px; color:var(--gran); margin-bottom:22px; line-height:1.6;
   }
   .advarsel b{ font-weight:700; }
@@ -707,7 +707,7 @@
       flex-direction:row; align-items:center;
       padding:6px 8px calc(6px + env(safe-area-inset-bottom));
       border-right:0; border-top:1px solid var(--linje);
-      background:rgba(253,252,249,.96);
+      background:rgba(252,248,242,.96);
       -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     }
     /* Maerket ud - titlen staar i browserens egen fane, og en telefon har
@@ -729,7 +729,7 @@
       width:auto; padding:8px 10px; font-size:11px;
       border-color:transparent; background:none; border-radius:12px;
     }
-    .sk-bund .knap:hover{ background:#f1efe6; }
+    .sk-bund .knap:hover{ background:#f2e9dd; }
 
     nav.faner{
       flex-direction:row; width:100%; gap:2px;
@@ -763,7 +763,7 @@
      ============================================================= -->
 <div id="login">
   <div class="kort">
-    <img src="../logo.png" alt="Arytmi" class="logo" width="340" height="120">
+    <img src="../logo-2026.svg" alt="Arytmi" class="logo" width="967" height="430">
     <div class="flade">
       <h1>Bagrummet</h1>
       <p style="color:var(--fjord);font-size:14px;margin-top:8px" id="login-under">Log ind med din Arytmi-konto.</p>
@@ -835,7 +835,7 @@
   -->
   <aside class="skinne">
     <div class="sk-maerke">
-      <span class="sk-ord">Arytmi</span>
+      <img class="sk-ord" src="../logo-2026.svg" alt="Arytmi" width="967" height="430">
       <span class="sk-under">bagrummet</span>
     </div>
 
