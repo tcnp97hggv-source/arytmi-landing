@@ -78,18 +78,25 @@
      andet brand end den forside, kunden lige kom fra.
      (App-repoets `landingsside/index.html` HAR en Inter-udgave, men den
      er aldrig blevet udgivet. To forsider, to design — se status.) */
+  /* Ny palette 27/9 2026 — Oliivias, samme som appen og forsiden. Navnene
+     er de gamle, så resten af CSS'en er urørt; kun værdierne er nye. */
   :root{
-    --gran:#3a3227;
-    --gran-mørk:#241f18;
-    --fjord:#5f6353;
-    --rav:#b0794e;
-    --bund:#eceae3;
-    --flade:#faf9f5;
-    --tekst:#2e2a24;
-    --dæmpet:#8e8a7f;
-    --linje:#ddd8cb;
+    --gran:#4a2417;          /* Deep Brown — stærk tekst */
+    --gran-mørk:#3a1a10;
+    --fjord:#6f5245;         /* brødtekst: brun i creme, 5,9:1 */
+    --rav:#8e4333;           /* Warm Rust Red — fokus og accent */
+    --bund:#f7efe4;          /* Warm Cream */
+    --flade:#fcf8f2;         /* kortet, en tak lysere end bunden */
+    --tekst:#4a2417;
+    --dæmpet:#7e6154;        /* 4,9:1 på creme */
+    --linje:#e6d8c8;
     --fejl:#9c4221;
     --god:#4f6b4a;
+    --sand:#e9ddcf;          /* Soft Sand */
+    --felt:#fffdf9;          /* inputfelter */
+    --knap:#e8935a;          /* CTA Orange — som i appen: orange med BRUN tekst */
+    --knap-hover:#dc8249;
+    --knap-tekst:#4a2417;    /* hvid på orange er 2,4:1 */
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{min-height:100%}
@@ -105,14 +112,19 @@
     padding:24px 20px 90px;
     overflow-x:hidden;
   }
+  /* Landskabet fra appen og forsiden: bakker, to træer og signaturbilen
+     som stregtegning (brand/lav-stregtegning.py i app-repoet). Fast, bag
+     kortet, så det ligger stille, når man ruller. */
+  .landskab{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .landskab::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;
+    background:linear-gradient(to bottom,rgba(232,147,90,.14),rgba(232,147,90,.04) 52%,transparent)}
+  .landskab svg{position:absolute;bottom:0;left:0;width:100%;height:200px}
   .bil{
-    position:fixed;
-    bottom:-30px;
-    right:-40px;
-    width:min(70vw,520px);
-    opacity:.14;
-    filter:grayscale(1);
-    pointer-events:none;
+    position:absolute;
+    bottom:34px;
+    right:max(-30px, calc(50% - 460px));
+    width:min(64vw,420px);
+    opacity:.2;
   }
   .kort{
     position:relative;
@@ -121,7 +133,7 @@
     max-width:420px;
   }
   .logo{
-    width:min(190px,52vw);
+    width:min(170px,46vw);
     height:auto;
     margin:0 auto 28px;
     display:block;
@@ -163,7 +175,7 @@
     font-family:inherit;
     font-size:16px;            /* 16px: mindre får iOS til at zoome ind */
     color:var(--tekst);
-    background:#fff;
+    background:var(--felt);
     border:1px solid var(--linje);
     border-radius:10px;
     padding:14px 76px 14px 14px;
@@ -203,16 +215,16 @@
     font-family:inherit;
     font-size:16px;
     font-weight:600;
-    color:#fff;
-    background:var(--gran);
+    color:var(--knap-tekst);
+    background:var(--knap);
     border:0;
     border-radius:10px;
     padding:15px;
     cursor:pointer;
   }
-  button.send:hover{ background:var(--gran-mørk); }
+  button.send:hover{ background:var(--knap-hover); }
   button.send[disabled]{
-    background:var(--dæmpet);
+    background:var(--sand); color:var(--dæmpet);
     cursor:default;
   }
   .besked{
@@ -268,23 +280,34 @@
     text-align:center;
     font-size:16px;
     font-weight:600;
-    color:#fff;
-    background:var(--gran);
+    color:var(--knap-tekst);
+    background:var(--knap);
     border-radius:10px;
     padding:14px;
     text-decoration:none;
   }
-  a.butik:hover{ background:var(--gran-mørk); }
+  a.butik:hover{ background:var(--knap-hover); }
   a.butik + a.butik{ margin-top:10px; }
   [hidden]{ display:none !important; }
 </style>
 </head>
 <body>
-  <img class="bil" src="bil-streg.png" alt="" aria-hidden="true">
+  <div class="landskab" aria-hidden="true">
+    <img class="bil" src="signaturbil-streg.png" alt="">
+    <svg viewBox="0 0 430 170" preserveAspectRatio="none">
+      <path d="M0 54 C60 30 120 44 180 36 C250 27 300 50 350 40 C390 33 415 40 430 36 V170 H0 Z" fill="#4a2417" opacity=".05"/>
+      <path d="M0 88 C70 68 130 84 200 74 C280 63 330 86 430 70 V170 H0 Z" fill="#4a2417" opacity=".07"/>
+      <path d="M0 126 C90 110 180 126 270 118 C340 112 400 122 430 116 V170 H0 Z" fill="#4a2417" opacity=".09"/>
+      <g fill="#4a2417" opacity=".08">
+        <path d="m36 92 8-16 8 16zM38 79l6-12 6 12z"/>
+        <path d="m388 84 7-14 7 14zM390 73l5-10 5 10z"/>
+      </g>
+    </svg>
+  </div>
 
   <main class="kort">
     <h1 class="sr-only">Aktivér din Arytmi-konto</h1>
-    <img class="logo" src="logo.png" alt="Arytmi">
+    <img class="logo" src="logo-2026.svg" alt="Arytmi">
 
     <!-- 0 · vi spørger serveren, om linket stadig kan bruges -->
     <section class="flade" id="trin-tjekker" hidden>
