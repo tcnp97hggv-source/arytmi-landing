@@ -29,8 +29,11 @@ SSL-certifikat, når DNS er slået igennem (kan tage op til et par timer).
 
 ## Forsiden sender videre til funnelen — 3. oktober 2026
 
+Funnelen bor på **afsted.arytmi.com** (Kennet og Oliivia 3/10). Det gamle
+shop.arytmi.com sender ClickFunnels selv videre dertil.
+
 **arytmi.com har ingen hjemmeside** (Oliivia og Kennet 3/10). `index.html` sender
-direkte videre til toppen af funnelen på `https://shop.arytmi.com/`, og det samme gør
+direkte videre til toppen af funnelen på `https://afsted.arytmi.com/`, og det samme gør
 `shop.html` (arytmi.com/shop). **Skift funnel = ret adressen i begge filer** (to steder
 i hver). Kun forsiden sender videre — domænet må aldrig peges på ClickFunnels, for
 /aktiver, /nulstil, /os, /liste og /admin bor her.
@@ -44,7 +47,7 @@ slet dem ikke. Noterne herunder gælder den forside, hvis den kommer tilbage.
 
 - **Funnelen skifter, forsiden gør ikke.** Alle knapper peger på `shop` (`shop.html`),
   som sender videre. Rør ikke knapperne i index.html.
-- **Kunden lander i toppen af funnelen** (`https://shop.arytmi.com/`, Kennet 3/10), så
+- **Kunden lander i toppen af funnelen** (`https://afsted.arytmi.com/`, Kennet 3/10), så
   hun ser det tema, der køres. Et anker som `#whatyouget` blev prøvet og fravalgt: det
   sprang temaet over og forsvandt lydløst, hvis sektionen blev omdøbt i ClickFunnels.
 - **Ingen pris og intet købsord på forsiden.** Appens "Opret en konto" fører hertil,
