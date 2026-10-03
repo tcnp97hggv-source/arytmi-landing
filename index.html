@@ -9,159 +9,885 @@
   `none` som udgangspunkt, og så åbnes der præcis det, siden bruger:
 
     style-src 'self' 'unsafe-inline'    sidens eget <style>, som står inline.
-    img-src 'self'                      logo, bil og favicons. Alle herfra.
+    img-src 'self'                      fotos, tegning, logo og favicons. Alle herfra.
+    font-src 'self'                     sidens egne skrifter i fonts/. Uden den
+                                        blokeres Fraunces og Inter lydløst (kun en
+                                        fejl i konsollen), og hele udtrykket falder
+                                        tilbage til systemskrift. (Tilføjet 3/10 2026.)
 
   Siden har intet script og taler ikke med nogen server, så der er hverken
   script-src eller connect-src. Kommer der et script her en dag, siger
   browserkonsollen fra med det samme.
     base-uri 'none'      ingen kan skyde et <base>-tag ind og flytte
                          alle relative adresser et andet sted hen.
-    form-action 'none'   formularerne herinde sendes af JavaScript, som
-                         altid kalder preventDefault(). Uden den linje
-                         ville en formular uden JavaScript submitte til
-                         sig selv med GET - og på aktiver- og
-                         nulstil-siderne ville kodeordet så stå i
-                         adresselinjen og i browserhistorikken.
+    form-action 'none'   formularerne på aktiver- og nulstil-siderne sendes
+                         af JavaScript, som altid kalder preventDefault().
+                         Uden den linje ville en formular uden JavaScript
+                         submitte til sig selv med GET - og kodeordet ville
+                         så stå i adresselinjen og i browserhistorikken.
 
   HVORFOR ET <meta>-TAG OG IKKE EN HTTP-HEADER: siderne udgives af GitHub
   Pages, som ikke kan sætte headers. Prisen er, at `frame-ancestors` og
   `report-uri` IKKE virker i et meta-tag - de ignoreres. Siderne kan
   altså stadig lægges i en iframe af en fremmed. Skal det lukkes, kræver
   det en vært, der kan sætte headers (Cloudflare Pages, Netlify).
-
-  HVORFOR 'unsafe-inline' OG IKKE HASHES: al CSS og JavaScript står inline
-  i filen, og hashes ville være strengere. De ville også betyde, at siden
-  holder op med at virke, hver gang nogen retter et komma i scriptet og
-  glemmer at regne hashen om - lydløst, uden fejl på skærmen. På en side,
-  hvor en kunde aktiverer sin konto, er det den dyreste slags fælde.
-  Beskyttelsen mod indsprøjtet HTML ligger et andet sted, og den er reel:
-  siderne skriver ALTID med textContent, aldrig innerHTML.
-
-  ⚠️ `connect-src` peger på Supabase-projektets adresse. Skiftes projektet
-  - fx ved en genskabelse fra backup - skal den her linje med. Ellers kan
-  siden ikke tale med serveren, og fejlen står kun i browserkonsollen.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arytmi — kommer snart</title>
-<meta name="description" content="Arytmi. En ny måde at planlægge de små, spontane ture på. Kommer snart.">
+<!--
+  FORSIDEN — arytmi.com. Skrevet om 3. oktober 2026 efter Kennets gennemsyn:
+  mere indhold, en tegnet scene i toppen i stedet for et foto, og ingen
+  konto/login i toppen.
+
+  1) SIDEN ER TIDLØS, FUNNELEN SKIFTER. Forsiden beskriver Arytmi uden tema
+     (ingen efterårsferie, ingen lanceringskampagne), fordi funnelen bag den
+     skifter med det tema, der køres. ALLE knapper til shoppen peger derfor på
+     `shop` (shop.html i dette repo), som sender videre. Skiftes funnelen, rettes
+     KUN shop.html - aldrig knapperne her.
+
+  2) INGEN PRIS OG INTET KØBSORD. Appens "Opret en konto" fører hertil.
+     Apple 3.1.1 og Googles external offers rammer et link fra appen, der
+     fører til et KØB. Derfor: ingen pris, ingen Køb/Bestil, intet "begrænset
+     antal" her. Det hører til salgssiden. Se Arytmi-backend-plan.md, KUNDEREJSEN.
+
+  3) KONTO OG KODEORD hører til i appen, ikke her (Kennet 3/10): "Glemt
+     kodeord" i appen fører til arytmi.com/nulstil. Modelnavnene følger
+     betalingssidens varianter (Model Y Juniper, Model Y (2021-2025), Model X).
+
+  4) FOTOS. Alle er fra appens egne ture (app-repoets billeder/), kun beskåret
+     og skaleret med sharp - farverne er urørte, og der er ingen metadata.
+     Vis aldrig et foto med en læsbar nummerplade.
+
+  5) INGEN STEDNAVNE (Kennet 3/10). Stederne er appens værdi - de vises, men
+     navngives ikke: ikke i tekst, billedtekst, alt-tekst eller filnavn (repoet
+     er offentligt). Hvilket foto der er hvilket sted, står i app-repoets
+     Arytmi-status.md, ikke her.
+-->
+<title>Arytmi – små ture i jeres bil</title>
+<meta name="description" content="Arytmi gør jeres bil til et sted at sove: en madras formet efter Tesla, som også passer i andre biler, og en app, der har tænkt det meste for jer. Til korte ture, hvor I sover ude og vågner til en anden udsigt.">
+<link rel="canonical" href="https://arytmi.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://arytmi.com/">
+<meta property="og:locale" content="da_DK">
+<meta property="og:title" content="Arytmi – én nat ude rækker langt">
+<meta property="og:description" content="En madras til jeres bil og en app, der har tænkt det meste for jer. Så en helt almindelig aften kan ende ved vandet.">
+<meta property="og:image" content="https://arytmi.com/billeder/forside-del.jpg?v=20261003">
+<meta property="og:image:width" content="1050">
+<meta property="og:image:height" content="551">
+<meta property="og:image:alt" content="En sort Tesla med bagklappen oppe og en redt madras i bagagerummet, ved en bro over vandet.">
+<meta name="theme-color" content="#f7efe4">
+<meta name="color-scheme" content="light">
+<link rel="preload" href="fonts/fraunces.woff2?v=20261003" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter.woff2?v=20261003" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="favicon.ico?v=20260927" sizes="any">
 <link rel="icon" href="favicon-32.png?v=20260927" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon-180.png?v=20260927">
 <style>
   @charset "UTF-8";
-  /* Ny udgave 27/9 2026: appens palette, logo og signaturbil, så siden ser
-     ud som appen. Farverne er Oliivias palette (samme som app.css); de
-     afledte (dæmpet tekst, streger) er brun blandet i creme, som i appen. */
+  /* Skrifterne er de samme som appens (app.css) og kopieret uændret fra
+     app-repoets fonts/, med OFL-licenserne ved siden af. Fraunces er også
+     salgssidens overskriftsskrift, så skiftet til shoppen ikke føles som et
+     andet firma. */
+  @font-face{font-family:'Fraunces';font-style:normal;font-weight:300 700;font-display:swap;src:url('fonts/fraunces.woff2?v=20261003') format('woff2')}
+  @font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;src:url('fonts/inter.woff2?v=20261003') format('woff2')}
+
+  /* Oliivias palette, samme som appen og domænets andre sider. Kontrast
+     (regnet): brun på cta 6,0:1 · rust på creme 6,2:1, på sand 5,3:1 ·
+     dæmpet på creme 6,3:1, på sand 5,4:1 · creme på brun 12,6:1. */
   :root{
-    --brun:#4a2417;          /* Deep Brown */
-    --creme:#f7efe4;         /* Warm Cream */
-    --sand:#e9ddcf;          /* Soft Sand */
-    --rust:#8e4333;          /* Warm Rust Red — 5,2:1 på sand */
-    --cta:#e8935a;           /* CTA Orange */
-    --daempet:#6f5245;       /* brun i creme — 5,9:1 på creme */
+    --brun:#4a2417;
+    --creme:#f7efe4;
+    --sand:#e9ddcf;
+    --rust:#8e4333;
+    --cta:#e8935a;
+    --cta-hover:#e07f42;
+    --daempet:#6f5245;
+    --creme-daempet:#e6d6c4;
     --linje:rgba(74,36,23,.16);
+    --toning:20,18,14;
+    --gutter:16px;
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
+  @media (min-width:360px){:root{--gutter:20px}}
+  @media (min-width:900px){:root{--gutter:40px}}
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{color-scheme:light;-webkit-text-size-adjust:100%}
+  @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
   body{
+    margin:0;
     background:var(--creme);
     color:var(--brun);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-height:100dvh;
-    position:relative;
-    overflow:hidden;
-    padding:24px 24px 120px;
+    font-family:var(--sans);
+    font-size:17px;
+    line-height:1.6;
+    overflow-x:hidden;
   }
-  /* Landskabet fra appens baggrund (.app-baggrund i appens index.html):
-     varm hvisken øverst, bakker og to træer nederst. */
-  .landskab{position:absolute;inset:0;pointer-events:none;z-index:0}
-  .landskab::before{content:'';position:absolute;top:0;left:0;right:0;height:360px;
-    background:linear-gradient(to bottom,rgba(232,147,90,.14),rgba(232,147,90,.04) 52%,transparent)}
-  .landskab svg{position:absolute;bottom:0;left:0;width:100%;height:200px}
-  /* Signaturbilen som stregtegning — den ægte illustration kørt gennem
-     brand/lav-stregtegning.py i app-repoet. Står på bakkerne, bag dem. */
-  .bil{
-    position:absolute;
-    bottom:34px;
-    right:max(-30px, calc(50% - 460px));
-    width:min(64vw,420px);
-    opacity:.2;
-    pointer-events:none;
-  }
-  .indhold{
-    position:relative;
-    z-index:1;
-    text-align:center;
-    max-width:420px;
-  }
-  .logo{
-    width:min(240px,62vw);
-    height:auto;
-    margin:0 auto 30px;
-    display:block;
-  }
+  @media (max-width:359px){body{font-size:16px;line-height:1.55}}
+  img{max-width:100%;height:auto;display:block}
+  h1,h2,h3,p,figure,ul,ol{margin:0}
+  h1,h2{text-wrap:balance}
+  ul,ol{padding:0;list-style:none}
+  a{color:inherit}
+  section[id]{scroll-margin-top:16px}
   .sr-only{
     position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
     clip:rect(0,0,0,0);white-space:nowrap;border:0;
   }
-  p.lead{
-    font-size:16px;
-    line-height:1.6;
-    color:var(--daempet);
-    margin-bottom:32px;
-  }
-  .etiket{
-    display:inline-block;
-    font-size:11px;
-    letter-spacing:2.4px;
+
+  /* Overlinjer: Inter 700 i versaler. Letter-spacing .16em og ikke
+     salgssidens .22em, så overlinjerne holder sig på én linje
+     ned til 320 px. */
+  .overlinje{
+    display:block;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:12px;
+    line-height:1.4;
+    letter-spacing:.16em;
     text-transform:uppercase;
     color:var(--rust);
-    font-weight:700;
-    border:1px solid var(--linje);
-    border-radius:20px;
-    padding:8px 18px;
-    background:var(--sand);
+    margin-bottom:12px;
   }
-  footer{
-    position:absolute;
-    bottom:22px;
-    left:0;
-    right:0;
+  h1{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(2.1rem,1.35rem + 3.4vw,3.8rem);
+    line-height:1.08;
+    margin-bottom:16px;
+  }
+  h2{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:clamp(1.75rem,1.3rem + 2.4vw,2.7rem);
+    line-height:1.12;
+  }
+  h3{
+    font-family:var(--serif);
+    font-weight:500;
+    font-size:1.35rem;
+    line-height:1.2;
+  }
+  .broed{color:var(--daempet);max-width:34rem}
+  .broed + .broed{margin-top:14px}
+
+  /* KNAPPEN er en kopi af salgssidens knap (målt 3/10): samme farve, samme
+     brune tekst, samme radius og skygge. Det er det element, kunden ser på
+     begge sider af skiftet til shoppen. */
+  .knap{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
     text-align:center;
-    font-size:13px;
-    color:var(--daempet);
-    z-index:1;
-  }
-  footer a{
+    background:var(--cta);
     color:var(--brun);
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:17px;
+    line-height:1.2;
     text-decoration:none;
-    border-bottom:1px solid var(--cta);
+    border-radius:10px;
+    padding:18px 36px;
+    min-height:44px;
+    box-shadow:0 6px 18px rgba(74,36,23,.14);
   }
+  .knap svg{width:18px;height:18px;flex:none}
+  .knap:hover{background:var(--cta-hover)}
+  .knap:active{transform:translateY(1px)}
+  .knap.lille{font-size:15px;padding:12px 20px;box-shadow:none}
+  a:focus-visible{outline:3px solid var(--brun);outline-offset:3px;border-radius:4px}
+  .moerk a:focus-visible{outline-color:var(--creme)}
+  @media (max-width:899px){.knap:not(.lille){display:flex;width:100%;max-width:420px}}
+  .efter-knap{font-size:13px;line-height:1.5;color:var(--daempet);margin-top:10px}
+
+  .tekstlink{
+    display:inline-flex;align-items:center;gap:6px;
+    min-height:44px;
+    font-weight:600;color:var(--brun);text-decoration:none;
+  }
+  .tekstlink span{border-bottom:1px solid var(--cta)}
+  .tekstlink svg{width:16px;height:16px;flex:none}
+  .indlejret{
+    font-weight:600;color:inherit;
+    text-decoration:underline;text-decoration-color:var(--cta);
+    text-decoration-thickness:1px;text-underline-offset:4px;
+    padding:10px 0;margin:-10px 0;
+  }
+
+  /* ---------- HEADER: kun logoet på telefon; på desktop en lille menu ---------- */
+  .top{
+    position:relative;z-index:2;
+    display:flex;align-items:center;justify-content:space-between;gap:24px;
+    padding:14px var(--gutter);
+  }
+  .top .logo{width:clamp(130px,38vw,160px);height:auto}
+  .menu{display:none}
+
+  /* ---------- HERO: en tegnet scene i stedet for et foto ----------
+     Solnedgang over havet, klitter i paletten og den ÆGTE signaturbil
+     (billeder/signaturbil-1120.webp, indsat som <image> - aldrig gentegnet).
+     Horisonten er logoets pulslinje med ét slag: en arytme. Klitterne, havet
+     og solen er nye, enkle flader - ikke kopier af leveret grafik.
+     Scenen er tegnet én gang (#scene) og vist to gange med hver sin viewBox:
+     hele landskabet bag teksten på desktop, et udsnit med sol og bil under
+     teksten på telefon. Forreste klit har farven --sand, så scenen glider
+     over i næste sektion. */
+  .start{position:relative;background:var(--creme)}
+  /* Teksten står centreret over scenen - overskrift, én sætning, én knap -
+     som på apple.com. Linjen under knappen står i stedet nederst på siden. */
+  .hero-tekst{position:relative;z-index:1;padding:20px var(--gutter) 36px;text-align:center}
+  .hero-tekst .broed{margin:0 auto 28px;max-width:34rem}
+  .hero-tekst .knap{margin:0 auto}
+  .scene{display:block;width:100%;height:auto}
+  .scene-stor{display:none}
+  .puls-linje{fill:none;stroke:var(--rust);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+  .sol-glod{transform-box:fill-box;transform-origin:center}
+  @media (prefers-reduced-motion:no-preference){
+    .puls-linje{stroke-dasharray:1;stroke-dashoffset:1;animation:tegn-puls 2.4s cubic-bezier(.3,.6,.2,1) .3s forwards}
+    .sol-glod{animation:aande 7s ease-in-out infinite}
+  }
+  @keyframes tegn-puls{to{stroke-dashoffset:0}}
+  @keyframes aande{50%{opacity:.6;transform:scale(1.08)}}
+
+  /* ---------- SEKTIONER ---------- */
+  .baand{padding:72px var(--gutter)}
+  .baand.sand{background:var(--sand)}
+  .indre{max-width:1240px;margin:0 auto}
+  .hoved{max-width:40rem;margin-bottom:36px}
+  .hoved h2{margin-bottom:14px}
+
+  /* arytme: ordet får en betydning */
+  .ord{
+    font-family:var(--serif);
+    font-weight:300;
+    font-size:clamp(3.25rem,2.4rem + 4.5vw,6rem);
+    line-height:1;
+  }
+  .ordklasse{font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--daempet);margin-top:6px}
+  .ord-intro{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(1.3rem,1.1rem + 1vw,1.7rem);line-height:1.3;
+    margin:18px 0 16px;
+  }
+  .puls{display:block;width:min(240px,60vw);height:auto;margin:18px 0 6px}
+  .puls path{fill:none;stroke:var(--cta);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .arytme .tekst .broed{max-width:36rem}
+
+  /* Sådan føles en arytme: tre øjeblikke. Grundformen er en almindelig
+     liste. Kan browseren scroll-drevne animationer, fastgøres sektionen i
+     én skærmhøjde (se BEVÆGELSE nederst), og man ser kun ét øjeblik ad
+     gangen - som apple.com's "sticky-content". */
+  .oejeblikke{display:grid;gap:40px}
+  .oejeblik{display:grid;gap:20px}
+  .oejeblik figure{border-radius:24px;overflow:hidden;background:var(--sand)}
+  .oejeblik img{width:100%;height:100%;aspect-ratio:4/3;object-fit:cover}
+  .oejeblik h3{font-size:clamp(1.7rem,1.2rem + 2.4vw,3rem);line-height:1.08;margin:8px 0 12px}
+  .oejeblik p{color:var(--daempet);font-size:16px;max-width:26rem}
+  .trin{display:none}
+  .tid{font-family:var(--sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--rust);display:block}
+
+  /* To dele: mørkt bånd, så det skiller sig ud fra fortællingen */
+  .moerk{background:var(--brun);color:var(--creme)}
+  .moerk .overlinje{color:var(--cta)}
+  .moerk .broed{color:var(--creme-daempet)}
+  .dele{display:grid;gap:18px}
+  /* Overskriften deles over de to kort: hver halvdel står midt over sit
+     kort (samme spalter og samme gap som .dele). */
+  .delt span{display:block}
+  #saadan .hoved{max-width:none}
+  /* Overlinjen spænder over begge kort som en skillelinje, så den ikke
+     forsvinder over den delte overskrift. */
+  #saadan .hoved .overlinje{
+    display:flex;align-items:center;gap:16px;
+    font-size:13px;letter-spacing:.2em;margin-bottom:20px;
+  }
+  #saadan .hoved .overlinje::after{content:'';flex:1;height:1px;background:rgba(232,147,90,.45)}
+  @media (min-width:640px){
+    #saadan .hoved .overlinje{font-size:14px;justify-content:center;margin-bottom:28px}
+    #saadan .hoved .overlinje::before{content:'';flex:1;height:1px;background:rgba(232,147,90,.45)}
+  }
+  .del{
+    display:flex;flex-direction:column;
+    background:rgba(247,239,228,.06);
+    border:1px solid rgba(247,239,228,.16);
+    border-radius:24px;
+    padding:28px 24px;
+  }
+  @media (max-width:359px){.del{padding:22px 18px}}
+  .del h3{font-size:1.6rem;margin-bottom:10px}
+  .del > p{color:var(--creme-daempet);max-width:30rem}
+  /* Fire punkter i et 2x2-gitter nederst i hvert kort. Begge kort har fire,
+     så linjerne flugter på tværs af kortene på desktop. */
+  .maerker{margin-top:auto;padding-top:24px;display:grid;grid-template-columns:1fr 1fr;column-gap:20px}
+  .maerker li{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 0;border-top:1px solid rgba(247,239,228,.16);
+    font-size:15px;font-weight:500;line-height:1.35;color:var(--creme);
+  }
+  .maerker li::before{content:'';flex:none;width:6px;height:6px;border-radius:50%;background:var(--cta)}
+  @media (max-width:399px){.maerker{grid-template-columns:1fr}}
+
+  /* Stederne: vandret rulleliste på telefon, gitter på desktop. Kun
+     listen ruller - aldrig siden. */
+  .steder{
+    display:grid;grid-auto-flow:column;grid-auto-columns:min(74%,300px);gap:14px;
+    overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+    margin:0 calc(var(--gutter) * -1);padding:4px var(--gutter) 12px;
+    scroll-padding-inline:var(--gutter);
+    scrollbar-width:thin;scrollbar-color:var(--linje) transparent;
+  }
+  .sted{scroll-snap-align:start}
+  .sted figure{border-radius:20px;overflow:hidden;background:var(--sand)}
+  .sted img{width:100%;aspect-ratio:4/5;object-fit:cover}
+  .sted h3{font-size:1.15rem;margin:14px 0 4px}
+  .sted p{font-family:var(--serif);font-size:1.15rem;line-height:1.3;margin-top:12px}
+  .rul-hint{font-size:13px;color:var(--daempet);margin-top:8px}
+
+  /* Til hvem */
+  .hvem{text-align:center}
+  .hvem .indre{max-width:46rem}
+  .hvem-linjer{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(1.6rem,1.2rem + 2.2vw,2.6rem);line-height:1.2;
+    margin-bottom:22px;
+  }
+  .hvem-linjer span{display:block}
+  .hvem-linjer span:nth-child(2){color:var(--rust)}
+  .hvem .broed{margin:0 auto}
+
+  /* Videre: overgangen til shoppen */
+  .videre{text-align:center}
+  .videre .indre{max-width:36rem}
+  .videre h2{margin-bottom:16px}
+  .videre .broed{margin:0 auto}
+  .videre .knap{margin:28px auto 0}
+  .videre .efter-knap{color:var(--creme-daempet)}
+
+  /* ---------- FOOTER ----------
+     Lys (creme, sidens hvide) efter den mørke afslutning (Kennet 3/10): fire
+     kolonner (kontakt, firma, følg os, hent appen) og en bundlinje med
+     handelsbetingelser, privatlivspolitik og logoets pulslinje. Logo, genveje
+     og slogan blev prøvet og fjernet. Samme fod står på privatliv.html og
+     handelsbetingelser.html - ret alle tre. */
+  footer{
+    background:var(--creme);color:var(--daempet);
+    padding:16px var(--gutter) 28px;
+    font-size:14px;line-height:1.7;
+  }
+  .fod-indre{max-width:1240px;margin:0 auto}
+  .fod-kolonner{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 24px;padding:36px 0}
+  .fod-kolonner h2{
+    font-family:var(--sans);font-weight:700;font-size:12px;line-height:1.4;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--rust);margin-bottom:12px;
+  }
+  .fod-kolonner p{max-width:28rem}
+  .fod-kolonner p + p{margin-top:10px}
+  .fod-kolonner a{
+    color:var(--brun);font-weight:600;
+    text-decoration:underline;text-decoration-color:var(--cta);
+    text-decoration-thickness:1px;text-underline-offset:4px;
+  }
+  .fod-bund{
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+    padding-top:22px;border-top:1px solid var(--linje);font-size:13px;
+  }
+  @media (max-width:639px){.fod-kolonner > :nth-child(-n+2){grid-column:1/-1}}
+  .fod-links li + li{margin-top:6px}
+  .fod-links a{display:inline-flex;align-items:center;gap:6px;min-height:32px}
+  .fod-links svg{width:14px;height:14px;flex:none}
+  .fod-jura{display:flex;flex-wrap:wrap;gap:4px 24px}
+  .fod-jura a{color:var(--brun);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center}
+  .fod-jura a:hover{text-decoration:underline;text-decoration-color:var(--cta);text-underline-offset:4px}
+  /* Pladsholder: adressen mangler. Fjernes, når adressen er sat ind. */
+  [data-mangler]{outline:2px dashed #d9a400;outline-offset:3px;border-radius:4px}
+  .fod-puls{width:120px;height:auto}
+  .fod-puls path{fill:none;stroke:var(--cta);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:.75}
+
+  /* ---------- TABLET ---------- */
+  @media (min-width:640px){
+    .oejeblik{grid-template-columns:1.1fr 1fr;align-items:center;gap:48px}
+    .oejeblik img{aspect-ratio:4/3.4}
+    .oejeblik p{font-size:17px}
+    .dele{grid-template-columns:1fr 1fr}
+    .delt{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .delt span{text-align:center}
+    #saadan .hoved{margin-bottom:24px}
+  }
+
+  /* ---------- DESKTOP ---------- */
+  @media (min-width:900px){
+    /* Headeren ligger oven på scenen, så himlen går helt op til kanten */
+    .top{position:absolute;top:0;left:0;right:0;max-width:1240px;margin:0 auto;padding:24px 40px}
+    .top .logo{width:180px}
+    .menu{display:flex;align-items:center;gap:28px;font-size:15px;font-weight:600}
+    .menu a:not(.knap){text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+    .menu a:not(.knap):hover{text-decoration:underline;text-decoration-color:var(--cta);text-underline-offset:6px}
+    /* Scenen ligger i flowet under teksten og trækkes op bag den. Horisonten
+       sidder 74,4 % nede i scenen (y=490 i viewBox 0 -180 1440 900), og
+       scenens højde er 62,5vw - så horisonten lander altid 80 px under
+       tekstens bund, uanset skærmens bredde og højde. */
+    .start{padding-top:112px}
+    .scene-stor{display:block;position:relative;z-index:0;margin-top:calc(80px - 46.5vw)}
+    .scene-lille{display:none}
+    .hero-tekst{width:100%;max-width:1240px;margin:0 auto;padding:clamp(24px,6vh,72px) 40px 0}
+    .hero-tekst h1{font-size:clamp(3rem,1.6rem + 3.6vw,5rem);margin-bottom:20px}
+    .hero-tekst .broed{font-size:19px;max-width:38rem}
+    .baand{padding:104px var(--gutter)}
+    .arytme .indre{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:end}
+    .oejeblik{gap:72px}
+    .fod-kolonner{grid-template-columns:1.3fr 1fr 1fr 1fr;gap:48px}
+    .del{padding:36px 32px}
+    .steder{
+      grid-auto-flow:row;grid-template-columns:repeat(5,1fr);grid-auto-columns:auto;
+      overflow:visible;margin:0;padding:0;gap:18px;
+    }
+    .rul-hint{display:none}
+  }
+  @media (min-width:900px) and (max-width:1099px){.menu .valgfri{display:none}}
+  @media (min-width:640px) and (max-width:899px){.delt{font-size:clamp(1.6rem,.9rem + 2.4vw,2.2rem)}}
+  /* ---------- BEVÆGELSE, NÅR MAN SCROLLER ----------
+     Inspireret af Apples produktsider: indhold glider på plads, billeder
+     zoomer blødt ud, øjeblikkene vises ét ad gangen, og solen går ned i
+     havet, når man scroller væk fra toppen. (Sektioner, der lagde sig oven
+     på hinanden med runde kanter, blev prøvet og fravalgt af Kennet 3/10.)
+     Alt er CSS (scroll-drevne animationer) - siden har stadig intet script.
+     Browsere uden understøttelse (fx Firefox i 2026) får den statiske side,
+     og "reducer bevægelse" slår det hele fra. */
+  /* clip og ikke hidden: hidden ville gøre main til en rulleflade, så de
+     klæbende kort og de scroll-drevne animationer holdt op med at virke */
+  main{overflow-x:clip}
+  .start{position:relative}
+  .sol{transform-box:view-box}
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion:no-preference){
+
+      /* Solen går ned */
+      .sol{animation:synk linear both;animation-timeline:scroll(root);animation-range:0 85vh}
+      @keyframes synk{to{transform:translateY(64px)}}
+
+      /* Indhold glider på plads */
+      .hoved,.arytme .indre > *,.del,.hvem-linjer span,.hvem .broed,
+      .videre .indre > *{
+        animation:op linear both;
+        animation-timeline:view();
+        animation-range:entry 5% cover 30%;
+      }
+      @keyframes op{from{opacity:0;transform:translateY(56px)}}
+      .arytme .indre > :nth-child(2),.del:nth-child(2),
+      .hvem-linjer span:nth-child(2){animation-range:entry 15% cover 36%}
+      .hvem-linjer span:nth-child(3){animation-range:entry 25% cover 42%}
+
+      /* Øjeblikkene: .forloeb er 4,2 skærmhøjder høj, og .scene-ramme klæber
+         i toppen imens. Hele forløbet styres af én tidslinje (--forloeb):
+         "entry" er, mens forløbet glider op på skærmen, og "contain" løber fra
+         0 %, når det når toppen, til 100 %, når dets bund når skærmens bund.
+           entry 40 % - contain 8 %   overskriften kommer langsomt frem
+           contain 16-26 %            overskriften glider væk
+           contain 24-36 %            billede 1 tørres op
+           contain 46-58 %            billede 2 tørres op over billede 1
+           contain 72-84 %            billede 3 tørres op over billede 2
+         Teksten toner over, og stregerne viser, hvor man er. */
+      .forloeb{height:420svh;view-timeline-name:--forloeb}
+      .scene-ramme{
+        position:sticky;top:0;height:100svh;
+        display:flex;flex-direction:column;justify-content:center;gap:18px;
+      }
+      .foeles .hoved{
+        position:absolute;inset:0;z-index:2;margin:0;max-width:none;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+        text-align:center;pointer-events:none;padding:0 var(--gutter);
+        animation:intro-ind linear both,intro-ud linear both;
+        animation-timeline:--forloeb,--forloeb;
+        animation-range:entry 40% contain 8%,contain 16% contain 26%;
+      }
+      .foeles .hoved h2{font-size:clamp(2.2rem,1.4rem + 3.6vw,4.6rem);line-height:1.06;max-width:16ch;margin:0}
+      @keyframes intro-ind{from{opacity:0;transform:translateY(60px);filter:blur(6px)}}
+      @keyframes intro-ud{to{opacity:0;transform:translateY(-60px) scale(.96)}}
+
+      .oejeblikke{position:relative;display:block;height:min(calc(100svh - 64px),760px)}
+      .oejeblik{position:absolute;inset:0;grid-template-rows:minmax(0,1fr) auto;gap:18px}
+      .oejeblik figure{height:100%;min-height:0}
+      .oejeblik img{aspect-ratio:auto}
+      /* Desktop: én række i fuld højde, så billedet aldrig vokser ud over
+         rammen (det skar bunden af billedet før), og teksten centreret. */
+      @media (min-width:640px){
+        .oejeblik{grid-template-rows:minmax(0,1fr);align-items:stretch}
+        .oejeblik .kort-tekst{align-self:center}
+      }
+
+      .oejeblik:nth-child(1) figure{
+        animation:billede-ind linear both,billede-tilbage linear both;
+        animation-timeline:--forloeb,--forloeb;
+        animation-range:contain 24% contain 36%,contain 46% contain 58%;
+      }
+      .oejeblik:nth-child(2) figure{
+        animation:billede-ind linear both,billede-tilbage linear both;
+        animation-timeline:--forloeb,--forloeb;
+        animation-range:contain 46% contain 58%,contain 72% contain 84%;
+      }
+      .oejeblik:nth-child(3) figure{
+        animation:billede-ind linear both;
+        animation-timeline:--forloeb;animation-range:contain 72% contain 84%;
+      }
+      .oejeblik:nth-child(1) img{animation:zoom-ud linear both;animation-timeline:--forloeb;animation-range:contain 24% contain 40%}
+      .oejeblik:nth-child(2) img{animation:zoom-ud linear both;animation-timeline:--forloeb;animation-range:contain 46% contain 62%}
+      .oejeblik:nth-child(3) img{animation:zoom-ud linear both;animation-timeline:--forloeb;animation-range:contain 72% contain 88%}
+      /* Billederne glider ikke ind - hele billedet står stille og toner
+         langsomt frem, mens motivet indeni falder blidt på plads (zoom-ud).
+         Kennet 3/10 (en cirkel, der åbnede sig, blev prøvet og fravalgt). */
+      @keyframes billede-ind{from{opacity:0}}
+      @keyframes billede-tilbage{to{transform:scale(.94);filter:brightness(.92) saturate(.75)}}
+
+      .oejeblik:nth-child(1) .kort-tekst{
+        animation:tekst-ind linear both,tekst-ud linear both;
+        animation-timeline:--forloeb,--forloeb;
+        animation-range:contain 30% contain 38%,contain 42% contain 50%;
+      }
+      .oejeblik:nth-child(2) .kort-tekst{
+        animation:tekst-ind linear both,tekst-ud linear both;
+        animation-timeline:--forloeb,--forloeb;
+        animation-range:contain 52% contain 60%,contain 68% contain 76%;
+      }
+      .oejeblik:nth-child(3) .kort-tekst{
+        animation:tekst-ind linear both;
+        animation-timeline:--forloeb;animation-range:contain 78% contain 86%;
+      }
+      @keyframes tekst-ind{from{opacity:0;transform:translateY(36px)}}
+      @keyframes tekst-ud{to{opacity:0;transform:translateY(-36px)}}
+
+      .trin{
+        display:flex;justify-content:center;gap:8px;
+        animation:tekst-ind linear both;animation-timeline:--forloeb;animation-range:contain 26% contain 32%;
+      }
+      .trin span{position:relative;width:48px;height:3px;border-radius:2px;background:var(--linje);overflow:hidden}
+      .trin span::after{
+        content:'';position:absolute;inset:0;background:var(--rust);
+        transform-origin:left;transform:scaleX(0);
+        animation:fyld linear both;animation-timeline:--forloeb;
+      }
+      .trin span:nth-child(1)::after{animation-range:contain 26% contain 46%}
+      .trin span:nth-child(2)::after{animation-range:contain 46% contain 72%}
+      .trin span:nth-child(3)::after{animation-range:contain 72% contain 100%}
+      @keyframes fyld{to{transform:scaleX(1)}}
+
+      /* Billeder zoomer blødt ud, når de kommer ind */
+      @keyframes zoom-ud{from{transform:scale(1.18)}}
+
+      /* Den delte overskrift samles fra hver sin side */
+      .delt span{animation:fra-venstre linear both;animation-timeline:view();animation-range:entry 10% cover 32%}
+      .delt span:last-child{animation-name:fra-hoejre}
+      @keyframes fra-venstre{from{opacity:0;transform:translateX(-72px)}}
+      @keyframes fra-hoejre{from{opacity:0;transform:translateX(72px)}}
+
+      /* Stederne toner frem ét ad gangen på samme måde, og teksten toner frem
+         uden at bevæge sig - kun på desktop, hvor de står i et gitter. På
+         telefon er listen sin egen rulleflade. */
+      @media (min-width:900px){
+        .sted figure,.sted p{animation:billede-ind linear both;animation-timeline:view();animation-range:entry 10% cover 34%}
+        .sted p{animation-name:ton-frem}
+        .sted:nth-child(2) figure,.sted:nth-child(2) p{animation-range:entry 14% cover 38%}
+        .sted:nth-child(3) figure,.sted:nth-child(3) p{animation-range:entry 18% cover 42%}
+        .sted:nth-child(4) figure,.sted:nth-child(4) p{animation-range:entry 22% cover 46%}
+        .sted:nth-child(5) figure,.sted:nth-child(5) p{animation-range:entry 26% cover 50%}
+        .sted img{animation:zoom-ud linear both;animation-timeline:view();animation-range:entry 10% cover 50%}
+        @keyframes ton-frem{from{opacity:0}}
+      }
+    }
+  }
+  @media (max-width:899px){.vis-desktop{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}}
 </style>
 </head>
 <body>
-  <div class="landskab" aria-hidden="true">
-    <img class="bil" src="signaturbil-streg.png" alt="">
-    <svg viewBox="0 0 430 170" preserveAspectRatio="none">
-      <path d="M0 54 C60 30 120 44 180 36 C250 27 300 50 350 40 C390 33 415 40 430 36 V170 H0 Z" fill="#4a2417" opacity=".05"/>
-      <path d="M0 88 C70 68 130 84 200 74 C280 63 330 86 430 70 V170 H0 Z" fill="#4a2417" opacity=".07"/>
-      <path d="M0 126 C90 110 180 126 270 118 C340 112 400 122 430 116 V170 H0 Z" fill="#4a2417" opacity=".09"/>
-      <g fill="#4a2417" opacity=".08">
-        <path d="m36 92 8-16 8 16zM38 79l6-12 6 12z"/>
-        <path d="m388 84 7-14 7 14zM390 73l5-10 5 10z"/>
-      </g>
-    </svg>
-  </div>
-  <div class="indhold">
-    <h1 class="sr-only">Arytmi</h1>
-    <img class="logo" src="logo-2026.svg" alt="Arytmi">
-    <p class="lead">En ny måde at planlægge de små, spontane ture på — væk fra hverdagen, uden at det kræver en hel ferie.</p>
-    <span class="etiket">Kommer snart</span>
-  </div>
-  <footer>Spørgsmål? Skriv til <a href="mailto:kundeservice@arytmi.com">kundeservice@arytmi.com</a></footer>
+  <header class="top">
+    <a href="./" aria-label="Arytmi – forsiden">
+      <img class="logo" src="logo-2026.svg?v=20261003" alt="Arytmi" width="967" height="430">
+    </a>
+    <nav class="menu" aria-label="Forsiden">
+      <a class="valgfri" href="#arytme">Idéen</a>
+      <a href="#saadan">Madras og app</a>
+      <a href="#steder">Stederne</a>
+      <a class="knap lille" href="shop">Se madrassen og appen</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="start" aria-labelledby="start-titel">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="himmel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f7efe4"/><stop offset=".5" stop-color="#f6e4d0"/>
+            <stop offset=".85" stop-color="#f3d0b0"/><stop offset="1" stop-color="#efc29e"/>
+          </linearGradient>
+          <radialGradient id="glod">
+            <stop offset="0" stop-color="#f2a873" stop-opacity=".5"/><stop offset=".35" stop-color="#f2b386" stop-opacity=".2"/>
+            <stop offset="1" stop-color="#f2b386" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="solskive" cx=".5" cy=".35" r=".7">
+            <stop offset="0" stop-color="#f8cfa6"/><stop offset=".65" stop-color="#ee9f69"/><stop offset="1" stop-color="#e58a52"/>
+          </radialGradient>
+          <linearGradient id="hav" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f0caa8"/><stop offset=".4" stop-color="#e5b38f"/><stop offset="1" stop-color="#d09a77"/>
+          </linearGradient>
+          <radialGradient id="lysvej" cx=".5" cy="0" r="1">
+            <stop offset="0" stop-color="#fbe2c6" stop-opacity=".85"/><stop offset="1" stop-color="#fbe2c6" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="land" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0b598"/><stop offset="1" stop-color="#e6bc9e"/></linearGradient>
+          <linearGradient id="klit-midt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bd7f62"/><stop offset="1" stop-color="#9a5d46"/></linearGradient>
+          <linearGradient id="klit-naer" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d5445"/><stop offset="1" stop-color="#553529"/></linearGradient>
+          <!-- Bilen en anelse dæmpet (Kennet 3/10): lidt mindre mætning og lidt
+               mørkere. Mekanisk farvebehandling af den ægte fil - intet gentegnet. -->
+          <filter id="daempet-bil" color-interpolation-filters="sRGB">
+            <feColorMatrix type="saturate" values=".8"/>
+            <feComponentTransfer><feFuncR type="linear" slope=".95"/><feFuncG type="linear" slope=".95"/><feFuncB type="linear" slope=".95"/></feComponentTransfer>
+          </filter>
+          <clipPath id="vandet"><rect x="0" y="490" width="1440" height="230"/></clipPath>
+          <filter id="blod-skygge" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="7"/></filter>
+          <filter id="korn" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>
+            <feColorMatrix values="0 0 0 0 .29  0 0 0 0 .14  0 0 0 0 .09  0 0 0 .11 0"/>
+          </filter>
+          <!-- Solen (#sol) ligger uden for #scene, så den kan synke, når man
+               scroller. Havet i #scene dækker dens nederste del. -->
+          <g id="scene">
+            <rect x="0" y="490" width="1440" height="230" fill="url(#hav)"/>
+            <ellipse cx="720" cy="490" rx="170" ry="120" fill="url(#lysvej)" clip-path="url(#vandet)"/>
+            <g fill="#fbe6cf">
+              <rect x="660" y="503" width="120" height="1.5" rx=".75" opacity=".8"/><rect x="686" y="516" width="70" height="1.5" rx=".75" opacity=".7"/>
+              <rect x="650" y="529" width="46" height="1.5" rx=".75" opacity=".55"/><rect x="718" y="540" width="84" height="1.5" rx=".75" opacity=".5"/>
+              <rect x="672" y="553" width="36" height="1.5" rx=".75" opacity=".4"/>
+              <rect x="210" y="526" width="64" height="1" opacity=".3"/><rect x="1180" y="518" width="52" height="1" opacity=".3"/>
+              <rect x="420" y="556" width="90" height="1" opacity=".22"/>
+            </g>
+            <path d="M0 490V474C120 466 250 470 360 480C430 486 480 489 540 490Z" fill="url(#land)"/>
+            <path d="M1110 490C1200 482 1320 476 1440 477V490Z" fill="url(#land)"/>
+            <path class="puls-linje" pathLength="1" d="M0 490H446Q454 482 462 490H478L484 494L494 448L504 506L511 486Q515 490 522 490H534Q545 480 556 490H1440"/>
+            <path d="M0 612C200 586 400 598 600 600C820 602 960 610 1120 594C1260 580 1360 576 1440 584V720H0Z" fill="url(#klit-midt)"/>
+            <path d="M0 692C220 668 430 676 640 670C840 664 980 646 1130 642C1280 638 1380 650 1440 656V720H0Z" fill="url(#klit-naer)"/>
+            <ellipse cx="1140" cy="641" rx="150" ry="9" fill="#2a1710" opacity=".45" filter="url(#blod-skygge)"/>
+            <image href="billeder/signaturbil-1120.webp?v=20261003" x="1000" y="398" width="280" height="246" filter="url(#daempet-bil)"/>
+            <path d="M0 720V706C320 694 640 712 920 703C1160 696 1320 708 1440 699V720Z" fill="#e9ddcf"/>
+          </g>
+          <g id="sol">
+            <circle class="sol-glod" cx="720" cy="490" r="420" fill="url(#glod)"/>
+            <circle cx="720" cy="498" r="78" fill="url(#solskive)"/>
+          </g>
+        </defs>
+      </svg>
+      <div class="hero-tekst">
+        <span class="overlinje">Til Tesla og andre biler</span>
+        <h1 id="start-titel">Én nat ude rækker langt.</h1>
+        <p class="broed">Arytmi gør jeres bil til et sted at sove. En madras, der passer i bagagerummet, og en app, der har tænkt det meste for jer – så en helt almindelig aften kan ende ved vandet.</p>
+        <a class="knap" href="shop">Se madrassen og appen</a>
+      </div>
+      <svg class="scene scene-stor" viewBox="0 -180 1440 900" role="img" aria-label="Tegning: solen går ned over havet, og på en klit holder en bil med åben bagklap, hvor et par sidder på en madras.">
+        <rect y="-180" width="1440" height="670" fill="url(#himmel)"/><use class="sol" href="#sol"/><use href="#scene"/><rect class="korn" x="-10" y="-200" width="1460" height="940" filter="url(#korn)"/>
+      </svg>
+      <svg class="scene scene-lille" viewBox="420 270 900 450" role="img" aria-label="Tegning: solen går ned over havet, og på en klit holder en bil med åben bagklap, hvor et par sidder på en madras.">
+        <rect x="420" y="270" width="900" height="220" fill="url(#himmel)"/><use class="sol" href="#sol"/><use href="#scene"/><rect class="korn" x="-10" y="-200" width="1460" height="940" filter="url(#korn)"/>
+      </svg>
+    </section>
+
+    <section class="baand sand arytme" id="arytme" aria-labelledby="arytme-titel">
+      <div class="indre">
+        <div>
+          <h2 class="ord" id="arytme-titel">arytme</h2>
+          <svg class="puls" viewBox="0 0 240 40" aria-hidden="true"><path d="M0 24H96L104 16L112 30L122 4L134 36L142 20L150 24H240"/></svg>
+          <p class="ordklasse">navneord · en lille forstyrrelse af den normale rytme</p>
+          <p class="ord-intro">En kort tur, der bryder hverdagen – uden at vende den på hovedet.</p>
+        </div>
+        <div class="tekst">
+          <p class="broed">Det kræver ikke en ferie. Bare en aften, hvor I sætter kursen mod et sted, I ikke har været før, sover i bilen og vågner til en anden udsigt. Dagen efter er I hjemme igen.</p>
+          <p class="broed">Det er ikke lysten, der plejer at mangle. Det er alt det rundt om: hvor skal vi hen, hvad skal vi spise, hvad skal vi have med. Arytmi er lavet til at fjerne netop det.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="baand foeles" aria-labelledby="foeles-titel">
+      <div class="indre">
+        <div class="forloeb">
+          <div class="scene-ramme">
+            <div class="hoved">
+              <span class="overlinje">Sådan føles en arytme</span>
+              <h2 id="foeles-titel">Mindre end et døgn – og I taler om det længe efter.</h2>
+            </div>
+        <ol class="oejeblikke">
+          <li class="oejeblik">
+            <figure>
+              <img src="billeder/eftermiddag-800.jpg?v=20261003"
+                   srcset="billeder/eftermiddag-480.jpg?v=20261003 480w, billeder/eftermiddag-800.jpg?v=20261003 800w"
+                   sizes="(min-width: 640px) 52vw, 100vw"
+                   width="800" height="1000" loading="lazy" decoding="async"
+                   alt="Bagklappen på en sort Tesla står åben på en lys sandstrand under blå himmel. Havet og en stenmole ses i baggrunden.">
+            </figure>
+            <div class="kort-tekst">
+              <span class="tid">Eftermiddag</span>
+              <h3>I kører.</h3>
+              <p>Stedet er valgt, maden er bestemt, og pakkelisten har lavet sig selv. Der er ikke mere at planlægge.</p>
+            </div>
+          </li>
+          <li class="oejeblik">
+            <figure>
+              <img src="billeder/aften-800.jpg?v=20261003"
+                   srcset="billeder/aften-480.jpg?v=20261003 480w, billeder/aften-800.jpg?v=20261003 800w"
+                   sizes="(min-width: 640px) 52vw, 100vw"
+                   width="800" height="1000" loading="lazy" decoding="async"
+                   alt="En lys hund ligger i græsset ved siden af en Tesla med åben bagklap. Bag dem går en lang bro over vandet under store aftenskyer.">
+            </figure>
+            <div class="kort-tekst">
+              <span class="tid">Aften</span>
+              <h3>I bliver.</h3>
+              <p>Bagklappen op, sengen redt. Bilen er ikke længere noget, man kører i. Den er et sted, man har lyst til at være.</p>
+            </div>
+          </li>
+          <li class="oejeblik">
+            <figure>
+              <img src="billeder/morgen-800.jpg?v=20261003"
+                   srcset="billeder/morgen-480.jpg?v=20261003 480w, billeder/morgen-800.jpg?v=20261003 800w"
+                   sizes="(min-width: 640px) 52vw, 100vw"
+                   width="800" height="1000" loading="lazy" decoding="async"
+                   alt="Udsigten fra madrassen i bagagerummet: under den åbne bagklap ligger stranden og havet. I forgrunden sover en lys hund på dynen.">
+            </figure>
+            <div class="kort-tekst">
+              <span class="tid">Morgen</span>
+              <h3>I vågner et andet sted.</h3>
+              <p>Første kop kaffe med havet for fødderne. Og hjemme igen, før hverdagen opdager, at I var væk.</p>
+            </div>
+          </li>
+        </ol>
+            <div class="trin" aria-hidden="true"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="baand moerk" id="saadan" aria-labelledby="saadan-titel">
+      <div class="indre">
+        <div class="hoved">
+          <span class="overlinje">Det er Arytmi</span>
+          <h2 id="saadan-titel" class="delt"><span>En seng i bilen.</span> <span>En plan i lommen.</span></h2>
+        </div>
+        <div class="dele">
+          <article class="del" aria-labelledby="madras-titel">
+            <span class="overlinje">Madrassen</span>
+            <h3 id="madras-titel">Lavet til jeres bil</h3>
+            <p>Selvnivellerende og formet efter bagagerummet i Tesla. Lagenet følger med.</p>
+            <ul class="maerker" aria-label="Passer til">
+              <li>Model Y Juniper</li>
+              <li>Model Y (2021–2025)</li>
+              <li>Model X</li>
+              <li>Andre biler med plads bagi</li>
+            </ul>
+          </article>
+          <article class="del" aria-labelledby="app-titel">
+            <span class="overlinje">Appen</span>
+            <h3 id="app-titel">Mindst mulig planlægning</h3>
+            <p>I vælger sted og mad. Appen klarer pakkelisten og resten.</p>
+            <ul class="maerker" aria-label="I appen">
+              <li>Udvalgte steder</li>
+              <li>Madscenarier</li>
+              <li>Pakkeliste</li>
+              <li>Turværktøjer</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="baand sand" id="steder" aria-labelledby="steder-titel">
+      <div class="indre">
+        <div class="hoved">
+          <span class="overlinje">Stederne</span>
+          <h2 id="steder-titel">Danmark er fuld af steder, man bare kører forbi.</h2>
+          <p class="broed">Et lille udpluk fra appen. Hvor de ligger, finder I derinde.</p>
+        </div>
+        <ul class="steder">
+          <li class="sted">
+            <figure><img src="billeder/sted-fyr-480.jpg?v=20261003" srcset="billeder/sted-fyr-480.jpg?v=20261003 480w, billeder/sted-fyr-800.jpg?v=20261003 800w" sizes="(min-width: 900px) 18vw, 300px" width="480" height="600" loading="lazy" decoding="async" alt="Et hvidt fyrtårn bag en gul længe og en grusvej, under blå himmel."></figure>
+            <p>Ved fyret</p>
+          </li>
+          <li class="sted">
+            <figure><img src="billeder/sted-strand-480.jpg?v=20261003" srcset="billeder/sted-strand-480.jpg?v=20261003 480w, billeder/sted-strand-800.jpg?v=20261003 800w" sizes="(min-width: 900px) 18vw, 300px" width="480" height="600" loading="lazy" decoding="async" alt="En bred, fast sandstrand med klitter, og langt ude en enkelt bil under en skyet himmel."></figure>
+            <p>Helt ned på stranden</p>
+          </li>
+          <li class="sted">
+            <figure><img src="billeder/sted-soe-480.jpg?v=20261003" srcset="billeder/sted-soe-480.jpg?v=20261003 480w, billeder/sted-soe-800.jpg?v=20261003 800w" sizes="(min-width: 900px) 18vw, 300px" width="480" height="600" loading="lazy" decoding="async" alt="Lav sol over en sø, set mellem buske og høje græsser."></figure>
+            <p>Solnedgang over søen</p>
+          </li>
+          <li class="sted">
+            <figure><img src="billeder/sted-bakker-480.jpg?v=20261003" srcset="billeder/sted-bakker-480.jpg?v=20261003 480w, billeder/sted-bakker-800.jpg?v=20261003 800w" sizes="(min-width: 900px) 18vw, 300px" width="480" height="600" loading="lazy" decoding="async" alt="Udsigt ned over lyngklædte bakker til en sø omgivet af skov."></figure>
+            <p>Udsigt over bakkerne</p>
+          </li>
+          <li class="sted">
+            <figure><img src="billeder/sted-bro-480.jpg?v=20261003" srcset="billeder/sted-bro-480.jpg?v=20261003 480w, billeder/sted-bro-800.jpg?v=20261003 800w" sizes="(min-width: 900px) 18vw, 300px" width="480" height="600" loading="lazy" decoding="async" alt="En træbro med siv på den ene side fører ud i en sø, mens solen står lavt over vandet."></figure>
+            <p>Stille vand ved broen</p>
+          </li>
+        </ul>
+        <p class="rul-hint" aria-hidden="true">Stryg for at se flere</p>
+      </div>
+    </section>
+
+    <section class="baand hvem" aria-labelledby="hvem-titel">
+      <div class="indre">
+        <h2 class="sr-only" id="hvem-titel">Hvem er Arytmi til?</h2>
+        <p class="hvem-linjer"><span>Til jer to.</span><span>Til dig og dit barn.</span><span>Til jer og hunden.</span></p>
+        <p class="broed">En arytme kræver ikke en ferie og ikke en plan. Bare en bil, en aften og nogen at dele udsigten med.</p>
+      </div>
+    </section>
+
+    <section class="baand moerk videre" aria-labelledby="videre-titel">
+      <div class="indre">
+        <span class="overlinje">Næste skridt</span>
+        <h2 id="videre-titel">Næste solnedgang er tættere på, end I tror.</h2>
+        <p class="broed">Madrassen og appen klarer resten.</p>
+        <a class="knap" href="shop">Se madrassen og appen<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <p class="efter-knap">Hvad I får, hvordan det virker, og svar på det praktiske</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <!-- ADRESSER (3/10). Google Play bygger på appId com.arytmi.app, som aldrig
+         ændres - samme adresse som i aktiver.html og opret-kunde. Den virker
+         først, når appen er udgivet. App Store, Facebook og Instagram er
+         IKKE kendt endnu: de står med data-mangler (gul stiplet ramme) og
+         href="#", indtil Kennet giver adresserne. Læg ikke siden op sådan. -->
+    <div class="fod-indre">
+      <div class="fod-kolonner">
+        <div>
+          <h2>Kontakt</h2>
+          <p><a href="mailto:kundeservice@arytmi.com">kundeservice@arytmi.com</a></p>
+          <p>Spørgsmål til din ordre eller din konto? Skriv til os, så hjælper vi dig.</p>
+        </div>
+        <div>
+          <h2>Virksomhed</h2>
+          <p>Alveni ApS<br>CVR 46738764<br>Askelunden 5, 8300 Odder</p>
+        </div>
+        <div>
+          <h2>Følg os</h2>
+          <ul class="fod-links">
+            <li><a href="#" data-mangler="url" rel="noopener">Instagram<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 11 5M6 5h5v5"/></svg></a></li>
+            <li><a href="#" data-mangler="url" rel="noopener">Facebook<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 11 5M6 5h5v5"/></svg></a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Hent appen</h2>
+          <ul class="fod-links">
+            <li><a href="#" data-mangler="url" rel="noopener">App Store<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 11 5M6 5h5v5"/></svg></a></li>
+            <li><a href="https://play.google.com/store/apps/details?id=com.arytmi.app" rel="noopener">Google Play<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 11 5M6 5h5v5"/></svg></a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="fod-bund">
+        <span>© 2026 Alveni ApS · Arytmi er et produkt fra Alveni</span>
+        <nav class="fod-jura" aria-label="Vilkår">
+          <a href="handelsbetingelser">Handelsbetingelser</a>
+          <a href="privatliv">Privatlivspolitik</a>
+        </nav>
+        <svg class="fod-puls" viewBox="0 0 240 40" aria-hidden="true"><path d="M0 24H96L104 16L112 30L122 4L134 36L142 20L150 24H240"/></svg>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

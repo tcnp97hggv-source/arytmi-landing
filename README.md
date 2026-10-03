@@ -1,6 +1,7 @@
-# Arytmi — kommer snart-side
+# Arytmi — forsiden og kundesiderne på arytmi.com
 
-Simpel, statisk "kommer snart"-side til arytmi.com. Ingen build, bare index.html + billeder.
+Statisk HTML til arytmi.com: forsiden (index.html), kundesiderne /aktiver, /nulstil,
+/os og /liste og bagrummet i admin/. Ingen build.
 Adskilt fra det private app-repo med vilje — den her skal være offentlig, appen skal ikke.
 
 ## Deploy (GitHub Pages)
@@ -26,6 +27,27 @@ Tilføj disse (ved siden af de eksisterende MX/TXT-records til mail — ingen ko
 Herefter virker både arytmi.com og www.arytmi.com. GitHub udsteder selv et gratis
 SSL-certifikat, når DNS er slået igennem (kan tage op til et par timer).
 
+## Forsiden og funnelen — 3. oktober 2026
+
+Forsiden er Arytmis hjemmeside: den fortæller, hvad Arytmi er (ordet arytme, en tur
+fra eftermiddag til morgen, madrassen og appen, stederne, hvem det er til) og sender
+så kunden videre til funnelen. Den er **tidløs** — intet tema, ingen kampagne.
+
+- **Funnelen skifter, forsiden gør ikke.** Alle knapper peger på `shop` (`shop.html`),
+  som sender videre. **Skift funnel = ret adressen i `shop.html`** (to steder i filen).
+  Rør ikke knapperne i index.html. `arytmi.com/shop` kan også bruges på tryk og i opslag.
+- **Ankeret er en afhængighed.** `shop.html` sender lige nu til
+  `https://shop.arytmi.com/#whatyouget` ("DET FÅR DU"). Omdøbes eller slettes sektionens
+  id i ClickFunnels-editoren, lander kunden lydløst i toppen af salgssiden.
+- **Ingen pris og intet købsord på forsiden.** Appens "Opret en konto" fører hertil,
+  og Apple 3.1.1 / Googles external offers rammer links fra appen, der fører til et køb.
+- **Ingen konto/login i toppen.** Hjælpen til eksisterende kunder står i footeren.
+- Fotoene er fra appens egne ture, kun beskåret og skaleret (ingen metadata); opskriften
+  står som kommentar i index.html. Vis aldrig et foto med en læsbar nummerplade.
+- **Ingen stednavne** — ikke i tekst, alt-tekst eller filnavn (repoet er offentligt).
+  Kortet over, hvilket foto der er hvilket sted, står i app-repoets Arytmi-status.md.
+- Skrifterne i `fonts/` er kopieret uændret fra app-repoet med OFL-licenserne.
+
 ## Opdatere siden senere
 
 Ret index.html, commit, push — Pages opdaterer automatisk inden for et par minutter.
@@ -35,7 +57,9 @@ Ret index.html, commit, push — Pages opdaterer automatisk inden for et par min
 Hver side har et `<meta http-equiv="Content-Security-Policy">` øverst i `<head>`.
 Den siger, hvad browseren overhovedet må hente: alt er `none` som udgangspunkt,
 og så åbnes præcis det, siden bruger — egne billeder, sit eget inline `<style>`
-og `<script>`, og for de fire app-sider et kald til Supabase-projektet.
+og `<script>`, og for de fire app-sider et kald til Supabase-projektet. Forsiden har
+desuden `font-src 'self'` til sine egne skrifter i `fonts/`; uden den falder den lydløst
+tilbage til systemskrift.
 
 **Tre ting er værd at kende, hvis du retter i siderne:**
 
