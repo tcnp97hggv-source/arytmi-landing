@@ -20,12 +20,14 @@
   /aktiver, /nulstil, /os, /liste, /admin (og senere /privatliv) bor her
   og skal blive ved med at virke.
 
-  SAMME ADRESSE står i shop.html (arytmi.com/shop). Skiftes funnelen, rettes
-  begge - to steder i hver fil: <meta http-equiv="refresh"> og linket nederst.
+  Skiftes funnelen, rettes adressen HER - fire steder: scriptet (og så
+  CSP-hashen), <meta http-equiv="refresh">, canonical og linket nederst.
+  (arytmi.com/shop fandtes som en ekstra viderestilling 3/10 - fjernet samme dag.)
 
   DEN BYGGEDE FORSIDE er gemt i git-historikken: commit cb59f6c (og 3fed676
   med /shop til toppen af funnelen). Hent den frem med
-      git checkout 3fed676 -- index.html
+      git checkout 3fed676 -- index.html shop.html
+  (shop.html skal med - forsidens knapper peger på arytmi.com/shop).
   Billederne i billeder/ og skrifterne i fonts/ er bevaret til det formål -
   slet dem ikke.
 
