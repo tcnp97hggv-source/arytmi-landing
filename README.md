@@ -36,9 +36,9 @@ så kunden videre til funnelen. Den er **tidløs** — intet tema, ingen kampagn
 - **Funnelen skifter, forsiden gør ikke.** Alle knapper peger på `shop` (`shop.html`),
   som sender videre. **Skift funnel = ret adressen i `shop.html`** (to steder i filen).
   Rør ikke knapperne i index.html. `arytmi.com/shop` kan også bruges på tryk og i opslag.
-- **Ankeret er en afhængighed.** `shop.html` sender lige nu til
-  `https://shop.arytmi.com/#whatyouget` ("DET FÅR DU"). Omdøbes eller slettes sektionens
-  id i ClickFunnels-editoren, lander kunden lydløst i toppen af salgssiden.
+- **Kunden lander i toppen af funnelen** (`https://shop.arytmi.com/`, Kennet 3/10), så
+  hun ser det tema, der køres. Et anker som `#whatyouget` blev prøvet og fravalgt: det
+  sprang temaet over og forsvandt lydløst, hvis sektionen blev omdøbt i ClickFunnels.
 - **Ingen pris og intet købsord på forsiden.** Appens "Opret en konto" fører hertil,
   og Apple 3.1.1 / Googles external offers rammer links fra appen, der fører til et køb.
 - **Ingen konto/login i toppen.** Hjælpen til eksisterende kunder står i footeren.
