@@ -27,15 +27,23 @@ Tilføj disse (ved siden af de eksisterende MX/TXT-records til mail — ingen ko
 Herefter virker både arytmi.com og www.arytmi.com. GitHub udsteder selv et gratis
 SSL-certifikat, når DNS er slået igennem (kan tage op til et par timer).
 
-## Forsiden og funnelen — 3. oktober 2026
+## Forsiden sender videre til funnelen — 3. oktober 2026
 
-Forsiden er Arytmis hjemmeside: den fortæller, hvad Arytmi er (ordet arytme, en tur
-fra eftermiddag til morgen, madrassen og appen, stederne, hvem det er til) og sender
-så kunden videre til funnelen. Den er **tidløs** — intet tema, ingen kampagne.
+**arytmi.com har ingen hjemmeside** (Oliivia og Kennet 3/10). `index.html` sender
+direkte videre til toppen af funnelen på `https://shop.arytmi.com/`, og det samme gør
+`shop.html` (arytmi.com/shop). **Skift funnel = ret adressen i begge filer** (to steder
+i hver). Kun forsiden sender videre — domænet må aldrig peges på ClickFunnels, for
+/aktiver, /nulstil, /os, /liste og /admin bor her.
+
+⚠️ Appens "Opret en konto" peger på arytmi.com og lander nu på en salgsside med pris.
+Det skal afgøres før Apples gennemsyn (regel 3.1.1).
+
+**Den byggede forside er gemt i git-historikken** — `git checkout 3fed676 -- index.html`
+henter den frem. Billederne i `billeder/` og skrifterne i `fonts/` er bevaret til det;
+slet dem ikke. Noterne herunder gælder den forside, hvis den kommer tilbage.
 
 - **Funnelen skifter, forsiden gør ikke.** Alle knapper peger på `shop` (`shop.html`),
-  som sender videre. **Skift funnel = ret adressen i `shop.html`** (to steder i filen).
-  Rør ikke knapperne i index.html. `arytmi.com/shop` kan også bruges på tryk og i opslag.
+  som sender videre. Rør ikke knapperne i index.html.
 - **Kunden lander i toppen af funnelen** (`https://shop.arytmi.com/`, Kennet 3/10), så
   hun ser det tema, der køres. Et anker som `#whatyouget` blev prøvet og fravalgt: det
   sprang temaet over og forsvandt lydløst, hvis sektionen blev omdøbt i ClickFunnels.
