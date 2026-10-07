@@ -3252,13 +3252,26 @@
   }
 
   /* ---------- NY KUNDE ----------
-     Siden 7/10 (Kennet): hun får velkomstmailen fra ClickFunnels, den
-     samme som ved et køb — kunden får kun mails fra ClickFunnels. Hun
-     opretter sig i appen med "Opret dig" og koden på mail (K21), så der
-     er intet aktiveringslink at give videre. Gik mailen ikke, siger
-     `admin-brugere` hvorfor, og så giver Kennet hende besked selv.
-     Svarer en ældre `admin-brugere` stadig med et link (17/9: "uden
-     mail"), vises det som før. */
+     Siden 7/10 (Kennet): hun får velkomstmailen fra ClickFunnels — kunden
+     får kun mails fra ClickFunnels. Hun opretter sig i appen med "Opret
+     dig" og koden på mail (K21), så der er intet aktiveringslink at give
+     videre.
+
+     HVORDAN CLICKFUNNELS FÅR BESKED. Planen har ingen API (kun Scale og
+     op), så `admin-brugere` kan ikke selv starte forløbet. I stedet åbner
+     bagrummet en side HOS ClickFunnels (`CF_VELKOMST_SIDE`) med mail og
+     navn i fragmentet (#) — det sendes aldrig til en server. Siden udfylder
+     ClickFunnels' egen formular og sender den; opt-in dér starter forløbet
+     "Arytmi – velkomst til manuel kunde" (mærke + velkomstmail). Siden
+     ligger hos ClickFunnels og ikke på arytmi.com, så deres script aldrig
+     kører ved siden af bagrummets login.
+
+     Vinduet åbnes I klikket — ellers stopper browserens popup-blokering
+     det — og sendes videre, når kontoen er lavet. Får `admin-brugere` en
+     dag en API-nøgle og svarer "sendt", lukkes vinduet igen. Svarer en
+     ældre `admin-brugere` med et link (17/9: "uden mail"), vises det. */
+  var CF_VELKOMST_SIDE = 'https://oliiviadahlsteamwor2e516.myclickfunnels.com/velkomst-til-manuel-kunde-sender--c6d8a';
+
   function nyKunde(){
     var b = $('bruger-boks');
     tøm(b); b.hidden = false;
@@ -3282,23 +3295,48 @@
 
     b.appendChild(knapFor('Opret kunden', 'knap', function(){
       var e = mail.value.trim().toLowerCase();
+      var n = navn.value.trim();
       if(!e){ status.className = 'status fejl'; status.textContent = 'Skriv en mailadresse.'; return; }
       status.className = 'status'; status.textContent = 'Opretter …';
-      brugerKald({ handling:'opret', email:e, navn:navn.value.trim() })
+      var vindue = null;
+      try {
+        vindue = window.open('', '_blank');
+        if(vindue){
+          vindue.opener = null;
+          vindue.document.title = 'Arytmi';
+          vindue.document.body.style.cssText = 'font-family:sans-serif;padding:24px;color:#3A3227;background:#ECEAE3';
+          vindue.document.body.textContent = 'Opretter kunden …';
+        }
+      } catch(x){}
+      function luk(){ try { if(vindue) vindue.close(); } catch(x){} }
+      var cfAdresse = CF_VELKOMST_SIDE + '#' + new URLSearchParams({ email:e, navn:n }).toString();
+      brugerKald({ handling:'opret', email:e, navn:n })
         .then(function(d){
           tøm(ud); ud.hidden = true;
           var v = d.velkomst;
           if(v === 'sendt'){
+            luk();
             status.className = 'status god';
             status.textContent = 'Kontoen er oprettet, og velkomstmailen er sendt fra ClickFunnels.';
           } else if(typeof v === 'string' && /allerede taget i brug/.test(v)){
+            luk();
             status.className = 'status god';
             status.textContent = 'Kontoen findes allerede og er taget i brug. Der er ikke sendt en ny velkomstmail.';
           } else if(typeof v === 'string'){
-            status.className = 'status fejl';
-            status.textContent = 'Kontoen er oprettet, men velkomstmailen er IKKE sendt (' + v.replace(/^ikke sendt: /, '')
-              + '). Bed hende åbne app.arytmi.com på telefonen og trykke "Opret dig".';
+            status.className = 'status god';
+            if(vindue && !vindue.closed){
+              vindue.location.href = cfAdresse;
+              status.textContent = 'Kontoen er oprettet. Velkomstmailen sendes fra ClickFunnels i det nye vindue, '
+                + 'som lukker af sig selv.';
+            } else {
+              status.textContent = 'Kontoen er oprettet. Tryk på knappen herunder, så sender ClickFunnels velkomstmailen.';
+              ud.hidden = false;
+              var a = lav('a', 'knap', 'Send velkomstmailen');
+              a.href = cfAdresse; a.target = '_blank'; a.rel = 'noopener';
+              ud.appendChild(a);
+            }
           } else {
+            luk();
             status.className = 'status god';
             status.textContent = 'Kontoen er oprettet.';
             if(d.aktiveringslink){
@@ -3311,7 +3349,7 @@
           }
           hentKunder();
         })
-        .catch(function(f){ status.className = 'status fejl'; status.textContent = forklar(f); });
+        .catch(function(f){ luk(); status.className = 'status fejl'; status.textContent = forklar(f); });
     }));
     b.appendChild(status);
     b.appendChild(ud);
