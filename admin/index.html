@@ -3270,7 +3270,10 @@
      det — og sendes videre, når kontoen er lavet. Får `admin-brugere` en
      dag en API-nøgle og svarer "sendt", lukkes vinduet igen. Svarer en
      ældre `admin-brugere` med et link (17/9: "uden mail"), vises det. */
-  var CF_VELKOMST_SIDE = 'https://oliiviadahlsteamwor2e516.myclickfunnels.com/velkomst-til-manuel-kunde-sender--c6d8a';
+  /* Trinnets adresse i funnelen — IKKE sidens egen (…/velkomst-til-manuel-
+     kunde-sender--c6d8a). Dér står siden uden for funnelen, og ClickFunnels
+     afviser formularen med page_not_in_funnel (set 7/10). */
+  var CF_VELKOMST_SIDE = 'https://oliiviadahlsteamwor2e516.myclickfunnels.com/velkomst-74e5c561ad94';
 
   function nyKunde(){
     var b = $('bruger-boks');
