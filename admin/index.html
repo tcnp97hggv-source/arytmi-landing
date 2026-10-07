@@ -3252,18 +3252,20 @@
   }
 
   /* ---------- NY KUNDE ----------
-     Kennets valg 17/9: uden mail. Kontoen laves, og linket kommer tilbage,
-     så det kan gives videre i hånden.
-     ⚠️ Et aktiveringslink er i praksis en nulstilling af kodeordet for
-     den, der har det. Derfor står advarslen ved siden af feltet — ikke i
-     en note nogen steder. */
+     Siden 7/10 (Kennet): hun får velkomstmailen fra ClickFunnels, den
+     samme som ved et køb — kunden får kun mails fra ClickFunnels. Hun
+     opretter sig i appen med "Opret dig" og koden på mail (K21), så der
+     er intet aktiveringslink at give videre. Gik mailen ikke, siger
+     `admin-brugere` hvorfor, og så giver Kennet hende besked selv.
+     Svarer en ældre `admin-brugere` stadig med et link (17/9: "uden
+     mail"), vises det som før. */
   function nyKunde(){
     var b = $('bruger-boks');
     tøm(b); b.hidden = false;
     b.appendChild(lav('h3', null, 'Ny kunde'));
     b.appendChild(lav('p','under',
-      'Kontoen laves med det samme. Der bliver IKKE sendt en mail — du får et aktiveringslink, '
-    + 'du selv giver videre.'));
+      'Kontoen laves med det samme, og hun får velkomstmailen fra ClickFunnels — den samme som '
+    + 'ved et køb. Arytmi sender ingen mail selv.'));
 
     var mail = document.createElement('input');
     mail.type = 'email'; mail.autocomplete = 'off'; mail.spellcheck = false;
@@ -3284,14 +3286,29 @@
       status.className = 'status'; status.textContent = 'Opretter …';
       brugerKald({ handling:'opret', email:e, navn:navn.value.trim() })
         .then(function(d){
-          status.className = 'status god';
-          status.textContent = 'Kontoen er oprettet.';
-          tøm(ud); ud.hidden = false;
-          ud.appendChild(lav('b', null, 'Aktiveringslink — giv det videre, og kun til hende:'));
-          var kode = lav('code','k-linktekst', d.aktiveringslink);
-          ud.appendChild(kode);
-          ud.appendChild(lav('div','hint',
-            'Gyldigt til ' + dato(d.udloeber) + '. Den, der har linket, kan sætte kontoens kodeord.'));
+          tøm(ud); ud.hidden = true;
+          var v = d.velkomst;
+          if(v === 'sendt'){
+            status.className = 'status god';
+            status.textContent = 'Kontoen er oprettet, og velkomstmailen er sendt fra ClickFunnels.';
+          } else if(typeof v === 'string' && /allerede taget i brug/.test(v)){
+            status.className = 'status god';
+            status.textContent = 'Kontoen findes allerede og er taget i brug. Der er ikke sendt en ny velkomstmail.';
+          } else if(typeof v === 'string'){
+            status.className = 'status fejl';
+            status.textContent = 'Kontoen er oprettet, men velkomstmailen er IKKE sendt (' + v.replace(/^ikke sendt: /, '')
+              + '). Bed hende åbne app.arytmi.com på telefonen og trykke "Opret dig".';
+          } else {
+            status.className = 'status god';
+            status.textContent = 'Kontoen er oprettet.';
+            if(d.aktiveringslink){
+              ud.hidden = false;
+              ud.appendChild(lav('b', null, 'Aktiveringslink — giv det videre, og kun til hende:'));
+              ud.appendChild(lav('code','k-linktekst', d.aktiveringslink));
+              ud.appendChild(lav('div','hint',
+                'Gyldigt til ' + dato(d.udloeber) + '. Den, der har linket, kan sætte kontoens kodeord.'));
+            }
+          }
           hentKunder();
         })
         .catch(function(f){ status.className = 'status fejl'; status.textContent = forklar(f); });
