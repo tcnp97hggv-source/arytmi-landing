@@ -3078,6 +3078,36 @@
       });
   }
 
+  /* Trackingnummer + mail til kunden ("din ordre er på vej"). */
+  function trackingFormular(o, hvor){
+    var f = lav('div','bb-gruppe');
+    function felt(pladsh, v){ var i = document.createElement('input'); i.type='text'; i.autocomplete='off'; i.placeholder=pladsh; i.value=v||''; return i; }
+    var nr = felt('Trackingnummer', o.tracking_nr);
+    var firma = felt('Fragtfirma (fx GLS, PostNord)', o.fragtfirma);
+    var link = felt('Sporingslink (valgfrit, https://…)', o.tracking_link);
+    f.appendChild(nr); f.appendChild(firma); f.appendChild(link);
+    var st = lav('div','status');
+    function send(medMail, gensend){
+      if(!nr.value.trim()){ st.className='status fejl'; st.textContent='Skriv et trackingnummer.'; return; }
+      if(medMail && !window.confirm('Send mail til ' + o.email + ' om, at ordren er på vej?')) return;
+      st.className='status'; st.textContent='Gemmer …';
+      brugerKald({ handling:'tracking', id:o.id, tracking_nr:nr.value.trim(), fragtfirma:firma.value.trim(),
+                   tracking_link:link.value.trim(), send_mail:medMail, gensend:!!gensend })
+        .then(function(d){
+          st.className='status god';
+          st.textContent = d.mail === 'sendt' ? 'Gemt, og mailen er sendt.'
+            : d.mail === 'allerede sendt' ? 'Gemt. Mailen var allerede sendt — brug "Send igen", hvis den skal sendes påny.'
+            : d.mail && d.mail.indexOf('ikke sendt') === 0 ? 'Gemt, men mailen gik ikke: ' + d.mail : 'Gemt.';
+        })
+        .catch(function(x){ st.className='status fejl'; st.textContent = forklar(x); });
+    }
+    f.appendChild(knapFor('Gem og send mail', 'knap lille', function(){ send(true, false); }));
+    f.appendChild(knapFor('Send mailen igen', 'knap rolig lille', function(){ send(true, true); }));
+    f.appendChild(knapFor('Gem uden mail', 'knap rolig lille', function(){ send(false, false); }));
+    f.appendChild(st);
+    hvor.appendChild(f);
+  }
+
   function harAdgang(k){ return !!k.adgang; }
 
   /* Hvornår løber adgangen ud? Den seneste slutdato af dem, der stadig
@@ -3218,6 +3248,43 @@
     g2.appendChild(linje);
     b.appendChild(g2);
 
+    // ---- ordrer (0052) ----
+    var gO = lav('div','bb-gruppe');
+    gO.appendChild(lav('h4', null, 'Ordrer'));
+    var oListe = lav('div');
+    oListe.appendChild(lav('p','hint','Henter …'));
+    gO.appendChild(oListe);
+    b.appendChild(gO);
+    brugerKald({ handling:'ordrer', bruger_id:k.id }).then(function(d){
+      tøm(oListe);
+      var os = (d && d.ordrer) || [];
+      if(!os.length){ oListe.appendChild(lav('p','hint','Ingen ordrer registreret.')); return; }
+      os.forEach(function(o){
+        var kr = o.beloeb_oere == null ? '' : ' · ' + (o.beloeb_oere / 100).toLocaleString('da-DK', { minimumFractionDigits:2 })
+          + ' ' + (o.valuta || '');
+        var t = (o.ordrenummer ? 'Ordre ' + o.ordrenummer : 'Betaling ' + o.betaling_ref)
+          + kr + (o.produkt ? ' · ' + o.produkt : '')
+          + ' · ' + dato(o.oprettet).split(' kl.')[0] + ' · ' + o.kilde
+          + (o.status === 'refunderet' ? ' · REFUNDERET' : '');
+        var l = lav('div','bb-linje');
+        l.appendChild(lav('span', 'hint', t));
+        if(o.tracking_nr){
+          oListe.appendChild(lav('div','hint','Sendt: ' + (o.fragtfirma ? o.fragtfirma + ' ' : '') + o.tracking_nr
+            + (o.tracking_mail_kl ? ' · mail sendt ' + dato(o.tracking_mail_kl).split(' kl.')[0] : ' · mail ikke sendt')));
+        }
+        if(o.status === 'betalt'){
+          l.appendChild(knapFor(o.tracking_nr ? 'Ret / send igen' : 'Send trackingnummer', 'knap rolig lille', function(){
+            trackingFormular(o, oListe);
+          }));
+          l.appendChild(knapFor('Markér refunderet', 'knap fare lille', function(){
+            if(!window.confirm('Markér ordren som refunderet?\n\nAdgangen fra netop denne ordre lukkes. Pengene betales ikke tilbage herfra — det gøres i Stripe eller ClickFunnels.')) return;
+            arbejd({ handling:'ordre_refunderet', id:o.id }, function(){ return 'Ordren er markeret refunderet, og dens adgang er lukket.'; });
+          }));
+        }
+        oListe.appendChild(l);
+      });
+    }).catch(function(f){ tøm(oListe); oListe.appendChild(lav('p','hint', forklar(f))); });
+
     // ---- rejsemakker ----
     var g3 = lav('div','bb-gruppe');
     g3.appendChild(lav('h4', null, 'Rejsemakker'));
@@ -3289,9 +3356,19 @@
     var navn = document.createElement('input');
     navn.type = 'text'; navn.placeholder = 'Fornavn (valgfrit)';
 
+    var ordrenr = document.createElement('input');
+    ordrenr.type = 'text'; ordrenr.autocomplete = 'off'; ordrenr.placeholder = 'Ordrenummer fra ClickFunnels';
+    var beloeb = document.createElement('input');
+    beloeb.type = 'text'; beloeb.inputMode = 'decimal'; beloeb.autocomplete = 'off'; beloeb.placeholder = 'Beløb i kr. (valgfrit)';
+    var produkt = document.createElement('input');
+    produkt.type = 'text'; produkt.autocomplete = 'off'; produkt.placeholder = 'Produkt (valgfrit)';
+
     var l1 = lav('label', null, 'Mailadresse'); l1.appendChild(mail);
     var l2 = lav('label', null, 'Navn'); l2.appendChild(navn);
-    b.appendChild(l1); b.appendChild(l2);
+    var l3 = lav('label', null, 'Ordrenummer'); l3.appendChild(ordrenr);
+    var l4 = lav('label', null, 'Beløb'); l4.appendChild(beloeb);
+    var l5 = lav('label', null, 'Produkt'); l5.appendChild(produkt);
+    b.appendChild(l1); b.appendChild(l2); b.appendChild(l3); b.appendChild(l4); b.appendChild(l5);
 
     var status = lav('div','status');
     var ud = lav('div','k-link'); ud.hidden = true;
@@ -3313,7 +3390,8 @@
       } catch(x){}
       function luk(){ try { if(vindue) vindue.close(); } catch(x){} }
       var cfAdresse = CF_VELKOMST_SIDE + '#' + new URLSearchParams({ email:e, navn:n }).toString();
-      brugerKald({ handling:'opret', email:e, navn:n })
+      brugerKald({ handling:'opret', email:e, navn:n,
+        ordrenummer:ordrenr.value.trim(), beloeb_kr:beloeb.value.trim(), produkt:produkt.value.trim() })
         .then(function(d){
           tøm(ud); ud.hidden = true;
           var v = d.velkomst;
