@@ -73,6 +73,22 @@
       fetch, fra vores egen vært. Ingen fremmed adresse er kommet til.
 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<!--
+  12/10 — CLICKJACKING (klar-til-live 2.5). `frame-ancestors` virker ikke i
+  et meta-tag, og GitHub Pages kan ikke sende headeren. Så siden gemmer sig
+  selv, indtil scriptet har set, at den IKKE ligger i en ramme. Ligger den i
+  en, vises intet, og browseren sendes til den rigtige side i stedet.
+  Skjul FØRST, vis bagefter: lykkes scriptet ikke, er siden usynlig — ikke
+  åben i en fremmeds ramme. Bagrummet virker ikke uden JavaScript alligevel.
+-->
+<style id="mod-ramme">html{display:none!important}</style>
+<script>
+  if (window.self === window.top) {
+    document.getElementById('mod-ramme').remove();
+  } else {
+    try { window.top.location = window.self.location.href; } catch (e) {}
+  }
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arytmi — bagrummet</title>
 <meta name="robots" content="noindex, nofollow">
