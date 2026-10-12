@@ -438,6 +438,75 @@
   .bb-gruppe .hint{ font-size:13px; color:var(--dæmpet); margin-bottom:10px; line-height:1.55; }
   .bb-gruppe .bb-linje{ display:flex; gap:8px; flex-wrap:wrap; }
 
+  /* ---------- DASHBOARDET (2.10) ----------
+     Én accentfarve (rav) i alle grafer: hver graf viser én ting, så farven
+     skal ikke skille serier ad. Status er altid lys + ikon + ord, aldrig farve
+     alene. Tal står i brødskriften (ikke serif), som dashboards skal. */
+  .db-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .db-top .under{ margin-bottom:16px; }
+  .db-status{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:14px; margin-bottom:18px; font-size:14px; line-height:1.5; border:1px solid; }
+  .db-status.god{ background:#eef3ec; border-color:#cfdcca; color:var(--god); }
+  .db-status.advar{ background:#fbf1e2; border-color:#ecd6b0; color:#7a5310; }
+  .db-status.fejl{ background:#f7e9e3; border-color:#e6cfc4; color:var(--fejl); }
+  .db-status b{ display:block; font-size:15px; margin-bottom:2px; }
+  .db-status ul{ margin:4px 0 0 18px; }
+  .db-ikon{ flex:0 0 auto; width:22px; height:22px; margin-top:1px; }
+  .db-tal{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:16px; }
+  .db-felt{ background:#fff; border:1px solid var(--linje); border-radius:16px; padding:16px 18px; box-shadow:var(--løft); }
+  .db-felt .navn{ font-size:13px; color:var(--fjord); font-weight:600; }
+  .db-felt .vaerdi{ font-size:clamp(22px,2.3vw,30px); font-weight:650; color:var(--gran); line-height:1.15; margin-top:6px; letter-spacing:-.01em; white-space:nowrap; }
+  .db-felt.helt .vaerdi{ font-size:clamp(24px,2.9vw,38px); }
+  .db-felt .note{ font-size:12.5px; color:var(--dæmpet); margin-top:4px; }
+  .db-kort{ background:#fff; border:1px solid var(--linje); border-radius:16px; padding:18px 18px 14px; box-shadow:var(--løft); margin-bottom:16px; min-width:0; }
+  .db-kort h3{ font-family:var(--skrift-brød); font-size:15px; font-weight:650; }
+  .db-under{ font-size:12.5px; color:var(--dæmpet); margin:3px 0 10px; }
+  .db-kort-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+  .db-vaelg{ display:inline-flex; border:1px solid var(--linje); border-radius:10px; overflow:hidden; }
+  .db-vaelg button{ background:#fff; border:0; padding:6px 11px; font-size:12.5px; color:var(--fjord); }
+  .db-vaelg button + button{ border-left:1px solid var(--linje); }
+  .db-vaelg button[aria-pressed="true"]{ background:var(--bund); color:var(--gran); font-weight:600; }
+  .db-to{ display:grid; gap:16px; grid-template-columns:1fr 1fr; }
+  .db-to .db-kort{ margin-bottom:0; }
+  .db-to + .db-to, .db-to + h2{ margin-top:16px; }
+  .db-graf{ position:relative; height:200px; }
+  .db-graf.lav{ height:150px; }
+  .db-graf svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .db-graf .akse{ font-size:11px; fill:var(--dæmpet); font-variant-numeric:tabular-nums; }
+  .db-graf .gitter{ stroke:#efe4d6; stroke-width:1; }
+  .db-graf .grund{ stroke:#d9c8b4; stroke-width:1; }
+  .db-graf .soejle{ fill:var(--rav); }
+  .db-graf .ramt{ fill:transparent; cursor:default; }
+  .db-graf .ramt:hover + .soejle, .db-graf .soejle.aktiv{ fill:var(--rav-mørk); }
+  .db-graf .tom{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dæmpet); font-size:13px; text-align:center; padding:0 20px; }
+  .db-tip{ position:absolute; pointer-events:none; background:var(--gran); color:#fff; font-size:12px; line-height:1.35; padding:6px 9px; border-radius:8px; white-space:nowrap; transform:translate(-50%,-100%); margin-top:-8px; box-shadow:var(--løft-hævet); }
+  .db-tip b{ font-weight:650; }
+  .db-tabel{ margin-top:8px; font-size:12.5px; }
+  .db-tabel summary{ cursor:pointer; color:var(--fjord); }
+  .db-tabel table{ margin-top:8px; }
+  .db-prod{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; margin-bottom:12px; font-size:13.5px; }
+  .db-prod .bar{ grid-column:1/-1; height:8px; border-radius:4px; background:var(--bund); overflow:hidden; }
+  .db-prod .bar i{ display:block; height:100%; background:var(--rav); border-radius:4px; }
+  .db-prod .v{ color:var(--dæmpet); font-variant-numeric:tabular-nums; }
+  .db-tavle{ list-style:none; }
+  .db-tavle li{ display:grid; grid-template-columns:22px 1fr; gap:4px 10px; padding:9px 0; border-top:1px solid var(--linje-blød); font-size:13.5px; }
+  .db-tavle li:first-child{ border-top:0; }
+  .db-tavle .hvad{ font-weight:600; color:var(--gran); }
+  .db-tavle .hvordan{ grid-column:2; color:var(--dæmpet); font-size:12.5px; }
+  .db-lys{ width:18px; height:18px; margin-top:1px; }
+  .db-mini{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .db-mini > div{ background:var(--flade); border:1px solid var(--linje-blød); border-radius:12px; padding:10px 12px; }
+  .db-mini .t{ font-size:22px; font-weight:650; color:var(--gran); }
+  .db-mini .n{ font-size:12px; color:var(--dæmpet); }
+  .db-mini > .alarm{ background:#f7e9e3; border-color:#e6cfc4; }
+  .db-mini .alarm .t{ color:var(--fejl); }
+  @media (max-width:720px){
+    .db-to{ grid-template-columns:1fr; }
+    .db-to .db-kort{ margin-bottom:16px; }
+    .db-to + .db-to{ margin-top:0; }
+    .db-felt .vaerdi{ font-size:28px; }
+    .db-felt.helt .vaerdi{ font-size:34px; }
+  }
+
   /* Beredskab og brudlog (2.7) */
   .brud-trin{ margin:0 0 10px 18px; font-size:14px; line-height:1.6; }
   .brud-trin li{ margin-bottom:4px; }
@@ -927,10 +996,61 @@
   <main>
     <!-- ---------- OVERSIGT ---------- -->
     <section id="fane-oversigt">
-      <h2>Oversigt</h2>
-      <p class="under">Tallene hentes, hver gang du åbner fanen. Der er ikke gemt et tal noget sted, som kan blive gammelt.</p>
-      <div class="tal" id="tal"></div>
-      <h2 style="margin-top:30px">Seneste udgivelser</h2>
+      <!-- DASHBOARDET (klar-til-live 2.10, omgang 1, 12/10). Alt hentes fra
+           edge-funktionen `overblik` i ét kald, hver gang fanen åbnes. -->
+      <div class="db-top">
+        <div>
+          <h2>Oversigt</h2>
+          <p class="under" id="db-hvornaar">Henter …</p>
+        </div>
+        <button type="button" class="knap rolig lille" id="db-opdater">Opdater</button>
+      </div>
+
+      <div class="db-status" id="db-status" hidden></div>
+
+      <div class="db-tal" id="db-tal"></div>
+
+      <div class="db-kort">
+        <div class="db-kort-top">
+          <div>
+            <h3>Salg pr. dag</h3>
+            <p class="db-under" id="db-salg-under"></p>
+          </div>
+          <div class="db-vaelg" role="group" aria-label="Periode">
+            <button type="button" data-dage="30" aria-pressed="true">30 dage</button>
+            <button type="button" data-dage="90" aria-pressed="false">90 dage</button>
+          </div>
+        </div>
+        <div class="db-graf" id="db-graf-salg"></div>
+      </div>
+
+      <div class="db-to">
+        <div class="db-kort">
+          <h3>Nye kunder pr. dag</h3>
+          <p class="db-under" id="db-nye-under"></p>
+          <div class="db-graf lav" id="db-graf-nye"></div>
+        </div>
+        <div class="db-kort">
+          <h3>Det sælger</h3>
+          <p class="db-under">Betalte ordrer i alt, efter produkt.</p>
+          <div id="db-produkter"></div>
+        </div>
+      </div>
+
+      <div class="db-to">
+        <div class="db-kort">
+          <h3>Driften</h3>
+          <p class="db-under">Grønt er i orden. Gråt er ikke sat op endnu.</p>
+          <ul class="db-tavle" id="db-drift"></ul>
+        </div>
+        <div class="db-kort">
+          <h3>Login og misbrug — seneste døgn</h3>
+          <p class="db-under">Koder på mail og invitationer. Et ramt loft er værd at kigge på.</p>
+          <div class="db-mini" id="db-login"></div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:34px">Seneste udgivelser</h2>
       <p class="under">Hver gang indholdet sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
       <div class="rulle">
         <table>
@@ -1332,22 +1452,6 @@
         return d;
       });
     });
-  }
-
-  /* Antal rækker uden at hente rækkerne. PostgREST svarer med
-     `Content-Range: 0-0/128`, og det er tallet efter skråstregen, vi vil
-     have. Er hovedet der ikke, siges det — der returneres ikke et nul,
-     som ville ligne et svar. */
-  function antal(forespørgsel){
-    return kald('/rest/v1/' + forespørgsel + '&select=id&limit=1', {
-      headers:{ Prefer:'count=exact' }
-    }).then(function(r){
-      if(!r.ok) return null;
-      var omr = r.headers.get('content-range');
-      if(!omr || omr.indexOf('/') < 0) return null;
-      var n = parseInt(omr.split('/')[1], 10);
-      return isNaN(n) ? null : n;
-    }).catch(function(){ return null; });
   }
 
   /* Databasens fejl oversat til noget, man kan handle på. Tallene er
@@ -1870,35 +1974,337 @@
   // -------------------------------------------------------------
   // Oversigt
   // -------------------------------------------------------------
-  function felt(stor, navn, note){
-    var f = lav('div','felt');
-    f.appendChild(lav('div','stor', stor === null ? '—' : stor));
+  // -------------------------------------------------------------
+  // DASHBOARDET (klar-til-live 2.10, omgang 1, 12/10)
+  //
+  // Ét kald til edge-funktionen `overblik`, som tjekker admin og to-faktor
+  // og samler alt: salg, kunder, login og misbrug, cron, mails, Sentry og
+  // GitHub. Kundernes egne ture tælles stadig IKKE - heller ikke en
+  // administrator kan læse dem, og det laves ikke om for et tals skyld.
+  // -------------------------------------------------------------
+  var overblik = null;
+  var dbDage = 30;
+  var SVG = 'http://www.w3.org/2000/svg';
+  var MDR_KORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+  var DAGE_NAVN = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+
+  function tusind(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function kr(oere){ return tusind((oere || 0) / 100) + ' kr.'; }
+  function dagDato(iso){
+    var d = new Date(iso + 'T12:00:00');
+    return d.getDate() + '. ' + MDR_KORT[d.getMonth()];
+  }
+  function langDato(iso){
+    var d = new Date(iso + 'T12:00:00');
+    return DAGE_NAVN[d.getDay()] + ' ' + d.getDate() + '. ' + MDR_KORT[d.getMonth()];
+  }
+  function svg(tag, attr){
+    var el = document.createElementNS(SVG, tag);
+    for(var k in (attr || {})) el.setAttribute(k, attr[k]);
+    return el;
+  }
+  /* Et pænt loft til y-aksen: 1, 2, 2,5 eller 5 gange en tierpotens. */
+  function pæntLoft(v){
+    if(!(v > 0)) return 1;
+    var p = Math.pow(10, Math.floor(Math.log10(v)));
+    var trin = [1, 2, 2.5, 5, 10];
+    for(var i = 0; i < trin.length; i++) if(trin[i] * p >= v) return trin[i] * p;
+    return 10 * p;
+  }
+
+  /* LYSET: status er altid farve + tegn + ord, aldrig farve alene. */
+  function lys(slags){
+    var farve = { god:'#4f6b4a', advar:'#b07a16', fejl:'#9c4221', graa:'#b9a898' }[slags];
+    var s = svg('svg', { viewBox:'0 0 20 20', 'class':'db-lys', 'aria-hidden':'true' });
+    s.appendChild(svg('circle', { cx:10, cy:10, r:9, fill:farve }));
+    var tegn = { god:'M6 10.4l2.6 2.6L14 7.6', fejl:'M7 7l6 6M13 7l-6 6', advar:'M10 5.5v5.5M10 14.2v.1', graa:'M6.5 10h7' }[slags];
+    s.appendChild(svg('path', { d:tegn, stroke:'#fff', 'stroke-width':'2', 'stroke-linecap':'round', 'stroke-linejoin':'round', fill:'none' }));
+    return s;
+  }
+
+  /* SØJLER: én serie, én farve. Tynde søjler (højst 24 px) med 4 px runding
+     i toppen og firkantet bund; hårfine gitterlinjer; tre pæne tal på
+     y-aksen; få datoer på x-aksen; tooltip på hver dag; og en tabel bag
+     "Vis som tabel", så intet kun står i grafen. */
+  function søjler(boks, punkter, valg){
+    tøm(boks);
+    var W = Math.max(boks.clientWidth, 260), H = boks.clientHeight || 200;
+    var V = 46, T = 10, B = 24;                       // plads til y-akse, top og datoer
+    var bredde = W - V, højde = H - T - B;
+    var maks = 0, sum = 0;
+    punkter.forEach(function(p){ maks = Math.max(maks, p.v); sum += p.v; });
+    var loft = pæntLoft(maks);
+    var s = svg('svg', { viewBox:'0 0 ' + W + ' ' + H, role:'img', 'aria-label': valg.aria(sum) });
+
+    [0, 0.5, 1].forEach(function(f){
+      var y = T + højde - f * højde;
+      s.appendChild(svg('line', { x1:V, x2:W, y1:y, y2:y, 'class': f === 0 ? 'grund' : 'gitter' }));
+      var t = svg('text', { x:V - 8, y:y + 4, 'text-anchor':'end', 'class':'akse' });
+      t.textContent = valg.akse(f * loft);
+      s.appendChild(t);
+    });
+
+    var plads = bredde / punkter.length;
+    var tyk = Math.max(2, Math.min(24, plads - 2));
+    var tip = lav('div','db-tip'); tip.hidden = true;
+
+    punkter.forEach(function(p, i){
+      var x = V + i * plads + (plads - tyk) / 2;
+      var h = p.v > 0 ? Math.max(2, p.v / loft * højde) : 0;
+      var y = T + højde - h;
+      var ramt = svg('rect', { x: V + i * plads, y: T, width: plads, height: højde, 'class':'ramt' });
+      var søjle;
+      if(h > 4){
+        var r = Math.min(4, tyk / 2);
+        søjle = svg('path', { 'class':'soejle', d:
+          'M' + x + ',' + (T + højde) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y +
+          'H' + (x + tyk - r) + 'Q' + (x + tyk) + ',' + y + ' ' + (x + tyk) + ',' + (y + r) + 'V' + (T + højde) + 'Z' });
+      } else {
+        søjle = svg('rect', { 'class':'soejle', x:x, y:y, width:tyk, height:h });
+      }
+      ramt.addEventListener('mouseenter', function(){
+        tip.innerHTML = '';
+        tip.appendChild(lav('b', null, langDato(p.dag)));
+        tip.appendChild(document.createElement('br'));
+        tip.appendChild(document.createTextNode(valg.tip(p)));
+        tip.style.left = (x + tyk / 2) / W * 100 + '%';
+        tip.style.top = Math.min(y, T + højde - 2) + 'px';
+        tip.hidden = false;
+        søjle.classList.add('aktiv');
+      });
+      ramt.addEventListener('mouseleave', function(){ tip.hidden = true; søjle.classList.remove('aktiv'); });
+      s.appendChild(ramt);
+      s.appendChild(søjle);
+    });
+
+    // Få datoer: første, to i midten og sidste.
+    var n = punkter.length;
+    [0, Math.round((n - 1) / 3), Math.round(2 * (n - 1) / 3), n - 1].forEach(function(i, j){
+      var t = svg('text', { x: V + i * plads + plads / 2, y: H - 6, 'class':'akse',
+        'text-anchor': j === 0 ? 'start' : j === 3 ? 'end' : 'middle' });
+      t.textContent = dagDato(punkter[i].dag);
+      s.appendChild(t);
+    });
+
+    boks.appendChild(s);
+    boks.appendChild(tip);
+    if(sum === 0) boks.appendChild(lav('div','tom', valg.tom));
+
+    // Tabellen: kun dagene med noget, ellers en sætning.
+    var med = punkter.filter(function(p){ return p.v > 0; });
+    var d = lav('details','db-tabel');
+    d.appendChild(lav('summary', null, 'Vis som tabel'));
+    if(med.length){
+      var tb = lav('table'), hd = lav('tr');
+      hd.appendChild(lav('th', null, 'Dag')); hd.appendChild(lav('th','tal-h', valg.kolonne));
+      tb.appendChild(hd);
+      med.forEach(function(p){
+        var tr = lav('tr');
+        tr.appendChild(lav('td', null, langDato(p.dag)));
+        tr.appendChild(lav('td','tal-h', valg.tip(p)));
+        tb.appendChild(tr);
+      });
+      d.appendChild(tb);
+    } else {
+      d.appendChild(lav('p','hint', valg.tom));
+    }
+    boks.parentNode.insertBefore(d, boks.nextSibling);
+    var gammel = d.nextSibling;
+    if(gammel && gammel.classList && gammel.classList.contains('db-tabel')) gammel.remove();
+  }
+
+  function dbFelt(navn, værdi, note, helt){
+    var f = lav('div','db-felt' + (helt ? ' helt' : ''));
     f.appendChild(lav('div','navn', navn));
+    f.appendChild(lav('div','vaerdi', værdi));
     if(note) f.appendChild(lav('div','note', note));
     return f;
   }
 
-  function hentOversigt(){
-    var nu = new Date().toISOString();
-    var maaned = new Date(Date.now() - 30*24*3600*1000).toISOString();
+  function hentOverblik(){
+    $('db-hvornaar').textContent = 'Henter …';
+    json('/functions/v1/overblik', { method:'POST', body:{} })
+      .then(function(d){ overblik = d; tegnOverblik(); })
+      .catch(function(f){
+        $('db-hvornaar').textContent = '';
+        var st = $('db-status');
+        tøm(st); st.hidden = false; st.className = 'db-status fejl';
+        st.appendChild(lys('fejl'));
+        var t = lav('div');
+        t.appendChild(lav('b', null, 'Overblikket kunne ikke hentes'));
+        t.appendChild(document.createTextNode(f && f.kode === 'mfa_paakraevet'
+          ? 'Log ind igen og bekræft med din engangskode — overblikket kræver to-faktor.'
+          : forklar(f)));
+        st.appendChild(t);
+      });
+  }
 
-    /* KUN de tal, serveren faktisk kan svare på. Kundernes egne `ture` og
-       `partner` står med vilje IKKE her: RLS lader heller ikke en
-       administrator læse dem, og et tal hentet herfra ville vise DINE egne
-       ture og kalde dem totalen. Det er den værste slags forkert — et tal,
-       der ser rigtigt ud. */
-    Promise.all([
-      antal('profiler?id=not.is.null'),
-      antal('adgang?or=(gyldig_til.is.null,gyldig_til.gt.' + nu + ')'),
-      antal('profiler?oprettet=gte.' + maaned)
-    ]).then(function(t){
-      var v = $('tal');
-      tøm(v);
-      v.appendChild(felt(t[0], 'Konti i alt', 'Hver profil er én kunde med et login.'));
-      v.appendChild(felt(t[1], 'Med gyldig adgang', 'Ingen slutdato, eller en slutdato ude i fremtiden.'));
-      v.appendChild(felt(t[2], 'Nye seneste 30 dage', 'Talt fra den dag, kontoen blev oprettet.'));
-      v.appendChild(felt(null, 'Kundernes ture', 'Vises ikke. Heller ikke en administrator kan læse kundernes ture — det er med vilje, og det laves ikke om for et tals skyld.'));
+  function tegnOverblik(){
+    var d = overblik; if(!d) return;
+    $('db-hvornaar').textContent = 'Opdateret ' + dato(d.genereret) + '. Tallene hentes, hver gang du åbner fanen.';
+
+    // --- Status øverst: brænder noget? ---
+    var fejl = [], advar = [];
+    (d.cron || []).forEach(function(j){
+      if(j.seneste_status === 'failed') fejl.push('Cron-jobbet "' + j.navn + '" fejlede sidst, det kørte.');
+      else if(j.fejl_7d > 0) advar.push('Cron-jobbet "' + j.navn + '" har fejlet ' + j.fejl_7d + ' gang(e) den seneste uge.');
     });
+    var gh = d.github || {};
+    if(gh.status === 'ok'){
+      if(gh.backup && gh.backup.resultat && gh.backup.resultat !== 'success') fejl.push('Den natlige backup lykkedes ikke sidst.');
+      if(gh.tests && gh.tests.resultat === 'failure') advar.push('Testene i CI er røde.');
+      if(gh.rls && gh.rls.resultat === 'failure') advar.push('RLS-prøven i CI er rød.');
+    }
+    var se = d.sentry || {};
+    if(se.status === 'ok' && se.sager > 0) advar.push(se.sager + ' fejl i appen det seneste døgn (Sentry).');
+    var m = d.mails || {};
+    if(m.status === 'ok' && (m.afvist > 0 || m.klager > 0)) advar.push(m.afvist + ' afviste mails og ' + m.klager + ' klager den seneste uge.');
+    var lg = d.login || {};
+    if(lg.laaste_24t > 0) advar.push(lg.laaste_24t + ' kode(r) låst efter fem forkerte gæt det seneste døgn.');
+    if(lg.doegnloft_24t > 0) advar.push(lg.doegnloft_24t + ' konto(er) ramte loftet for koder det seneste døgn.');
+    if(lg.invitationsloft_24t > 0) advar.push(lg.invitationsloft_24t + ' konto(er) ramte loftet for invitationer det seneste døgn.');
+
+    var st = $('db-status'); tøm(st); st.hidden = false;
+    var slags = fejl.length ? 'fejl' : advar.length ? 'advar' : 'god';
+    st.className = 'db-status ' + slags;
+    st.appendChild(lys(slags));
+    var tx = lav('div');
+    tx.appendChild(lav('b', null, slags === 'god' ? 'Alt kører'
+      : (fejl.length + advar.length) + (fejl.length + advar.length === 1 ? ' ting kræver' : ' ting kræver') + ' din opmærksomhed'));
+    if(slags === 'god'){
+      tx.appendChild(document.createTextNode('Ingen fejl i cron, backup, mails eller login. Det, der ikke er sat op endnu, står gråt under Driften.'));
+    } else {
+      var ul = lav('ul');
+      fejl.concat(advar).forEach(function(t){ ul.appendChild(lav('li', null, t)); });
+      tx.appendChild(ul);
+    }
+    st.appendChild(tx);
+
+    // --- De fire tal ---
+    var sa = d.salg || {}, ku = d.kunder || {};
+    var tal = $('db-tal'); tøm(tal);
+    tal.appendChild(dbFelt('Salg denne måned', kr(sa.maaned && sa.maaned.oere), (sa.maaned && sa.maaned.antal || 0) + ' ordrer', true));
+    tal.appendChild(dbFelt('Salg i dag', kr(sa.i_dag && sa.i_dag.oere), (sa.i_dag && sa.i_dag.antal || 0) + ' ordrer · ' + kr(sa.syv_dage && sa.syv_dage.oere) + ' på 7 dage'));
+    tal.appendChild(dbFelt('Aktive kunder', tusind(ku.aktive || 0), (ku.nye_30d || 0) + ' nye konti de seneste 30 dage'));
+    tal.appendChild(dbFelt('Udløber inden 30 dage', tusind(ku.udloeber_30d || 0),
+      (sa.refunderet && sa.refunderet.antal ? sa.refunderet.antal + ' tilbagebetalt i alt (' + kr(sa.refunderet.oere) + ')' : 'Ingen tilbagebetalinger')));
+
+    tegnGrafer();
+
+    // --- Det sælger ---
+    var pr = $('db-produkter'); tøm(pr);
+    var liste = sa.produkter || [];
+    if(!liste.length){
+      pr.appendChild(lav('p','hint','Ingen betalte ordrer endnu.'));
+    } else {
+      var top = liste[0].oere || 1;
+      liste.forEach(function(p){
+        var r = lav('div','db-prod');
+        r.appendChild(lav('span', null, p.produkt));
+        r.appendChild(lav('span','v', p.antal + ' · ' + kr(p.oere)));
+        var b = lav('div','bar'), i = document.createElement('i');
+        i.style.width = Math.max(2, p.oere / top * 100) + '%';
+        b.appendChild(i); r.appendChild(b);
+        pr.appendChild(r);
+      });
+    }
+
+    // --- Driften ---
+    var tv = $('db-drift'); tøm(tv);
+    function linje(slags, hvad, hvordan){
+      var li = lav('li'); li.appendChild(lys(slags));
+      li.appendChild(lav('span','hvad', hvad));
+      li.appendChild(lav('span','hvordan', hvordan));
+      tv.appendChild(li);
+    }
+    function ghLinje(navn, k){
+      if(gh.status === 'ikke_sat_op') return linje('graa', navn, 'Ikke sat op — kræver GITHUB_LAESE_TOKEN i Supabase.');
+      if(gh.status !== 'ok' || !k || k.status !== 'ok') return linje('advar', navn, 'GitHub svarede ikke.');
+      var ok = k.resultat === 'success';
+      linje(ok ? 'god' : (k.resultat === 'failure' ? 'fejl' : 'advar'), navn,
+        (ok ? 'Grøn' : k.resultat === 'failure' ? 'Rød' : (k.resultat || 'ukendt')) + (k.tid ? ' · ' + dato(k.tid) : ''));
+    }
+    ghLinje('Natlig backup', gh.backup);
+    ghLinje('Testene (CI)', gh.tests);
+    ghLinje('RLS-prøven (CI)', gh.rls);
+    var cr = d.cron || [];
+    var crFejl = cr.filter(function(j){ return j.seneste_status === 'failed'; }).length;
+    var crSeneste = cr.map(function(j){ return j.seneste_start; }).filter(Boolean).sort().pop();
+    linje(crFejl ? 'fejl' : 'god', 'Cron-jobbene', cr.length + ' job · ' + (crFejl ? crFejl + ' fejlede sidst' : 'alle lykkedes sidst')
+      + (crSeneste ? ' · seneste ' + dato(crSeneste) : ''));
+    if(m.status === 'ok'){
+      linje(m.afvist || m.klager ? 'advar' : 'god', 'Mails, 7 dage',
+        m.i_alt + ' sendt · ' + m.leveret + ' leveret · ' + m.afvist + ' afvist · ' + m.klager + ' klager');
+    } else {
+      linje(m.status === 'ikke_sat_op' ? 'graa' : 'advar', 'Mails, 7 dage', m.status === 'ikke_sat_op' ? 'Ikke sat op.' : 'Resend svarede ikke.');
+    }
+    if(se.status === 'ok'){
+      linje(se.sager ? 'advar' : 'god', 'Fejl i appen, 24 t',
+        se.sager ? se.sager + ' sager · ' + se.haendelser + ' gange · fx "' + (se.oeverste[0] && se.oeverste[0].titel || '') + '"' : 'Ingen nye fejl');
+    } else {
+      linje(se.status === 'ikke_sat_op' ? 'graa' : 'advar', 'Fejl i appen, 24 t',
+        se.status === 'ikke_sat_op' ? 'Ikke sat op — kræver SENTRY_TOKEN, SENTRY_ORG og SENTRY_PROJEKT i Supabase.' : 'Sentry svarede ikke.');
+    }
+
+    // --- Login og misbrug ---
+    var lo = $('db-login'); tøm(lo);
+    [['Koder sendt', lg.koder_24t, false],
+     ['Gæt på koder', lg.gaet_24t, false],
+     ['Låste koder', lg.laaste_24t, true],
+     ['Ramte kodeloftet', lg.doegnloft_24t, true],
+     ['Invitationer', lg.invitationer_24t, false],
+     ['Ramte invitationsloftet', lg.invitationsloft_24t, true]
+    ].forEach(function(r){
+      var c = lav('div', r[2] && r[1] > 0 ? 'alarm' : null);
+      c.appendChild(lav('div','t', tusind(r[1] || 0)));
+      c.appendChild(lav('div','n', r[0]));
+      lo.appendChild(c);
+    });
+  }
+
+  /* Graferne tegnes for sig: de skal kunne tegnes om, når perioden skiftes
+     eller vinduet ændrer bredde, uden et nyt kald til serveren. */
+  function tegnGrafer(){
+    var d = overblik; if(!d || $('fane-oversigt').hidden) return;
+    var salg = (d.salg && d.salg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.oere, antal:p.antal }; });
+    var sumKr = salg.reduce(function(n, p){ return n + p.v; }, 0);
+    var sumAntal = salg.reduce(function(n, p){ return n + p.antal; }, 0);
+    $('db-salg-under').textContent = kr(sumKr) + ' på ' + sumAntal + ' ordrer de seneste ' + dbDage + ' dage.';
+    søjler($('db-graf-salg'), salg, {
+      akse: function(v){ return v === 0 ? '0' : tusind(v / 100); },
+      tip: function(p){ return p.antal + (p.antal === 1 ? ' ordre · ' : ' ordrer · ') + kr(p.v); },
+      kolonne: 'Salg',
+      tom: 'Ingen salg i perioden endnu.',
+      aria: function(){ return 'Salg pr. dag de seneste ' + dbDage + ' dage: ' + kr(sumKr) + ' i alt.'; }
+    });
+    var nye = (d.kunder && d.kunder.nye_pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.antal }; });
+    var sumNye = nye.reduce(function(n, p){ return n + p.v; }, 0);
+    $('db-nye-under').textContent = sumNye + ' nye konti de seneste ' + dbDage + ' dage.';
+    søjler($('db-graf-nye'), nye, {
+      akse: function(v){ return tusind(v); },
+      tip: function(p){ return p.v + (p.v === 1 ? ' ny konto' : ' nye konti'); },
+      kolonne: 'Nye konti',
+      tom: 'Ingen nye konti i perioden.',
+      aria: function(s){ return 'Nye konti pr. dag de seneste ' + dbDage + ' dage: ' + s + ' i alt.'; }
+    });
+  }
+
+  document.querySelectorAll('.db-vaelg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      dbDage = parseInt(b.getAttribute('data-dage'), 10);
+      document.querySelectorAll('.db-vaelg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      tegnGrafer();
+    });
+  });
+  $('db-opdater').addEventListener('click', hentOverblik);
+  var dbVent = null;
+  window.addEventListener('resize', function(){
+    window.clearTimeout(dbVent);
+    dbVent = window.setTimeout(tegnGrafer, 150);
+  });
+
+  function hentOversigt(){
+    hentOverblik();
 
     json('/rest/v1/indhold_udgivelse?select=id,udgivet_kl,antal,antal_ture,profiler(navn)&order=id.desc&limit=10')
       .then(function(rk){
