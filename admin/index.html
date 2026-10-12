@@ -437,6 +437,17 @@
   }
   .bb-gruppe .hint{ font-size:13px; color:var(--dæmpet); margin-bottom:10px; line-height:1.55; }
   .bb-gruppe .bb-linje{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* Beredskab og brudlog (2.7) */
+  .brud-trin{ margin:0 0 10px 18px; font-size:14px; line-height:1.6; }
+  .brud-trin li{ margin-bottom:4px; }
+  .brud-form{ margin-top:14px; padding:4px 16px 16px; border:1px solid var(--linje); border-radius:14px; background:#fff; }
+  .brud-form input[type=datetime-local]{ width:100%; background:#fff; border:1px solid var(--linje); border-radius:11px; padding:10px 12px; }
+  .brud-kort{ margin-top:12px; padding:13px 15px; border:1px solid var(--linje); border-radius:14px; background:#fff; }
+  .brud-kort .brud-top{ font-size:12.5px; color:var(--dæmpet); margin-bottom:4px; }
+  .brud-kort .brud-hvad{ font-size:15px; line-height:1.5; margin-bottom:6px; overflow-wrap:anywhere; }
+  .brud-kort .brud-status{ font-size:13px; margin-bottom:8px; }
+  .brud-kort .brud-status.frist{ color:var(--fejl); font-weight:600; }
   /* Den uigenkaldelige gruppe skal SES som noget andet end de øvrige. */
   .bb-gruppe.fare{ border-top-color:#e6cfc4; }
   .bb-gruppe.fare h4{ color:var(--fejl); }
@@ -1049,6 +1060,33 @@
       </div>
 
       <div id="mfa-besked" class="besked" hidden role="alert"></div>
+
+      <!-- BEREDSKAB OG BRUDLOG (klar-til-live 2.7, 12/10). Planen i sin helhed
+           står i app-repoet (docs/beredskab.md); her står det, der haster. -->
+      <div class="bb-gruppe" id="beredskab">
+        <h4>Ved et brud på persondatasikkerheden</h4>
+        <ol class="brud-trin">
+          <li><b>Luk hullet</b> med det samme. Slet intet bevis.</li>
+          <li><b>Skriv det i loggen herunder</b> inden for en time, og ring til den anden.</li>
+          <li><b>Inden for 24 timer:</b> hvad, hvilke data, hvor mange — og hvor stor er risikoen for dem.</li>
+          <li><b>Senest 72 timer efter, vi blev klar over det:</b> anmeld til Datatilsynet (via virk.dk),
+            medmindre der sandsynligvis ikke er en risiko. I tvivl: anmeld.</li>
+          <li><b>Høj risiko:</b> skriv også til de berørte.</li>
+        </ol>
+        <p class="hint">Hele planen, med første hjælp nøgle for nøgle:
+          <a href="https://github.com/tcnp97hggv-source/Arytmi/blob/main/docs/beredskab.md" target="_blank" rel="noopener">docs/beredskab.md</a>.</p>
+      </div>
+
+      <div class="bb-gruppe" id="brudlog-boks">
+        <h4>Brudloggen</h4>
+        <p class="hint">Alle brud skrives her — også dem, der ikke anmeldes (art. 33, stk. 5).
+          Kun en admin, der har brugt sin to-faktor, kan se og skrive. Intet kan slettes;
+          en fejl rettes.</p>
+        <div class="bb-linje"><button type="button" class="knap lille" id="brud-ny">Skriv et nyt brud</button></div>
+        <div id="brud-form" class="brud-form" hidden></div>
+        <div id="brud-besked" class="besked" hidden role="alert"></div>
+        <div id="brud-liste"></div>
+      </div>
     </section>
 
   </main>
@@ -1667,13 +1705,167 @@
        to-faktor til i en anden fane eller på en anden maskine — og en
        skærm, der påstår "ikke slået til" om en konto, der har den, er
        værre end et kald for meget. */
-    if(navn === 'sikkerhed'){ tegnSikkerhed(); }
+    if(navn === 'sikkerhed'){ tegnSikkerhed(); hentBrud(); }
   }
 
   $('faner').addEventListener('click', function(e){
     var k = e.target.closest('button[data-fane]');
     if(k) skiftFane(k.getAttribute('data-fane'));
   });
+
+  // -------------------------------------------------------------
+  // Brudloggen (klar-til-live 2.7, 0054)
+  //
+  // Databasen afgør, hvem der ser hvad: kun en bekræftet admin. En admin
+  // med to-faktor, der ikke har brugt den, får en tom liste - og får at
+  // vide hvorfor, i stedet for at tro, at loggen er tom.
+  // -------------------------------------------------------------
+  var RISIKO = {
+    ikke_vurderet: 'Ikke vurderet endnu',
+    ingen:         'Ingen eller lille risiko',
+    risiko:        'Risiko — skal anmeldes',
+    hoej:          'Høj risiko — anmeld og skriv til de berørte'
+  };
+  var BRUD_FELTER = [
+    ['hvad',                   'Hvad skete der?', 'lang'],
+    ['sket_kl',                'Hvornår skete det? (hvis vi ved det)', 'tid'],
+    ['opdaget_kl',             'Hvornår blev vi klar over det? — de 72 timer regnes herfra', 'tid'],
+    ['data_og_personer',       'Hvilke data, og hvor mange personer?', 'lang'],
+    ['risiko',                 'Risikoen for de berørte', 'risiko'],
+    ['foelger',                'Følgerne', 'lang'],
+    ['handlinger',             'Hvad vi gjorde for at lukke hullet og begrænse skaden', 'lang'],
+    ['anmeldt_kl',             'Anmeldt til Datatilsynet', 'tid'],
+    ['ikke_anmeldt_fordi',     '… eller hvorfor det ikke er anmeldt', 'kort'],
+    ['underrettet_kl',         'Skrevet til de berørte', 'tid'],
+    ['ikke_underrettet_fordi', '… eller hvorfor de ikke har fået besked', 'kort'],
+    ['laerdom',                'Hvad lærte vi, og hvad er ændret?', 'lang'],
+    ['lukket_kl',              'Sagen er lukket', 'tid']
+  ];
+
+  /* <input type="datetime-local"> taler lokal tid uden zone; databasen
+     taler ISO med zone. To små oversættere, og intet andet. */
+  function tilLokal(iso){
+    if(!iso) return '';
+    var d = new Date(iso);
+    if(isNaN(d)) return '';
+    var p = function(n){ return (n<10?'0':'') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate())
+         + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fraLokal(v){
+    if(!v) return null;
+    var d = new Date(v);
+    return isNaN(d) ? null : d.toISOString();
+  }
+
+  function hentBrud(){
+    var liste = $('brud-liste');
+    tøm(liste);
+    liste.appendChild(lav('p','hint','Henter …'));
+    json('/rest/v1/brudlog?select=*&order=opdaget_kl.desc')
+      .then(function(rk){
+        tøm(liste);
+        if(!rk || !rk.length){
+          liste.appendChild(lav('p','hint', session && session.aal === 'aal2'
+            ? 'Ingen brud skrevet endnu.'
+            : 'Ingen brud at vise. Har din konto to-faktor, skal du have brugt den i den her session for at se loggen.'));
+          return;
+        }
+        rk.forEach(function(b){ liste.appendChild(brudKort(b)); });
+      })
+      .catch(function(f){
+        tøm(liste);
+        vis($('brud-besked'), 'Loggen kunne ikke hentes: ' + forklar(f), 'fejl');
+      });
+  }
+
+  /* Hvor står bruddet? Det vigtigste er fristen: 72 timer fra vi blev
+     klar over det, medmindre det er anmeldt, eller der står hvorfor ikke. */
+  function brudStatus(b){
+    if(b.lukket_kl) return { tekst: 'Lukket ' + dato(b.lukket_kl), frist: false };
+    if(b.anmeldt_kl) return { tekst: 'Anmeldt til Datatilsynet ' + dato(b.anmeldt_kl), frist: false };
+    if(b.ikke_anmeldt_fordi) return { tekst: 'Ikke anmeldt: ' + b.ikke_anmeldt_fordi, frist: false };
+    var frist = new Date(new Date(b.opdaget_kl).getTime() + 72*3600*1000);
+    var over = Date.now() > frist.getTime();
+    if(b.risiko === 'ingen')
+      return { tekst: 'Ingen risiko — skriv hvorfor det ikke anmeldes', frist: false };
+    return { tekst: (over ? 'FRISTEN ER OVERSKREDET: ' : 'Frist for anmeldelse: ') + dato(frist.toISOString()), frist: true };
+  }
+
+  function brudKort(b){
+    var k = lav('div','brud-kort');
+    k.appendChild(lav('div','brud-top', 'Opdaget ' + dato(b.opdaget_kl) + ' · ' + (RISIKO[b.risiko] || b.risiko)));
+    var hvad = String(b.hvad || '');
+    k.appendChild(lav('div','brud-hvad', hvad.length > 180 ? hvad.slice(0,180) + ' …' : hvad));
+    var st = brudStatus(b);
+    k.appendChild(lav('div','brud-status' + (st.frist ? ' frist' : ''), st.tekst));
+    k.appendChild(knapFor('Åbn og ret', 'knap rolig lille', function(){ åbnBrud(b); }));
+    return k;
+  }
+
+  function åbnBrud(b){
+    var ny = !b;
+    b = b || { opdaget_kl: new Date().toISOString(), risiko: 'ikke_vurderet' };
+    var boks = $('brud-form');
+    tøm(boks);
+    $('brud-besked').hidden = true;
+    boks.hidden = false;
+    boks.appendChild(lav('h4', null, ny ? 'Nyt brud' : 'Brud opdaget ' + dato(b.opdaget_kl)));
+
+    var felter = {};
+    BRUD_FELTER.forEach(function(f){
+      var navn = f[0], id = 'brud-f-' + navn;
+      var l = lav('label', null, f[1]); l.htmlFor = id;
+      boks.appendChild(l);
+      var el;
+      if(f[2] === 'lang'){ el = lav('textarea'); el.rows = 3; el.value = b[navn] || ''; }
+      else if(f[2] === 'tid'){ el = lav('input'); el.type = 'datetime-local'; el.value = tilLokal(b[navn]); }
+      else if(f[2] === 'risiko'){
+        el = lav('select');
+        Object.keys(RISIKO).forEach(function(v){
+          var o = lav('option', null, RISIKO[v]); o.value = v;
+          if(v === b.risiko) o.selected = true;
+          el.appendChild(o);
+        });
+      }
+      else { el = lav('input'); el.type = 'text'; el.value = b[navn] || ''; }
+      el.id = id;
+      felter[navn] = el;
+      boks.appendChild(el);
+    });
+
+    var linje = lav('div','bb-linje'); linje.style.marginTop = '16px';
+    var gem = knapFor(ny ? 'Gem bruddet' : 'Gem rettelsen', 'knap lille', function(){
+      var krop = {};
+      BRUD_FELTER.forEach(function(f){
+        var v = felter[f[0]].value;
+        krop[f[0]] = f[2] === 'tid' ? fraLokal(v) : v;
+      });
+      if(!krop.hvad.trim()){ vis($('brud-besked'), 'Skriv, hvad der skete.', 'fejl'); return; }
+      if(!krop.opdaget_kl) krop.opdaget_kl = new Date().toISOString();
+      gem.disabled = true;
+      json(ny ? '/rest/v1/brudlog' : '/rest/v1/brudlog?id=eq.' + encodeURIComponent(b.id), {
+        method: ny ? 'POST' : 'PATCH', body: krop, headers: { Prefer: 'return=representation' }
+      }).then(function(rk){
+        if(!rk || !rk.length) throw new Error('Serveren gemte ingenting. Har du brugt din to-faktor i den her session?');
+        boks.hidden = true;
+        tøm(boks);
+        vis($('brud-besked'), ny ? 'Bruddet er skrevet i loggen.' : 'Rettelsen er gemt.', 'god');
+        hentBrud();
+      }).catch(function(f){
+        gem.disabled = false;
+        vis($('brud-besked'), f && f.kode === '42501'
+          ? 'Afvist. Kun en admin, der har brugt sin to-faktor i den her session, kan skrive i loggen.'
+          : forklar(f), 'fejl');
+      });
+    });
+    linje.appendChild(gem);
+    linje.appendChild(knapFor('Fortryd', 'knap rolig lille', function(){ boks.hidden = true; tøm(boks); }));
+    boks.appendChild(linje);
+    felter.hvad.focus();
+  }
+
+  $('brud-ny').addEventListener('click', function(){ åbnBrud(null); });
 
   // -------------------------------------------------------------
   // Oversigt
