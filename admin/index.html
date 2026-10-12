@@ -499,7 +499,12 @@
   .db-mini .n{ font-size:12px; color:var(--dæmpet); }
   .db-mini > .alarm{ background:#f7e9e3; border-color:#e6cfc4; }
   .db-mini .alarm .t{ color:var(--fejl); }
+  .db-tre{ grid-template-columns:repeat(3,1fr); margin-bottom:12px; }
+  .db-indre{ margin-top:16px; }
+  .db-h4{ font-family:var(--skrift-brød); font-size:13px; font-weight:650; color:var(--fjord); margin-bottom:10px; }
+  .db-prod .pct{ color:var(--gran); font-weight:600; }
   @media (max-width:720px){
+    .db-tre{ grid-template-columns:repeat(3,1fr); gap:8px; }
     .db-to{ grid-template-columns:1fr; }
     .db-to .db-kort{ margin-bottom:16px; }
     .db-to + .db-to{ margin-top:0; }
@@ -1022,6 +1027,28 @@
           </div>
         </div>
         <div class="db-graf" id="db-graf-salg"></div>
+      </div>
+
+      <!-- BESØG PÅ FUNNELEN (2.10, omgang 2). Vores egen tæller: visninger,
+           ikke personer — ingen cookies, ingen IP (docs/funnel-taeller.md). -->
+      <div class="db-kort">
+        <h3>Besøg på funnelen</h3>
+        <p class="db-under" id="db-besoeg-under"></p>
+        <div id="db-besoeg">
+          <div class="db-mini db-tre" id="db-besoeg-tal"></div>
+          <div class="db-graf lav" id="db-graf-besoeg"></div>
+          <div class="db-to db-indre">
+            <div>
+              <h4 class="db-h4">Tragten, 30 dage</h4>
+              <div id="db-tragt"></div>
+            </div>
+            <div>
+              <h4 class="db-h4">Hvor de kommer fra, 30 dage</h4>
+              <div id="db-kilder"></div>
+            </div>
+          </div>
+        </div>
+        <p class="hint" id="db-besoeg-tom" hidden></p>
       </div>
 
       <div class="db-to">
@@ -2191,6 +2218,60 @@
 
     tegnGrafer();
 
+    // --- Besøg på funnelen (omgang 2) ---
+    var bs = d.besoeg || {};
+    var harBesoeg = bs.status === 'ok';
+    $('db-besoeg').hidden = !harBesoeg;
+    $('db-besoeg-tom').hidden = harBesoeg;
+    if(!harBesoeg){
+      $('db-besoeg-under').textContent = '';
+      $('db-besoeg-tom').textContent = bs.status === 'ikke_sat_op'
+        ? 'Ikke sat op endnu — tælleren skal ind i funnelens "Head tracking code" i ClickFunnels. Vejledningen står i docs/funnel-taeller.md.'
+        : 'Besøgstallene kunne ikke hentes.';
+    } else {
+      var tr = bs.tragt_30d || {};
+      var pct = function(a, b){ return b ? Math.round(a / b * 1000) / 10 : 0; };
+      $('db-besoeg-under').textContent = 'Visninger, ikke personer — uden cookies. Seneste visning ' + dato(bs.seneste) + '.';
+      var bt = $('db-besoeg-tal'); tøm(bt);
+      [[tusind(bs.i_dag || 0), 'Visninger i dag'],
+       [tusind(bs.syv_dage || 0), 'Visninger, 7 dage'],
+       [String(pct(tr.tak || 0, tr.salgsside || 0)).replace('.', ',') + ' %', 'Fra salgsside til tak, 30 dage']
+      ].forEach(function(r){
+        var c = lav('div'); c.appendChild(lav('div','t', r[0])); c.appendChild(lav('div','n', r[1])); bt.appendChild(c);
+      });
+
+      var tg = $('db-tragt'); tøm(tg);
+      var top = tr.salgsside || 0;
+      [['Salgssiden', tr.salgsside || 0], ['Betalingen', tr.betaling || 0], ['Tak for købet', tr.tak || 0]].forEach(function(r, i){
+        var rk = lav('div','db-prod');
+        rk.appendChild(lav('span', null, r[0]));
+        var v = lav('span','v', tusind(r[1]) + (i ? ' · ' : ''));
+        if(i){ var p = lav('span','pct', String(pct(r[1], top)).replace('.', ',') + ' %'); v.appendChild(p); }
+        rk.appendChild(v);
+        var bar = lav('div','bar'), fyld = document.createElement('i');
+        fyld.style.width = (top ? Math.max(r[1] ? 2 : 0, r[1] / top * 100) : 0) + '%';
+        bar.appendChild(fyld); rk.appendChild(bar); tg.appendChild(rk);
+      });
+
+      var kl = $('db-kilder'); tøm(kl);
+      var kilder = bs.kilder_30d || [];
+      if(!kilder.length){
+        kl.appendChild(lav('p','hint','Ingen besøg på salgssiden de seneste 30 dage.'));
+      } else {
+        var maks = kilder[0].antal || 1;
+        kilder.forEach(function(k){
+          var rk = lav('div','db-prod');
+          rk.appendChild(lav('span', null, k.kilde === 'direkte' ? 'Direkte (intet link)' : k.kilde));
+          rk.appendChild(lav('span','v', tusind(k.antal)));
+          var bar = lav('div','bar'), fyld = document.createElement('i');
+          fyld.style.width = Math.max(2, k.antal / maks * 100) + '%';
+          bar.appendChild(fyld); rk.appendChild(bar); kl.appendChild(rk);
+        });
+        var en = bs.enheder_30d || {}, iAlt = (en.mobil || 0) + (en.computer || 0) + (en.ukendt || 0);
+        if(iAlt) kl.appendChild(lav('p','hint', pct(en.mobil || 0, iAlt).toString().replace('.', ',') + ' % på mobil.'));
+      }
+    }
+
     // --- Det sælger ---
     var pr = $('db-produkter'); tøm(pr);
     var liste = sa.produkter || [];
@@ -2279,6 +2360,16 @@
       tom: 'Ingen salg i perioden endnu.',
       aria: function(){ return 'Salg pr. dag de seneste ' + dbDage + ' dage: ' + kr(sumKr) + ' i alt.'; }
     });
+    if(d.besoeg && d.besoeg.status === 'ok'){
+      var bes = (d.besoeg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.salgsside, betaling:p.betaling, tak:p.tak }; });
+      søjler($('db-graf-besoeg'), bes, {
+        akse: function(v){ return tusind(v); },
+        tip: function(p){ return p.v + ' på salgssiden · ' + p.betaling + ' på betalingen · ' + p.tak + ' tak'; },
+        kolonne: 'Visninger',
+        tom: 'Ingen visninger i perioden.',
+        aria: function(s){ return 'Visninger af salgssiden pr. dag de seneste ' + dbDage + ' dage: ' + s + ' i alt.'; }
+      });
+    }
     var nye = (d.kunder && d.kunder.nye_pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.antal }; });
     var sumNye = nye.reduce(function(n, p){ return n + p.v; }, 0);
     $('db-nye-under').textContent = sumNye + ' nye konti de seneste ' + dbDage + ' dage.';
