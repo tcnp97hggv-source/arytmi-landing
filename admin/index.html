@@ -2236,7 +2236,9 @@
       linje(m.afvist || m.klager ? 'advar' : 'god', 'Mails, 7 dage',
         m.i_alt + ' sendt · ' + m.leveret + ' leveret · ' + m.afvist + ' afvist · ' + m.klager + ' klager');
     } else {
-      linje(m.status === 'ikke_sat_op' ? 'graa' : 'advar', 'Mails, 7 dage', m.status === 'ikke_sat_op' ? 'Ikke sat op.' : 'Resend svarede ikke.');
+      linje(m.status === 'ikke_sat_op' ? 'graa' : 'advar', 'Mails, 7 dage', m.status === 'ikke_sat_op'
+        ? 'Ikke sat op — venter på den første besked fra Resends webhook.'
+        : 'Mailtallene kunne ikke hentes.');
     }
     if(se.status === 'ok'){
       linje(se.sager ? 'advar' : 'god', 'Fejl i appen, 24 t',
