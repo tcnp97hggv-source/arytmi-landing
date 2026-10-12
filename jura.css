@@ -1,0 +1,125 @@
+@charset "UTF-8";
+/* =============================================================
+   jura.css — handelsbetingelser.html og privatliv.html (11/10 2026)
+   =============================================================
+   Før lå forsidens 540 linjer CSS kopieret ind i begge sider, og
+   handelsbetingelserne var gået i stykker under en kopiering. Nu ét
+   stylesheet til begge. Skrifter og palet er de samme som appen og
+   funnelen (Oliivias palet). Siderne har intet script. */
+
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:300 700;font-display:swap;src:url('fonts/fraunces.woff2?v=20261003') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;src:url('fonts/inter.woff2?v=20261003') format('woff2')}
+
+:root{
+  --brun:#4a2417;
+  --creme:#f7efe4;
+  --sand:#e9ddcf;
+  --rust:#8e4333;
+  --cta:#e8935a;
+  --daempet:#6f5245;
+  --linje:rgba(74,36,23,.16);
+  --gutter:16px;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+@media (min-width:360px){:root{--gutter:20px}}
+@media (min-width:900px){:root{--gutter:40px}}
+
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;background:var(--creme);color:var(--brun);font-family:var(--sans);
+  font-size:17px;line-height:1.65;overflow-x:hidden}
+@media (max-width:359px){body{font-size:16px;line-height:1.6}}
+img{max-width:100%;height:auto;display:block}
+h1,h2,h3,p,ul,ol{margin:0}
+a{color:inherit}
+a:focus-visible{outline:3px solid var(--brun);outline-offset:3px;border-radius:4px}
+
+/* ---------- toppen ---------- */
+.jura-top{max-width:1240px;margin:0 auto;padding:22px var(--gutter);
+  display:flex;align-items:center;justify-content:space-between;gap:16px}
+.jura-top .logo{width:clamp(120px,32vw,150px);height:auto}
+.jura-top a.tilbage{font-weight:600;font-size:15px;text-decoration:none;min-height:44px;
+  display:inline-flex;align-items:center}
+.jura-top a.tilbage span{border-bottom:1px solid var(--cta)}
+
+/* ---------- selve teksten ---------- */
+.jura{max-width:44rem;margin:0 auto;padding:12px var(--gutter) 88px}
+.overlinje{display:block;font-weight:700;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rust);margin-bottom:10px}
+.jura h1{font-family:var(--serif);font-weight:500;line-height:1.08;text-wrap:balance;
+  font-size:clamp(2.2rem,1.6rem + 2.6vw,3.4rem);margin-bottom:10px}
+.dato{font-size:14px;color:var(--daempet);margin-bottom:28px}
+.jura h2{font-family:var(--serif);font-weight:500;line-height:1.15;text-wrap:balance;
+  font-size:clamp(1.4rem,1.2rem + 1vw,1.8rem);margin:52px 0 14px;scroll-margin-top:20px}
+.jura h3{font-family:var(--serif);font-weight:500;font-size:1.2rem;line-height:1.25;margin:30px 0 10px}
+.jura p,.jura li{color:var(--daempet)}
+.jura p + p{margin-top:12px}
+.jura strong{color:var(--brun);font-weight:600}
+.jura ul{list-style:disc;padding-left:1.3em;margin:12px 0}
+.jura ol{list-style:decimal;padding-left:1.3em;margin:12px 0}
+.jura li + li{margin-top:6px}
+.jura a{color:var(--brun);font-weight:600;text-decoration:underline;
+  text-decoration-color:var(--cta);text-decoration-thickness:1px;text-underline-offset:3px}
+.jura hr{border:0;border-top:1px solid var(--linje);margin:52px 0}
+
+/* "Kort fortalt": det vigtigste først, så ingen skal læse det hele */
+.kort{background:var(--sand);border-radius:20px;padding:22px 22px 20px;margin:0 0 8px}
+.kort h2{margin:0 0 10px;font-size:1.25rem}
+.kort ul{margin:0}
+.kort li{color:var(--brun)}
+
+/* Indholdsfortegnelse */
+.indhold{margin:28px 0 0;padding:18px 0 4px;border-top:1px solid var(--linje)}
+.indhold .overlinje{margin-bottom:8px}
+.indhold ol{list-style:none;padding:0;margin:0;columns:2;column-gap:28px}
+@media (max-width:519px){.indhold ol{columns:1}}
+.indhold li{break-inside:avoid;margin:0 0 4px}
+.indhold li + li{margin-top:0}
+.indhold a{font-weight:500;text-decoration:none;display:inline-block;padding:4px 0;
+  border-bottom:1px solid transparent}
+.indhold a:hover{border-bottom-color:var(--cta)}
+
+/* Fremhævet afsnit (sikkerhed) */
+.boks{border-left:3px solid var(--cta);padding:2px 0 2px 18px;margin:16px 0}
+
+/* Tabeller ruller for sig selv på en smal skærm — aldrig siden */
+.tabel{overflow-x:auto;margin:16px 0;border:1px solid var(--linje);border-radius:16px;background:#fbf7f0}
+.jura table{border-collapse:collapse;width:100%;font-size:15px;line-height:1.5}
+.jura th,.jura td{text-align:left;vertical-align:top;padding:12px 16px;border-bottom:1px solid var(--linje)}
+.jura tr:last-child td{border-bottom:0}
+.jura th{font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--rust);background:var(--sand)}
+.jura td{color:var(--daempet)}
+.jura td:first-child{min-width:9rem}
+
+.formular{background:#fbf7f0;border:1px solid var(--linje);border-radius:20px;padding:6px 22px 20px}
+.formular ul{list-style:none;padding:0}
+.formular li{padding:8px 0;border-bottom:1px dashed var(--linje)}
+
+.afsender{font-size:14px}
+
+/* ---------- foden ---------- */
+footer{background:var(--creme);color:var(--daempet);padding:8px var(--gutter) 28px;font-size:14px;line-height:1.7}
+.fod-indre{max-width:1240px;margin:0 auto;border-top:1px solid var(--linje)}
+.fod-kolonner{display:grid;grid-template-columns:1fr;gap:28px;padding:32px 0}
+@media (min-width:640px){.fod-kolonner{grid-template-columns:1.3fr 1fr 1fr}}
+.fod-kolonner h2{font-weight:700;font-size:12px;line-height:1.4;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--rust);margin-bottom:10px}
+.fod-kolonner p + p{margin-top:8px}
+.fod-kolonner a{color:var(--brun);font-weight:600;text-decoration:underline;
+  text-decoration-color:var(--cta);text-decoration-thickness:1px;text-underline-offset:4px}
+.fod-bund{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  padding-top:20px;border-top:1px solid var(--linje);font-size:13px}
+.fod-jura{display:flex;flex-wrap:wrap;gap:4px 24px}
+.fod-jura a{color:var(--brun);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center}
+.fod-jura a[aria-current]{text-decoration:underline;text-decoration-color:var(--cta);text-underline-offset:4px}
+.fod-puls{width:120px;height:auto}
+.fod-puls path{fill:none;stroke:var(--cta);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;opacity:.75}
+
+@media print{
+  .jura-top a.tilbage,.indhold,footer{display:none}
+  body{background:#fff}
+  .kort,.tabel,.formular{background:#fff}
+}
