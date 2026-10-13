@@ -2294,10 +2294,10 @@
     if(!harGsc){
       $('db-gsc-under').textContent = '';
       $('db-gsc-tom').textContent = gs.status === 'ikke_sat_op'
-        ? 'Ikke sat op endnu — kræver GOOGLE_SERVICEKONTO i Supabase. Vejledningen står i docs/tokens-til-oversigten.md.'
+        ? 'Ikke sat op endnu — kræver de tre Google-hemmeligheder i Supabase. Vejledningen står i docs/tokens-til-oversigten.md, afsnit 2b.'
         : gs.kode === 403
-          ? 'Google svarede 403 — servicekontoen er ikke tilføjet som bruger i Search Console, eller ejendommen hedder noget andet (GSC_EJENDOM).'
-          : 'Søgetallene kunne ikke hentes.';
+          ? 'Google svarede 403 — kontoen har ikke adgang til ejendommen i Search Console, eller ejendommen hedder noget andet (GSC_EJENDOM).'
+          : 'Søgetallene kunne ikke hentes' + (gs.besked ? ' (' + gs.besked + ')' : '') + '.';
     } else {
       var kommaTal = function(x, c){ return (Math.round(x * Math.pow(10, c)) / Math.pow(10, c)).toString().replace('.', ','); };
       $('db-gsc-under').textContent = 'Googles søgeresultater for arytmi.com, ' + gs.fra + ' til ' + gs.til + '. Tallene er 2-3 dage forsinkede.';
