@@ -123,3 +123,89 @@ footer{background:var(--creme);color:var(--daempet);padding:8px var(--gutter) 28
   body{background:#fff}
   .kort,.tabel,.formular{background:#fff}
 }
+
+/* =============================================================
+   LØFT 13/10 2026 — "det ser ikke særlig godt ud på telefon eller pc" (Kennet)
+   =============================================================
+   Ligger SIDST og lægger sig oven på det ovenstående: fjernes hele blokken,
+   er siderne som før. Intet script (siderne har CSP default-src 'none').
+
+   Fire ting:
+     1 · NAVIGATION. En lang tekst skal kunne findes rundt i. På pc (≥ 1280 px)
+         står indholdsfortegnelsen som en klæbende sidebjælke i den tomme margen;
+         på telefon er den en række små knapper i stedet for en hel skærm af
+         lodret liste, og toppen klæber, med et link tilbage til Indhold.
+     2 · AFSNIT kan skimmes: en tynd streg og mere luft over hver overskrift, og
+         "Kort fortalt" står som sidens ankerpunkt.
+     3 · LÆSBARHED: lidt større og luftigere tekst på pc, en anelse bredere spalte.
+     4 · TABELLER viser, at de kan rulles sidelæns, og rækkerne er lettere at følge. */
+
+/* --- toppen klæber (alle bredder) --- */
+.jura-top{position:sticky;top:0;z-index:30;max-width:none;
+  padding:10px max(var(--gutter),calc((100vw - 1240px)/2 + var(--gutter)));
+  background:rgba(247,239,228,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-bottom:1px solid transparent;transition:border-color .2s}
+.jura-top .logo{width:clamp(104px,28vw,128px)}
+.jura-top .hoejre{display:flex;align-items:center;gap:20px}
+.jura-top a.til-indhold{font-weight:600;font-size:15px;text-decoration:none;min-height:44px;
+  display:inline-flex;align-items:center}
+.jura-top a.til-indhold span{border-bottom:1px solid var(--cta)}
+@media (min-width:1280px){.jura-top a.til-indhold{display:none}}
+.jura h2,.jura .kort{scroll-margin-top:84px}
+.indhold{scroll-margin-top:84px}
+
+/* --- 2 · afsnit, der kan skimmes --- */
+.jura > h2{margin:64px 0 16px;padding-top:30px;border-top:1px solid var(--linje)}
+.jura > h2::before{content:'';display:block;width:34px;height:3px;border-radius:2px;
+  background:var(--cta);margin:-31px 0 26px}
+.kort{background:linear-gradient(160deg,#eadccb 0%,#e3d3c0 100%);
+  border:1px solid rgba(74,36,23,.1);box-shadow:0 1px 2px rgba(74,36,23,.05),0 12px 30px rgba(74,36,23,.07)}
+.kort li::marker{color:var(--rust)}
+.jura .boks{background:#fbf7f0;border:1px solid var(--linje);border-left:4px solid var(--cta);
+  border-radius:14px;padding:14px 18px;margin:20px 0}
+
+/* --- 3 · læsbarhed på pc --- */
+@media (min-width:900px){
+  .jura{max-width:46rem}
+  .jura p,.jura li{font-size:1.0625rem}
+  .jura p,.jura li,.jura td{line-height:1.72}
+  .dato{margin-bottom:32px}
+}
+
+/* --- 1 · navigation --- */
+/* Telefon og tablet: knapper i stedet for en lang liste */
+@media (max-width:1279px){
+  .indhold ol{display:flex;flex-wrap:wrap;gap:8px;columns:auto}
+  .indhold li{margin:0}
+  .indhold a{padding:9px 14px;min-height:40px;border:1px solid var(--linje);border-radius:999px;
+    background:#fbf7f0;font-size:15px;font-weight:500;line-height:1.2;display:inline-flex;align-items:center}
+  .indhold a:hover,.indhold a:focus-visible{background:var(--sand);border-color:rgba(74,36,23,.3)}
+}
+/* Pc: klæbende sidebjælke i den tomme margen til venstre for teksten */
+@media (min-width:1280px){
+  .indhold{float:left;position:sticky;top:96px;width:14.5rem;margin:6px 0 0 -18.5rem;
+    padding:0 0 0 4px;border-top:0;max-height:calc(100vh - 128px);overflow-y:auto}
+  .indhold ol{columns:1;display:block}
+  .indhold li{margin:0 0 2px}
+  .indhold a{display:block;padding:7px 12px;border-left:2px solid var(--linje);border-bottom:0;
+    font-size:14.5px;line-height:1.35;color:var(--daempet);font-weight:500}
+  .indhold a:hover,.indhold a:focus-visible{color:var(--brun);border-left-color:var(--cta);
+    background:rgba(232,147,90,.1)}
+}
+
+/* --- 4 · tabeller --- */
+.tabel{background:
+    linear-gradient(to right,#fbf7f0 30%,rgba(251,247,240,0)) left center/36px 100% no-repeat local,
+    linear-gradient(to left,#fbf7f0 30%,rgba(251,247,240,0)) right center/36px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%,rgba(74,36,23,.18),rgba(74,36,23,0)) left center/12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%,rgba(74,36,23,.18),rgba(74,36,23,0)) right center/12px 100% no-repeat scroll,
+    #fbf7f0;
+  box-shadow:0 1px 2px rgba(74,36,23,.04)}
+.jura tbody tr:nth-child(even) td{background:rgba(233,221,207,.28)}
+.jura td:first-child{color:var(--brun);font-weight:500}
+
+@media print{
+  .jura-top{position:static;background:none}
+  .jura > h2::before{display:none}
+  .jura > h2{border-top:0;padding-top:0;margin-top:40px}
+}

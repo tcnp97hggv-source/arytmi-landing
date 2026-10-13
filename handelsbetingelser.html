@@ -30,7 +30,7 @@
 <meta name="color-scheme" content="light">
 <link rel="preload" href="fonts/fraunces.woff2?v=20261003" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/inter.woff2?v=20261003" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="jura.css?v=20261011a">
+<link rel="stylesheet" href="jura.css?v=20261013a">
 <link rel="icon" href="favicon.ico?v=20260927" sizes="any">
 <link rel="icon" href="favicon-32.png?v=20260927" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon-180.png?v=20260927">
@@ -38,7 +38,7 @@
 <body>
   <header class="jura-top">
     <a href="./" aria-label="Arytmi – forsiden"><img class="logo" src="logo-2026.svg?v=20261003" alt="Arytmi" width="967" height="430"></a>
-    <a class="tilbage" href="./"><span>Til forsiden</span></a>
+    <div class="hoejre"><a class="til-indhold" href="#indhold"><span>Indhold</span></a><a class="tilbage" href="./"><span>Til forsiden</span></a></div>
   </header>
 
   <main class="jura">
@@ -57,7 +57,7 @@
       </ul>
     </section>
 
-    <nav class="indhold" aria-label="Indhold">
+    <nav class="indhold" id="indhold" aria-label="Indhold">
       <span class="overlinje">Indhold</span>
       <ol>
         <li><a href="#saelger">Hvem sælger</a></li>
