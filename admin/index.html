@@ -4142,13 +4142,26 @@
     var f = lav('div','bb-gruppe');
     function felt(pladsh, v){ var i = document.createElement('input'); i.type='text'; i.autocomplete='off'; i.placeholder=pladsh; i.value=v||''; return i; }
     var nr = felt('Trackingnummer', o.tracking_nr);
-    var firma = felt('Fragtfirma (fx GLS, PostNord)', o.fragtfirma);
-    var link = felt('Sporingslink (valgfrit, https://…)', o.tracking_link);
+    var firma = felt('Fragtfirma (fx GLS, DAO, PostNord)', o.fragtfirma);
+    /* Forslag, ikke en begrænsning: firmaet er frit tekst, og mailen siger det, der står her. */
+    if(!document.getElementById('fragtfirmaer')){
+      var dl = document.createElement('datalist'); dl.id = 'fragtfirmaer';
+      ['GLS', 'DAO', 'PostNord', 'DHL', 'UPS', 'Bring'].forEach(function(n){ var op = document.createElement('option'); op.value = n; dl.appendChild(op); });
+      document.body.appendChild(dl);
+    }
+    firma.setAttribute('list', 'fragtfirmaer');
+    var link = felt('Sporingslink (anbefales — indsæt det fra leverandørens mail)', o.tracking_link);
     f.appendChild(nr); f.appendChild(firma); f.appendChild(link);
+    f.appendChild(lav('div','hint', 'Står der et link, får kunden en knap, der åbner sporingen. Uden et link får hun trackingnummeret og en opfordring til at søge det hos fragtfirmaet.'));
     var st = lav('div','status');
     function send(medMail, gensend){
       if(!nr.value.trim()){ st.className='status fejl'; st.textContent='Skriv et trackingnummer.'; return; }
-      if(medMail && !window.confirm('Send mail til ' + o.email + ' om, at ordren er på vej?')) return;
+      if(medMail){
+        var spoerg = link.value.trim()
+          ? 'Send mail til ' + o.email + ' om, at ordren er på vej?'
+          : 'Der er intet sporingslink. Kunden får kun trackingnummeret og en opfordring til at søge det hos ' + (firma.value.trim() || 'fragtfirmaet') + '.\n\nSend alligevel til ' + o.email + '?';
+        if(!window.confirm(spoerg)) return;
+      }
       st.className='status'; st.textContent='Gemmer …';
       brugerKald({ handling:'tracking', id:o.id, tracking_nr:nr.value.trim(), fragtfirma:firma.value.trim(),
                    tracking_link:link.value.trim(), send_mail:medMail, gensend:!!gensend })
