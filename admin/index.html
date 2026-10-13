@@ -503,6 +503,17 @@
   .db-indre{ margin-top:16px; }
   .db-h4{ font-family:var(--skrift-brød); font-size:13px; font-weight:650; color:var(--fjord); margin-bottom:10px; }
   .db-prod .pct{ color:var(--gran); font-weight:600; }
+  /* Brede skærme (13/10): indholdet fyldte kun halvdelen af en stor skærm.
+     Fra 1360 px bliver arket bredere, og kortene fordeles i to kolonner, der
+     selv holder sig lige lange (CSS-kolonner), uanset hvor høje kortene er.
+     Under 1360 px er intet ændret. `display:contents` på .db-to lader de to
+     kort i hvert par indgå i samme kolonnestrøm. */
+  @media (min-width:1360px){
+    main:has(#fane-oversigt:not([hidden])){ max-width:1320px; }
+    .db-kolonner{ column-count:2; column-gap:16px; }
+    .db-kolonner > .db-kort, .db-kolonner .db-to > .db-kort{ break-inside:avoid; margin-bottom:16px; }
+    .db-kolonner .db-to{ display:contents; }
+  }
   @media (max-width:720px){
     .db-tre{ grid-template-columns:repeat(3,1fr); gap:8px; }
     .db-to{ grid-template-columns:1fr; }
@@ -1015,6 +1026,9 @@
 
       <div class="db-tal" id="db-tal"></div>
 
+      <!-- Kortene. Under 1360 px ligger de under hinanden; på brede skærme
+           fordeles de i to kolonner (CSS, .db-kolonner). -->
+      <div class="db-kolonner">
       <div class="db-kort">
         <div class="db-kort-top">
           <div>
@@ -1090,6 +1104,7 @@
           <div class="db-mini" id="db-login"></div>
         </div>
       </div>
+      </div><!-- /db-kolonner -->
 
       <h2 style="margin-top:34px">Seneste udgivelser</h2>
       <p class="under">Hver gang indholdet sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
