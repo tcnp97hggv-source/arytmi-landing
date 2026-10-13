@@ -1051,6 +1051,20 @@
         <p class="hint" id="db-besoeg-tom" hidden></p>
       </div>
 
+      <!-- GOOGLE-SØGNING (2.10, Search Console). Hvor mange der ser og klikker
+           på arytmi.com i Googles resultater, og på hvilke søgeord. Tallene er
+           2-3 dage forsinkede. Kilden: overblik → soegning (GOOGLE_SERVICEKONTO). -->
+      <div class="db-kort">
+        <h3>Google-søgning</h3>
+        <p class="db-under" id="db-gsc-under"></p>
+        <div id="db-gsc">
+          <div class="db-mini" id="db-gsc-tal"></div>
+          <h4 class="db-h4">Søgeord, 28 dage</h4>
+          <div id="db-gsc-ord"></div>
+        </div>
+        <p class="hint" id="db-gsc-tom" hidden></p>
+      </div>
+
       <div class="db-to">
         <div class="db-kort">
           <h3>Nye kunder pr. dag</h3>
@@ -2269,6 +2283,46 @@
         });
         var en = bs.enheder_30d || {}, iAlt = (en.mobil || 0) + (en.computer || 0) + (en.ukendt || 0);
         if(iAlt) kl.appendChild(lav('p','hint', pct(en.mobil || 0, iAlt).toString().replace('.', ',') + ' % på mobil.'));
+      }
+    }
+
+    // --- Google-søgning (Search Console) ---
+    var gs = d.soegning || {};
+    var harGsc = gs.status === 'ok';
+    $('db-gsc').hidden = !harGsc;
+    $('db-gsc-tom').hidden = harGsc;
+    if(!harGsc){
+      $('db-gsc-under').textContent = '';
+      $('db-gsc-tom').textContent = gs.status === 'ikke_sat_op'
+        ? 'Ikke sat op endnu — kræver GOOGLE_SERVICEKONTO i Supabase. Vejledningen står i docs/tokens-til-oversigten.md.'
+        : gs.kode === 403
+          ? 'Google svarede 403 — servicekontoen er ikke tilføjet som bruger i Search Console, eller ejendommen hedder noget andet (GSC_EJENDOM).'
+          : 'Søgetallene kunne ikke hentes.';
+    } else {
+      var kommaTal = function(x, c){ return (Math.round(x * Math.pow(10, c)) / Math.pow(10, c)).toString().replace('.', ','); };
+      $('db-gsc-under').textContent = 'Googles søgeresultater for arytmi.com, ' + gs.fra + ' til ' + gs.til + '. Tallene er 2-3 dage forsinkede.';
+      var gt = $('db-gsc-tal'); tøm(gt);
+      [[tusind(gs.klik || 0), 'Klik'],
+       [tusind(gs.visninger || 0), 'Visninger'],
+       [kommaTal((gs.klikrate || 0) * 100, 1) + ' %', 'Klikrate'],
+       [gs.position ? kommaTal(gs.position, 1) : '—', 'Gns. placering']
+      ].forEach(function(r){
+        var c = lav('div'); c.appendChild(lav('div','t', r[0])); c.appendChild(lav('div','n', r[1])); gt.appendChild(c);
+      });
+      var go = $('db-gsc-ord'); tøm(go);
+      var ord = gs.soegeord || [];
+      if(!ord.length){
+        go.appendChild(lav('p','hint','Ingen søgeord endnu — Google har ikke vist siden nok til at melde tal.'));
+      } else {
+        var maksV = ord[0].visninger || 1;
+        ord.forEach(function(o){
+          var rk = lav('div','db-prod');
+          rk.appendChild(lav('span', null, o.ord));
+          rk.appendChild(lav('span','v', tusind(o.visninger) + ' visn. · ' + tusind(o.klik) + ' klik'));
+          var bar = lav('div','bar'), fyld = document.createElement('i');
+          fyld.style.width = Math.max(2, o.visninger / maksV * 100) + '%';
+          bar.appendChild(fyld); rk.appendChild(bar); go.appendChild(rk);
+        });
       }
     }
 
