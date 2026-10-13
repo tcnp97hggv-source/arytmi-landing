@@ -2227,8 +2227,7 @@
     tal.appendChild(dbFelt('Salg denne måned', kr(sa.maaned && sa.maaned.oere), (sa.maaned && sa.maaned.antal || 0) + ' ordrer', true));
     tal.appendChild(dbFelt('Salg i dag', kr(sa.i_dag && sa.i_dag.oere), (sa.i_dag && sa.i_dag.antal || 0) + ' ordrer · ' + kr(sa.syv_dage && sa.syv_dage.oere) + ' på 7 dage'));
     tal.appendChild(dbFelt('Aktive kunder', tusind(ku.aktive || 0), (ku.nye_30d || 0) + ' nye konti de seneste 30 dage'));
-    tal.appendChild(dbFelt('Udløber inden 30 dage', tusind(ku.udloeber_30d || 0),
-      (sa.refunderet && sa.refunderet.antal ? sa.refunderet.antal + ' tilbagebetalt i alt (' + kr(sa.refunderet.oere) + ')' : 'Ingen tilbagebetalinger')));
+    tal.appendChild(dbFelt('Udløber inden 30 dage', tusind(ku.udloeber_30d || 0), 'adgange, der skal fornyes'));
 
     tegnGrafer();
 
