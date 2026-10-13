@@ -536,7 +536,6 @@
     main:has(#fane-oversigt:not([hidden])){ max-width:1320px; }
     .db-kolonner{ column-count:2; column-gap:16px; }
     .db-kolonner > .db-kort, .db-kolonner .db-to > .db-kort{ break-inside:avoid; margin-bottom:16px; }
-    .db-kolonner .db-to{ display:contents; }
   }
   @media (max-width:720px){
     .db-tre{ grid-template-columns:repeat(3,1fr); gap:8px; }
@@ -899,6 +898,117 @@
     *{ transition:none !important; animation:none !important; }
     .skaermkort:hover{ transform:none; }
   }
+
+  /* =============================================================
+     LØFT 13/10 2026 — "ikke særlig lækkert at arbejde i" (Kennet)
+     =============================================================
+     Ligger SIDST og lægger sig OVENPÅ det ovenstående: kun værdier og regler,
+     ingen klasser omdøbt og ingen nye, som JavaScriptet skal kende. Fjernes
+     hele blokken, er bagrummet som før.
+
+     Fire ting:
+       1 · SKINNEN er mørk gran på skrivebordet (≥ 861 px) med logoet i lys —
+           bagrummet får en tyngde, og arbejdsfladen skiller sig tydeligere ud.
+       2 · TYPOGRAFI: sidens titel er større, kortenes overskrifter og alle
+           nøgletal står i serif (som appen), og små etiketter er versaler med
+           luft. Det giver hierarki, hvor alt før var lige stort.
+       3 · KORT har større hjørner, mere luft og blødere kanter; det vigtigste
+           tal (salg denne måned) er mørkt og står som sidens ankerpunkt.
+       4 · KNAPPER har en anelse dybde, så de ligner noget, man kan trykke på.
+     Telefon (≤ 860 px) er uændret, undtagen kortenes former og typografi. */
+
+  /* --- 2 · typografi, alle bredder --- */
+  .db-kort h3{ font-family:var(--skrift-display); font-size:19px; font-weight:600; letter-spacing:-.005em; }
+  .db-under{ font-size:13px; margin:4px 0 14px; }
+  .db-felt .navn{ font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--dæmpet); }
+  .db-felt .vaerdi{ font-family:var(--skrift-display); font-weight:600; margin-top:10px; letter-spacing:-.01em; }
+  .db-mini .t{ font-family:var(--skrift-display); font-weight:600; }
+  .db-h4{ font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--dæmpet); }
+
+  /* --- 3 · kort --- */
+  .db-kort, .db-felt, .bruger-boks, .rulle{ border-color:rgba(74,36,23,.09); border-radius:20px; }
+  .db-kort{ padding:22px 24px 18px; }
+  .db-felt{ padding:20px 22px; }
+  .db-status{ border-radius:18px; border-left-width:4px; padding:16px 18px; }
+  .db-mini > div{ border-radius:14px; }
+  .tur, .skaerm-flok{ border-radius:16px; }
+
+  /* Sidens ankerpunkt: det første nøgletal (salg denne måned). */
+  .db-felt.helt{
+    background:linear-gradient(150deg,#5c2e1f 0%,#3a1a10 100%);
+    border-color:transparent; box-shadow:var(--løft-hævet);
+  }
+  .db-felt.helt .navn, .db-felt.helt .note{ color:#dcc3b3; }
+  .db-felt.helt .vaerdi{ color:#fff8ef; }
+
+  /* --- Træk kortene rundt (13/10) --- */
+  .db-top-knapper{ display:flex; gap:8px; flex:0 0 auto; align-items:flex-start; }
+  .db-kolonner .db-to{ display:contents; }
+  .db-kort{ position:relative; }
+  .db-greb{
+    position:absolute; top:4px; left:50%; transform:translateX(-50%);
+    width:56px; height:18px; border:0; background:transparent; border-radius:9px;
+    cursor:grab; touch-action:none; opacity:0; transition:opacity .15s, background .15s;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .db-greb::before{ content:''; width:30px; height:4px; border-radius:2px; background:var(--dæmpet); opacity:.55; }
+  .db-kort:hover .db-greb, .db-greb:focus-visible{ opacity:1; }
+  .db-greb:hover{ background:#f2e9dd; }
+  .db-greb:active{ cursor:grabbing; }
+  @media (hover:none){ .db-greb{ opacity:.7; } }
+  .db-kort.traekkes{
+    z-index:30; cursor:grabbing; transition:none;
+    box-shadow:var(--løft-hævet), 0 20px 44px rgba(74,36,23,.24);
+  }
+  .db-kort.traekkes .db-greb{ opacity:1; }
+  .db-faldlinje{ position:fixed; height:4px; border-radius:2px; background:var(--rav); z-index:60; pointer-events:none; box-shadow:0 0 0 3px rgba(142,67,51,.18); }
+  body.traekker{ user-select:none; -webkit-user-select:none; cursor:grabbing; }
+
+  /* --- 4 · knapper --- */
+  .knap{ border-radius:12px; box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 1px 2px rgba(74,36,23,.2); }
+  .knap.rolig, .knap.fare{ box-shadow:none; }
+  .knap.lille{ border-radius:10px; }
+  #udgiv{ box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 2px 8px rgba(232,147,90,.4); border-radius:12px; font-weight:700; }
+
+  /* --- 1 · skrivebord: mørk skinne, rummeligere ark --- */
+  @media (min-width:861px){
+    body{ background:radial-gradient(1100px 480px at 80% -6%, #fcf5ea 0%, rgba(252,245,234,0) 62%), var(--bund); }
+
+    .skinne{
+      background:linear-gradient(180deg,#4a2417 0%,#37190f 100%);
+      border-right:0; box-shadow:2px 0 28px rgba(58,26,16,.14);
+      padding:26px 16px 18px;
+    }
+    .sk-ord{ filter:brightness(0) invert(1); opacity:.93; }
+    .sk-under{ color:#cfb3a2; font-size:11px; letter-spacing:.16em; text-transform:uppercase; }
+    .sk-maerke{ padding-bottom:30px; }
+    nav.faner{ gap:3px; }
+    nav.faner button{ color:#ead9c9; padding:11px 12px; font-weight:550; }
+    nav.faner button .ik{ opacity:.85; }
+    nav.faner button:hover{ background:rgba(255,255,255,.08); color:#fff; }
+    nav.faner button[aria-current=page]{
+      background:#f6ede1; color:var(--gran);
+      box-shadow:0 2px 10px rgba(0,0,0,.18);
+    }
+    nav.faner button[aria-current=page] .ik{ opacity:1; }
+    .sk-bund{ border-top-color:rgba(255,255,255,.13); }
+    .sk-hvem b{ color:#f6ede1; }
+    .sk-hvem .mail{ color:#c9ac9a; }
+    .sk-bund .knap{ color:#f6ede1; border-color:rgba(255,255,255,.25); background:transparent; }
+    .sk-bund .knap:hover{ background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.4); }
+
+    .udgiv-linje{ padding:14px 44px; background:rgba(246,237,225,.8); border-bottom-color:rgba(74,36,23,.08); }
+    main{ padding:38px 44px 110px; }
+    main:has(#fane-kunder:not([hidden])){ max-width:1120px; }
+    h2{ font-size:34px; line-height:1.12; letter-spacing:-.012em; margin-bottom:8px; }
+    .under{ font-size:15px; color:var(--dæmpet); }
+    .db-top .under{ margin-bottom:22px; }
+    .db-tal{ gap:16px; margin-bottom:20px; }
+    .db-felt.helt .vaerdi{ font-size:clamp(32px,3.2vw,44px); }
+    .db-felt .vaerdi{ font-size:clamp(26px,2.5vw,34px); }
+    .db-kolonner{ column-gap:20px; }
+    .db-kort, .db-kolonner .db-kort{ margin-bottom:20px; }
+  }
 </style>
 </head>
 <body>
@@ -1052,7 +1162,10 @@
           <h2>Oversigt</h2>
           <p class="under" id="db-hvornaar">Henter …</p>
         </div>
-        <button type="button" class="knap rolig lille" id="db-opdater">Opdater</button>
+        <div class="db-top-knapper">
+          <button type="button" class="knap rolig lille" id="db-nulstil" hidden>Nulstil rækkefølge</button>
+          <button type="button" class="knap rolig lille" id="db-opdater">Opdater</button>
+        </div>
       </div>
 
       <div class="db-status" id="db-status" hidden></div>
@@ -1062,7 +1175,7 @@
       <!-- Kortene. Under 1360 px ligger de under hinanden; på brede skærme
            fordeles de i to kolonner (CSS, .db-kolonner). -->
       <div class="db-kolonner">
-      <div class="db-kort">
+      <div class="db-kort" data-kort="salg">
         <div class="db-kort-top">
           <div>
             <h3>Salg pr. dag</h3>
@@ -1078,7 +1191,7 @@
 
       <!-- BESØG PÅ FUNNELEN (2.10, omgang 2). Vores egen tæller: visninger,
            ikke personer — ingen cookies, ingen IP (docs/funnel-taeller.md). -->
-      <div class="db-kort">
+      <div class="db-kort" data-kort="besoeg">
         <h3>Besøg på funnelen</h3>
         <p class="db-under" id="db-besoeg-under"></p>
         <div id="db-besoeg">
@@ -1101,7 +1214,7 @@
       <!-- GOOGLE-SØGNING (2.10, Search Console). Hvor mange der ser og klikker
            på arytmi.com i Googles resultater, og på hvilke søgeord. Tallene er
            2-3 dage forsinkede. Kilden: overblik → soegning (GOOGLE_SERVICEKONTO). -->
-      <div class="db-kort">
+      <div class="db-kort" data-kort="soegning">
         <h3>Google-søgning</h3>
         <p class="db-under" id="db-gsc-under"></p>
         <div id="db-gsc">
@@ -1113,12 +1226,12 @@
       </div>
 
       <div class="db-to">
-        <div class="db-kort">
+        <div class="db-kort" data-kort="nye">
           <h3>Nye kunder pr. dag</h3>
           <p class="db-under" id="db-nye-under"></p>
           <div class="db-graf lav" id="db-graf-nye"></div>
         </div>
-        <div class="db-kort">
+        <div class="db-kort" data-kort="saelger">
           <h3>Det sælger</h3>
           <p class="db-under">Betalte ordrer i alt, efter produkt.</p>
           <div id="db-produkter"></div>
@@ -1126,12 +1239,12 @@
       </div>
 
       <div class="db-to">
-        <div class="db-kort">
+        <div class="db-kort" data-kort="drift">
           <h3>Driften</h3>
           <p class="db-under">Grønt er i orden. Gråt er ikke sat op endnu.</p>
           <ul class="db-tavle" id="db-drift"></ul>
         </div>
-        <div class="db-kort">
+        <div class="db-kort" data-kort="login">
           <h3>Login og misbrug — seneste døgn</h3>
           <p class="db-under">Koder på mail og invitationer. Et ramt loft er værd at kigge på.</p>
           <div class="db-mini" id="db-login"></div>
@@ -2496,6 +2609,144 @@
     window.clearTimeout(dbVent);
     dbVent = window.setTimeout(tegnGrafer, 150);
   });
+
+  /* ---------- Træk kortene rundt i Oversigten (13/10) ----------
+     Kennet: "jeg vil gerne kunne trække rundt på kortene i overblikket".
+     Hvert kort har en grib (stregen foroven). Man trækker i den med mus eller
+     finger, eller bruger piletasterne, når den har fokus. Rækkefølgen huskes i
+     denne browser (localStorage) - den er en bekvemmelighed for den, der sidder
+     her, ikke noget, serveren skal vide. "Nulstil rækkefølge" kommer frem, så
+     snart den afviger fra standarden.
+
+     Kortene FLYTTES IKKE i DOM'en, mens man trækker: en node, der flyttes, mister
+     sin pointer-capture, og så ville trækket gå i stå midt i en bevægelse. Det
+     trukne kort følger i stedet markøren med en transform, en kobberstreg viser,
+     hvor det lander, og først ved slip flyttes det. Grafer tegnes om bagefter,
+     fordi kortets bredde kan have ændret sig. De fire nøgletal og statuslinjen
+     kan ikke flyttes - de bygges om, hver gang tallene hentes. */
+  (function(){
+    var kol = document.querySelector('.db-kolonner');
+    if(!kol) return;
+    var NØGLE_RK = 'arytmi-bagrum-oversigt-raekkefoelge';
+    var STANDARD = Array.prototype.map.call(kol.querySelectorAll('.db-kort[data-kort]'), function(k){ return k.getAttribute('data-kort'); });
+    var nulstil = $('db-nulstil');
+    var besked = lav('div','sr-only'); besked.setAttribute('role','status'); besked.setAttribute('aria-live','polite');
+    document.body.appendChild(besked);
+
+    function læs(){
+      try {
+        var r = JSON.parse(window.localStorage.getItem(NØGLE_RK));
+        return Array.isArray(r) ? r.filter(function(x){ return typeof x === 'string'; }) : null;
+      } catch(e){ return null; }
+    }
+    function gem(rk){
+      try {
+        if(rk.join() === STANDARD.join()) window.localStorage.removeItem(NØGLE_RK);
+        else window.localStorage.setItem(NØGLE_RK, JSON.stringify(rk));
+      } catch(e){ /* privat vindue: rækkefølgen holder, til siden lukkes */ }
+    }
+    function kortene(){ return Array.prototype.slice.call(kol.querySelectorAll('.db-kort[data-kort]')); }
+    function rækkefølge(){ return kortene().map(function(k){ return k.getAttribute('data-kort'); }); }
+    function anvend(rk){
+      var alle = {};
+      kortene().forEach(function(k){ alle[k.getAttribute('data-kort')] = k; });
+      var brugt = {};
+      (rk || []).concat(STANDARD).forEach(function(id){
+        if(alle[id] && !brugt[id]){ brugt[id] = true; kol.appendChild(alle[id]); }
+      });
+      nulstil.hidden = rækkefølge().join() === STANDARD.join();
+    }
+    function efter(){
+      gem(rækkefølge());
+      nulstil.hidden = rækkefølge().join() === STANDARD.join();
+      tegnGrafer();
+    }
+    function titel(k){ var h3 = k.querySelector('h3'); return h3 ? h3.textContent : 'Kortet'; }
+    function meld(k){
+      besked.textContent = titel(k) + ' er flyttet til plads ' + (rækkefølge().indexOf(k.getAttribute('data-kort')) + 1) + ' af ' + STANDARD.length + '.';
+    }
+
+    var linje = lav('div','db-faldlinje'); linje.hidden = true; document.body.appendChild(linje);
+
+    function gør(kort){
+      var g = lav('button','db-greb');
+      g.type = 'button';
+      g.title = 'Træk for at flytte kortet (eller brug piletasterne)';
+      g.setAttribute('aria-label', 'Flyt kortet ' + titel(kort) + '. Træk, eller brug pil op og pil ned.');
+      kort.insertBefore(g, kort.firstChild);
+
+      g.addEventListener('pointerdown', function(e){
+        if(e.button !== undefined && e.button !== 0) return;
+        e.preventDefault();
+        var id = e.pointerId, x0 = e.clientX, y0 = e.clientY, mål = null, før = true, ramt = false;
+        try { g.setPointerCapture(id); } catch(x){}
+        kort.classList.add('traekkes'); document.body.classList.add('traekker');
+
+        function find(x, y){
+          var liste = document.elementsFromPoint(x, y);
+          for(var i = 0; i < liste.length; i++){
+            var k = liste[i].closest && liste[i].closest('.db-kort[data-kort]');
+            if(k && k !== kort) return k;
+          }
+          return null;
+        }
+        function flyt(ev){
+          if(ev.pointerId !== id) return;
+          ramt = true;
+          kort.style.transform = 'translate(' + (ev.clientX - x0) + 'px,' + (ev.clientY - y0) + 'px)';
+          mål = find(ev.clientX, ev.clientY);
+          if(mål){
+            var r = mål.getBoundingClientRect();
+            før = ev.clientY < r.top + r.height / 2;
+            linje.style.left = r.left + 'px'; linje.style.width = r.width + 'px';
+            linje.style.top = (før ? r.top - 10 : r.bottom + 8) + 'px';
+            linje.hidden = false;
+          } else { linje.hidden = true; }
+          if(ev.clientY < 90) window.scrollBy(0, -16);
+          else if(ev.clientY > window.innerHeight - 110) window.scrollBy(0, 16);
+        }
+        function slut(ev, afbryd){
+          if(ev && ev.pointerId !== id) return;
+          g.removeEventListener('pointermove', flyt);
+          g.removeEventListener('pointerup', op);
+          g.removeEventListener('pointercancel', afb);
+          document.removeEventListener('keydown', esc);
+          try { g.releasePointerCapture(id); } catch(x){}
+          kort.style.transform = ''; kort.classList.remove('traekkes');
+          document.body.classList.remove('traekker'); linje.hidden = true;
+          if(!afbryd && ramt && mål){
+            mål.parentNode.insertBefore(kort, før ? mål : mål.nextSibling);
+            efter();
+            meld(kort);
+          }
+          g.focus();
+        }
+        function op(ev){ slut(ev, false); }
+        function afb(ev){ slut(ev, true); }
+        function esc(ev){ if(ev.key === 'Escape') slut(null, true); }
+        g.addEventListener('pointermove', flyt);
+        g.addEventListener('pointerup', op);
+        g.addEventListener('pointercancel', afb);
+        document.addEventListener('keydown', esc);
+      });
+
+      g.addEventListener('keydown', function(e){
+        if(e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        var liste = kortene(), i = liste.indexOf(kort);
+        if(e.key === 'ArrowUp' && i > 0){ liste[i - 1].parentNode.insertBefore(kort, liste[i - 1]); }
+        else if(e.key === 'ArrowDown' && i < liste.length - 1){ liste[i + 1].parentNode.insertBefore(kort, liste[i + 1].nextSibling); }
+        else return;
+        efter();
+        g.focus();
+        meld(kort);
+      });
+    }
+
+    kortene().forEach(gør);
+    anvend(læs());
+    nulstil.addEventListener('click', function(){ anvend(STANDARD); gem(STANDARD); tegnGrafer(); });
+  })();
 
   function hentOversigt(){
     hentOverblik();
