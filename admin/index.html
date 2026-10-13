@@ -422,6 +422,30 @@
   }
   .k-rolle.admin{ background:var(--gran); color:#f8f1e7; }
   .k-handling{ text-align:right; white-space:nowrap; }
+  /* Telefon (13/10): tabellen var 864 px bred på en 390 px skærm, så kun navnet
+     var synligt, og telefon, adgang og dato lå bag en usynlig sidelæns rulning.
+     Nu er hver konto et kort: navn, mail og rolle øverst, så adgang, telefon og
+     oprettet som små linjer, og "Rediger" nederst. Kun Kunder-fanen — "Seneste
+     udgivelser" i Oversigten er stadig en tabel, der ruller. */
+  @media (max-width:720px){
+    #fane-kunder .rulle{ overflow:visible; border:0; background:none; box-shadow:none; border-radius:0; }
+    #fane-kunder table, #fane-kunder tbody{ display:block; min-width:0; }
+    #fane-kunder thead{ display:none; }
+    #kunder tr{
+      display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; align-items:start;
+      background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
+      padding:14px 16px; margin-bottom:10px; box-shadow:var(--løft);
+    }
+    #kunder td{ display:block; padding:0; border:0; font-size:13.5px; min-width:0; }
+    #kunder td:nth-child(1){ grid-column:1; grid-row:1; overflow-wrap:anywhere; font-size:14.5px; }
+    #kunder td:nth-child(5){ grid-column:2; grid-row:1; }
+    #kunder td:nth-child(2), #kunder td:nth-child(3), #kunder td:nth-child(4), #kunder td:nth-child(6){ grid-column:1 / -1; }
+    #kunder td:nth-child(2)::before{ content:'Telefon · '; color:var(--dæmpet); }
+    #kunder td:nth-child(3)::before{ content:'Adgang · '; color:var(--dæmpet); }
+    #kunder td:nth-child(4)::before{ content:'Oprettet · '; color:var(--dæmpet); }
+    #kunder td.k-handling{ text-align:left; margin-top:4px; }
+    #kunder td.tomt{ grid-column:1 / -1; }
+  }
 
   .bruger-boks{
     background:var(--flade); border:1px solid var(--linje); border-radius:16px;
