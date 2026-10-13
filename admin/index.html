@@ -708,6 +708,15 @@
   .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gran); }
   .tur .smaa{ font-size:12.5px; color:var(--dæmpet); flex:0 0 auto; }
   .tur .pil{ color:var(--dæmpet); font-size:11px; flex:0 0 auto; }
+  /* Telefon (13/10): metadata'en ("★★★★ · god til børn · …") tog al pladsen, så
+     turens NAVN blev klippet til "Svanni…" - og det første forsvandt helt. Nu
+     står navnet på sin egen linje, og metadata'en under. */
+  @media (max-width:720px){
+    .tur > .linje{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 12px; align-items:center; }
+    .tur .navn{ white-space:normal; overflow:visible; text-overflow:clip; }
+    .tur .pil{ grid-column:3; grid-row:1; }
+    .tur .smaa{ grid-column:2 / 3; grid-row:2; }
+  }
 
   .turkrop{ padding:2px 17px 17px; border-top:1px solid var(--linje-blød); }
   .par{ display:grid; gap:0 15px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
