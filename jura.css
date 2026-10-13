@@ -181,14 +181,20 @@ footer{background:var(--creme);color:var(--daempet);padding:8px var(--gutter) 28
     background:#fbf7f0;font-size:15px;font-weight:500;line-height:1.2;display:inline-flex;align-items:center}
   .indhold a:hover,.indhold a:focus-visible{background:var(--sand);border-color:rgba(74,36,23,.3)}
 }
-/* Pc: klæbende sidebjælke i den tomme margen til venstre for teksten */
+/* Pc: klæbende sidebjælke ved siden af teksten, fra titlen og ned. Gitteret lægger
+   alt andet i spor 2 og indholdet i spor 1 over hele sidens højde; "position:sticky"
+   holder det så i syne, mens man ruller. Under 1280 px er der intet gitter, og
+   indholdet står som knapper efter "Kort fortalt", som før. */
 @media (min-width:1280px){
-  .indhold{float:left;position:sticky;top:96px;width:14.5rem;margin:6px 0 0 -18.5rem;
-    padding:0 0 0 4px;border-top:0;max-height:calc(100vh - 128px);overflow-y:auto}
+  .jura{display:grid;grid-template-columns:14.5rem minmax(0,46rem);column-gap:4rem;
+    max-width:calc(14.5rem + 4rem + 46rem)}
+  .jura > *{grid-column:2}
+  .indhold{grid-column:1;grid-row:1 / span 600;align-self:start;position:sticky;top:96px;
+    margin:30px 0 0;padding:0 0 0 4px;border-top:0;max-height:calc(100vh - 128px);overflow-y:auto}
   .indhold ol{columns:1;display:block}
   .indhold li{margin:0 0 2px}
   .indhold a{display:block;padding:7px 12px;border-left:2px solid var(--linje);border-bottom:0;
-    font-size:14.5px;line-height:1.35;color:var(--daempet);font-weight:500}
+    border-radius:0;background:none;min-height:0;font-size:14.5px;line-height:1.35;color:var(--daempet);font-weight:500}
   .indhold a:hover,.indhold a:focus-visible{color:var(--brun);border-left-color:var(--cta);
     background:rgba(232,147,90,.1)}
 }
