@@ -757,6 +757,25 @@
   .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:19px; line-height:1.85; }
   .billedliste code{ font-family:var(--skrift-kode); font-size:12px; }
 
+  /* ---------- ARYTMI MAILS (14/10) ---------- */
+  .mail-kort{ background:#fff; border:1px solid var(--linje); border-radius:14px; padding:18px 18px 16px; margin-bottom:16px; }
+  .mail-kort h3{ margin:0 0 4px; font-size:17px; color:var(--gran); }
+  .mail-kort .om{ font-size:13.5px; color:var(--dæmpet); line-height:1.55; margin:0 0 6px; }
+  .mail-felt{ padding:13px 0; border-top:1px solid var(--linje-blød); }
+  .mail-top{ display:flex; align-items:center; gap:9px; margin-bottom:6px; }
+  .mail-top label{ font-weight:600; font-size:14px; }
+  .mail-rettet{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#8a5a2f; background:#f6e8d6; border-radius:999px; padding:2px 8px; }
+  .mail-felt input, .mail-felt textarea{ width:100%; }
+  .mail-felt .hint{ font-size:12.5px; color:var(--dæmpet); margin-top:5px; line-height:1.5; }
+  .mail-std{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px; }
+  .mail-std .hint{ margin-top:0; flex:1 1 220px; min-width:0; }
+  .mail-bund{ display:flex; gap:9px; flex-wrap:wrap; padding-top:15px; border-top:1px solid var(--linje-blød); }
+  .mail-kort .status{ font-size:13.5px; color:var(--dæmpet); margin-top:11px; line-height:1.5; }
+  .mail-kort .status.fejl{ color:var(--fejl); }
+  .mail-kort .status.god{ color:var(--god); }
+  .mail-ramme{ display:block; width:100%; height:640px; border:1px solid var(--linje); border-radius:12px; margin-top:14px; background:#ECEAE3; }
+  .mail-ramme[hidden]{ display:none; }
+
   /* ---------- BILLEDER PAA EN TUR (17/9) ---------- */
   .billedboks{ margin-top:20px; padding-top:16px; border-top:1px solid var(--linje-blød); }
   .bb-titel{ font-size:11.5px; font-weight:700; letter-spacing:.09em;
@@ -1107,6 +1126,10 @@
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5-4.5 2v12L9 17l6 2 4.5-2V5L15 7Z"/><path d="M9 5v12M15 7v12" opacity=".5"/></svg>
         <span>Vores ture</span>
       </button>
+      <button type="button" data-fane="mails">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="6" width="16.4" height="12" rx="1.8"/><path d="m4.6 7.4 7.4 5.6 7.4-5.6" opacity=".6"/></svg>
+        <span>Arytmi mails</span>
+      </button>
       <button type="button" data-fane="kunder">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="8.5" r="2.4" opacity=".7"/><path d="M15 13.6c2 .2 3.6 1.7 4.2 4.4" opacity=".7"/></svg>
         <span>Brugere</span>
@@ -1301,6 +1324,18 @@
         <span class="tæller" id="tur-tæller"></span>
       </div>
       <div id="ture"><p class="tomt">Henter …</p></div>
+    </section>
+
+    <!-- ---------- ARYTMI MAILS (14/10) ----------
+         Teksten i de automatiske mails. Layoutet sidder i koden; her rettes
+         kun tekstfelterne. Kode- og kodeordsmailen (login) er ikke med. -->
+    <section id="fane-mails" hidden>
+      <h2>Arytmi mails</h2>
+      <p class="under">
+        Teksten i de mails, Arytmi sender af sig selv. Du retter ordene; designet sidder fast.
+        Kode- og kodeordsmailen (login) kan ikke rettes her.
+      </p>
+      <div id="mails"><p class="tomt">Henter …</p></div>
     </section>
 
     <!-- ---------- KUNDER ---------- -->
@@ -2006,6 +2041,7 @@
     if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
     if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
     if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
+    if(navn === 'mails'   && !hentet.mails){   hentet.mails = true;   hentMails(); }
     /* Sikkerhed hentes HVER gang og caches ikke i `hentet`. Tilstanden
        kan have flyttet sig, siden man sidst kiggede — man kan have slået
        to-faktor til i en anden fane eller på en anden maskine — og en
@@ -4123,6 +4159,126 @@
   // Fladen her viser altså knapper til noget, PostgREST siger nej til.
   // Det er rigtigt sådan: serveren afgør, fladen foreslår.
   // -------------------------------------------------------------
+  /* ---------- ARYTMI MAILS (14/10) ----------
+     Serveren (admin-mails) kender mailene, felterne og standardteksterne og
+     tjekker flettefelterne igen, når der gemmes. Siden her viser og sender. */
+  function mailKald(krop){
+    return json('/functions/v1/admin-mails', { method:'POST', body: krop });
+  }
+
+  function hentMails(){
+    var v = $('mails');
+    mailKald({ handling:'liste' })
+      .then(function(d){ tegnMails((d && d.skabeloner) || []); })
+      .catch(function(f){ tøm(v); v.appendChild(lav('p','tomt', forklar(f))); });
+  }
+
+  function tegnMails(skabeloner){
+    var v = $('mails');
+    tøm(v);
+    if(!skabeloner.length){ v.appendChild(lav('p','tomt','Ingen mails endnu.')); return; }
+    skabeloner.forEach(function(s){ v.appendChild(mailKort(s)); });
+  }
+
+  function mailKort(s){
+    var kort = lav('div','mail-kort');
+    kort.appendChild(lav('h3', null, s.titel));
+    kort.appendChild(lav('p','om', s.hvornaar));
+
+    var felter = {};   // navn -> input/textarea
+    var st = lav('div','status');
+    var ramme = lav('iframe','mail-ramme');
+    ramme.setAttribute('sandbox', '');
+    ramme.title = 'Forhåndsvisning af ' + s.titel;
+    ramme.hidden = true;
+
+    function nu(){
+      var ud = {};
+      s.felter.forEach(function(f){ ud[f.navn] = felter[f.navn].value; });
+      return ud;
+    }
+    function besked(tekst, slags){ st.className = 'status' + (slags ? ' ' + slags : ''); st.textContent = tekst; }
+    function ret(f, el, mærke){
+      var rettet = el.value !== f.standard;
+      mærke.hidden = !rettet;
+    }
+
+    s.felter.forEach(function(f){
+      var blok = lav('div','mail-felt');
+      var etiket = lav('label', null, f.label);
+      var el = lav(f.flere ? 'textarea' : 'input');
+      if(!f.flere) el.type = 'text';
+      else el.rows = Math.max(2, (f.standard.match(/\n/g) || []).length + 2);
+      el.value = f.tekst;
+      el.maxLength = f.max;
+      el.autocomplete = 'off';
+      el.id = 'mail-' + s.id + '-' + f.navn;
+      etiket.setAttribute('for', el.id);
+      felter[f.navn] = el;
+
+      var mærke = lav('span','mail-rettet','rettet');
+      mærke.hidden = el.value === f.standard;
+      var top = lav('div','mail-top');
+      top.appendChild(etiket); top.appendChild(mærke);
+      blok.appendChild(top);
+      blok.appendChild(el);
+
+      var hint = [];
+      if(f.hjaelp) hint.push(f.hjaelp);
+      if(f.flet.length) hint.push('Flettefelter: ' + f.flet.map(function(k){ return '{' + k + '}'; }).join(' '));
+      if(hint.length) blok.appendChild(lav('div','hint', hint.join(' ')));
+
+      var brug = knapFor('Brug standardteksten', 'knap rolig lille', function(){
+        el.value = f.standard; ret(f, el, mærke); ramme.hidden = true;
+      });
+      var std = lav('div','mail-std');
+      std.appendChild(lav('span','hint','Standard: ' + f.standard.replace(/\n/g, ' / ')));
+      std.appendChild(brug);
+      blok.appendChild(std);
+
+      el.addEventListener('input', function(){ ret(f, el, mærke); });
+      kort.appendChild(blok);
+    });
+
+    function arbejd(knap, tekst, kald, klaret){
+      besked(tekst);
+      knap.disabled = true;
+      kald().then(function(d){ besked(klaret(d), 'god'); })
+        .catch(function(x){ besked(forklar(x), 'fejl'); })
+        .then(function(){ knap.disabled = false; });
+    }
+
+    var bund = lav('div','mail-bund');
+    var gem = knapFor('Gem', 'knap', function(){
+      arbejd(gem, 'Gemmer …', function(){ return mailKald({ handling:'gem', skabelon:s.id, felter:nu() }); },
+        function(d){ return d.rettede ? 'Gemt. Nye mails bruger teksten med det samme.' : 'Gemt. Alt står som standard.'; });
+    });
+    var vispr = knapFor('Forhåndsvis', 'knap rolig', function(){
+      arbejd(vispr, 'Tegner …', function(){
+        return mailKald({ handling:'vis', skabelon:s.id, felter:nu() }).then(function(d){
+          ramme.srcdoc = d.html; ramme.hidden = false; return d;
+        });
+      }, function(d){ return 'Emne: ' + d.emne + ' (eksempeldata, ikke gemt)'; });
+    });
+    var proeve = knapFor('Send prøve til mig', 'knap rolig', function(){
+      arbejd(proeve, 'Sender …', function(){ return mailKald({ handling:'proeve', skabelon:s.id, felter:nu() }); },
+        function(d){ return 'Prøven er sendt til ' + d.til + ' med eksempeldata. Den bruger teksten ovenfor, også hvis den ikke er gemt.'; });
+    });
+    var nulstil = knapFor('Nulstil hele mailen', 'knap fare lille', function(){
+      if(!window.confirm('Nulstil "' + s.titel + '" til standardteksterne?\n\nAlle rettelser i den her mail forsvinder.')) return;
+      arbejd(nulstil, 'Nulstiller …', function(){ return mailKald({ handling:'nulstil', skabelon:s.id }); }, function(){
+        s.felter.forEach(function(f){ felter[f.navn].value = f.standard; felter[f.navn].dispatchEvent(new Event('input')); });
+        ramme.hidden = true;
+        return 'Nulstillet. Standardteksterne gælder igen.';
+      });
+    });
+    bund.appendChild(gem); bund.appendChild(vispr); bund.appendChild(proeve); bund.appendChild(nulstil);
+    kort.appendChild(bund);
+    kort.appendChild(st);
+    kort.appendChild(ramme);
+    return kort;
+  }
+
   function brugerKald(krop){
     return json('/functions/v1/admin-brugere', { method:'POST', body: krop });
   }
