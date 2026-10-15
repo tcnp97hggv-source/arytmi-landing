@@ -501,7 +501,7 @@
      hjørner. Før fandtes fem varianter med hver sin kant og radius, og kortene
      skilte sig næsten ikke fra bunden (1,1:1). */
   .db-kort, .db-felt, .bruger-boks, .rulle, .tal .felt, .skaermkort, .rk, .tur, .mail-kort,
-  .brud-kort, .brud-form{
+  .brud-kort, .brud-form, .note-kort{
     background:var(--flade); border:1px solid var(--kant); border-radius:var(--r);
     box-shadow:var(--løft);
   }
@@ -703,6 +703,33 @@
   .brud-kort .brud-hvad{ font-size:15px; line-height:1.5; margin-bottom:6px; overflow-wrap:anywhere; }
   .brud-kort .brud-status{ font-size:13px; margin-bottom:8px; }
   .brud-kort .brud-status.frist{ color:var(--fejl); font-weight:600; }
+
+  /* ---------- SALG & MARKETING: annoncer og ugenoter (3.9 trin 3) ---------- */
+  /* Nulstil-knappen hører til tallenes kort - ikke til annoncerne. */
+  body[data-salg="annoncer"] #db-nulstil, body[data-salg="ugenoter"] #db-nulstil{ display:none; }
+  .sm-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .sm-top h3, .sm-h3{ font-size:18px; font-weight:600; }
+  .sm-h3{ margin:28px 0 4px; }
+  .sm-hint{ margin-top:10px; }
+  #ann-form{ margin:0 0 16px; }
+  #ann-besked{ margin:0 0 16px; }
+  .sm-felter{ display:grid; gap:0 14px; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); }
+  .sm-felter .hint{ grid-column:1 / -1; margin-top:6px; }
+  /* Ni kolonner: overskrifterne må bryde, tallene må ikke. Smal skærm ruller i .rulle. */
+  #salg-annoncer th{ white-space:normal; vertical-align:bottom; }
+  @media (max-width:860px){ #salg-annoncer th{ white-space:nowrap; } }
+  #salg-annoncer th:not(:first-child), #ann-liste td:not(:first-child){ padding-left:8px; padding-right:8px; }
+  #salg-annoncer th:last-child, #ann-liste td:last-child{ padding-right:18px; }
+  #ann-liste td{ white-space:nowrap; }
+  #ann-liste td.sm-kampagne{ white-space:normal; overflow-wrap:anywhere; min-width:140px; }
+  #ann-liste .sm-note{ display:block; font-size:12px; color:var(--tekst-2); margin-top:2px; }
+  #ann-liste td.sm-greb{ text-align:right; }
+  #ann-liste td.sm-greb .knap + .knap{ margin-left:6px; }
+  #note-tekst{ margin-top:0; }
+  .note-kort{ margin-top:12px; padding:14px 16px; }
+  .note-kort .note-top{ font-size:13px; color:var(--tekst-2); margin-bottom:4px; }
+  .note-kort .note-tekst{ font-size:15px; line-height:1.5; margin-bottom:8px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .note-kort .knap + .knap{ margin-left:6px; }
 
   /* ---------- VÆLG PLACERING (17/9) ---------- */
   .placering{
@@ -1203,17 +1230,25 @@
     <!-- ---------- SALG & MARKETING (15/10) ----------
          Salget, funnelen og Google, flyttet fra Oversigt. Kortene kan trækkes
          rundt (Kennet 13/10; flyttede med hertil 15/10). Annonceforbrug og
-         ugenoter kommer her i næste skridt (klar-til-live 3.9). -->
+         ugenoter ligger i hver sin underfane (klar-til-live 3.9, trin 3). -->
     <section id="fane-salg" hidden>
       <div class="db-top">
         <div>
           <h2>Salg &amp; Marketing</h2>
-          <p class="under">Salget, besøgene på funnelen og Google-søgning. Træk i stregen øverst på et kort for at flytte det.</p>
+          <p class="under">Salget, besøgene på funnelen, Google-søgning, annoncerne og ugens noter. Tallenes kort flyttes ved at trække i stregen øverst.</p>
         </div>
         <div class="db-top-knapper">
           <button type="button" class="knap rolig lille" id="db-nulstil" hidden>Nulstil rækkefølge</button>
         </div>
       </div>
+      <!-- Underfanerne (trin 3, 15/10): tallene, annoncerne og ugenoterne.
+           Samme mønster som Indhold; rummet står i adressen (#salg/annoncer). -->
+      <div class="underfaner" id="underfaner-salg" role="tablist" aria-label="Salg &amp; Marketing">
+        <button type="button" role="tab" data-salg="tal" aria-selected="true">Tal</button>
+        <button type="button" role="tab" data-salg="annoncer" aria-selected="false">Annoncer</button>
+        <button type="button" role="tab" data-salg="ugenoter" aria-selected="false">Ugenoter</button>
+      </div>
+      <div id="salg-tal">
       <p class="besked fejl db-fejl" id="db-fejl-salg" hidden role="alert"></p>
       <div class="db-kolonner">
       <div class="db-kort" data-kort="salg">
@@ -1272,6 +1307,54 @@
         <p class="hint" id="db-gsc-tom" hidden></p>
       </div>
       </div><!-- /db-kolonner -->
+      </div><!-- /salg-tal -->
+
+      <!-- ANNONCER (3.9 trin 3, 0065). Forbruget tastes fra Ads Manager - ingen
+           API i første udgave. Kun en bekræftet admin (RLS), som brudloggen. -->
+      <div id="salg-annoncer" hidden>
+        <div class="sm-top">
+          <div>
+            <h3>Annoncer</h3>
+            <p class="db-under">Forbruget, som det står i Ads Manager, uden moms. De seneste først.</p>
+          </div>
+          <button type="button" class="knap lille" id="ann-ny">Registrér forbrug</button>
+        </div>
+        <div id="ann-form" class="brud-form" hidden></div>
+        <div id="ann-besked" class="besked" hidden role="alert"></div>
+        <div class="rulle">
+          <table>
+            <thead><tr><th>Periode</th><th>Kanal</th><th>Kampagne</th><th class="tal-h">Forbrug</th>
+              <th class="tal-h">Klik</th><th class="tal-h">Checkouts</th><th class="tal-h">Køb (Meta)</th>
+              <th class="tal-h">Pris pr. køb</th><th></th></tr></thead>
+            <tbody id="ann-liste"><tr><td colspan="9" class="tomt">Henter …</td></tr></tbody>
+          </table>
+        </div>
+        <p class="hint sm-hint">Pris pr. køb vises først ved 5 køb ifølge Meta. Færre er for få at regne på.</p>
+      </div>
+
+      <!-- UGENOTER (3.9 trin 3, 0065). Én note pr. ISO-uge. -->
+      <div id="salg-ugenoter" hidden>
+        <div class="db-kort">
+          <div class="db-kort-top">
+            <h3 id="note-titel">Uge</h3>
+            <div class="db-vaelg" role="group" aria-label="Skift uge">
+              <button type="button" id="note-forrige" aria-label="Forrige uge">←</button>
+              <button type="button" id="note-naeste" aria-label="Næste uge">→</button>
+            </div>
+          </div>
+          <p class="db-under" id="note-periode"></p>
+          <label for="note-tekst">Hvad skete der i ugen?</label>
+          <textarea id="note-tekst" rows="5" maxlength="4000"
+            placeholder="Fx: Vi testede tre annoncer. Forælder/barn fik flest klik, men date-annoncen gav flest køb."></textarea>
+          <div class="bb-linje">
+            <button type="button" class="knap lille" id="note-gem">Gem noten</button>
+            <button type="button" class="knap fare lille" id="note-slet" hidden>Slet noten</button>
+          </div>
+          <div id="note-besked" class="besked" hidden role="alert"></div>
+        </div>
+        <h3 class="sm-h3">Tidligere noter</h3>
+        <div id="note-liste"><p class="hint">Henter …</p></div>
+      </div>
     </section>
 
     <!-- ---------- INDHOLD (15/10) ----------
@@ -2101,7 +2184,8 @@
   /* Kun et rum og en underfane i adressen - aldrig persondata. replaceState,
      så tilbage-knappen ikke skal igennem hver fane, man har kigget i. */
   function skrivAdresse(navn){
-    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '');
+    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '')
+          + (navn === 'salg' && valgtSalg !== 'tal' ? '/' + valgtSalg : '');
     if(location.hash !== h){ try { history.replaceState(null, '', h); } catch(e){} }
   }
 
@@ -2119,6 +2203,23 @@
     if(u === 'udgivelser'){ hentUdgivelser(); }
   }
 
+  /* Salg & Marketing: tallene, annoncerne og ugenoterne (3.9 trin 3).
+     Annoncer og noter hentes, hver gang underfanen åbnes - Oliivia og
+     Kennet kan begge rette, og en gammel liste er værre end et kald for meget. */
+  var SALG_UNDER = ['tal', 'annoncer', 'ugenoter'];
+  var valgtSalg = 'tal';
+  function visSalg(u){
+    if(SALG_UNDER.indexOf(u) < 0) u = valgtSalg;
+    valgtSalg = u;
+    SALG_UNDER.forEach(function(x){ $('salg-' + x).hidden = x !== u; });
+    $('underfaner-salg').querySelectorAll('button[data-salg]').forEach(function(b){
+      b.setAttribute('aria-selected', String(b.getAttribute('data-salg') === u));
+    });
+    document.body.setAttribute('data-salg', u);
+    if(u === 'annoncer') hentAnnoncer();
+    if(u === 'ugenoter') hentNoter();
+  }
+
   function skiftFane(navn, under){
     if(!RUM[navn]) navn = 'oversigt';
     var knapper = $('faner').querySelectorAll('button[data-fane]');
@@ -2131,6 +2232,8 @@
     document.body.setAttribute('data-rum', navn);
     if(navn === 'indhold') visUnder(under || valgtUnder);
     else document.body.removeAttribute('data-under');
+    if(navn === 'salg') visSalg(under || valgtSalg);
+    else document.body.removeAttribute('data-salg');
     /* Tallene i Oversigt, Salg & Marketing og Drift kommer fra samme kald
        (edge-funktionen overblik) og hentes, hver gang et af rummene åbnes. */
     if(navn === 'oversigt' || navn === 'salg' || navn === 'drift' || (navn === 'kunder' && !overblik)){ hentOverblik(); }
@@ -2155,6 +2258,15 @@
     if(!b) return;
     visUnder(b.getAttribute('data-under'));
     skrivAdresse('indhold');
+    window.scrollTo(0, 0);
+  });
+  $('underfaner-salg').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-salg]');
+    if(!b) return;
+    visSalg(b.getAttribute('data-salg'));
+    /* En skjult graf har ingen bredde - tegn igen, når tallene kommer frem. */
+    if(valgtSalg === 'tal') tegnGrafer();
+    skrivAdresse('salg');
     window.scrollTo(0, 0);
   });
   /* "Log ud" i topbjælken (telefon) gør det samme som den i skinnen. */
@@ -2313,6 +2425,347 @@
   }
 
   $('brud-ny').addEventListener('click', function(){ åbnBrud(null); });
+
+  // -------------------------------------------------------------
+  // SALG & MARKETING: ANNONCER OG UGENOTER (klar-til-live 3.9 trin 3, 0065)
+  //
+  // Som brudloggen: PostgREST direkte, og databasen afgør hvem (kun en
+  // bekræftet admin). Hvem der skrev, sætter databasen selv. Beløbet står
+  // i øre i databasen og i kroner her - uden moms, som i Ads Manager.
+  // -------------------------------------------------------------
+  var KANALER = { meta:'Meta', google:'Google', tiktok:'TikTok', andet:'Andet' };
+  var AFVIST = 'Afvist. Kun en admin, der har brugt sin to-faktor i den her session, kan ';
+  var INGEN_AAL2 = ' Har din konto to-faktor, skal du have brugt den i den her session.';
+
+  function iDag(){
+    var d = new Date(), p = function(n){ return (n<10?'0':'') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+  }
+  function kortDato(iso){ var d = iso.split('-'); return (+d[2]) + '/' + (+d[1]); }
+  function periode(fra, til){
+    var fa = fra.slice(0,4), ta = til.slice(0,4);
+    if(fra === til) return kortDato(fra) + ' ' + fa;
+    return fa === ta ? kortDato(fra) + '–' + kortDato(til) + ' ' + ta
+                     : kortDato(fra) + ' ' + fa + '–' + kortDato(til) + ' ' + ta;
+  }
+  /* Kroner med øre, kun når der er øre: "1.500 kr." / "1.234,50 kr." */
+  function kroner(oere){
+    var hele = Math.floor(oere / 100), rest = oere % 100;
+    return tusind(hele) + (rest ? ',' + (rest < 10 ? '0' : '') + rest : '') + ' kr.';
+  }
+  /* "1.234,50", "1234,5", "1500" og "1.500" er alle danske beløb. */
+  function læsKroner(v){
+    var s = String(v || '').replace(/kr\.?/i, '').replace(/\s/g, '');
+    if(!s) return null;
+    if(s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    if(!/^\d+(\.\d{1,2})?$/.test(s)) return NaN;
+    return Math.round(parseFloat(s) * 100);
+  }
+  function tilKronerFelt(oere){
+    if(oere === null || oere === undefined) return '';
+    var rest = oere % 100;
+    return Math.floor(oere / 100) + (rest ? ',' + (rest < 10 ? '0' : '') + rest : '');
+  }
+  function læsHeltal(v){
+    v = String(v || '').trim();
+    if(!v) return null;
+    return /^\d+$/.test(v) ? parseInt(v, 10) : NaN;
+  }
+  function salgFejl(f, hvad){
+    if(f && f.kode === '42501') return AFVIST + hvad + '.';
+    if(f && f.kode === '23514') return 'Serveren afviste et felt. Tjek, at slutdatoen ikke ligger før startdatoen, at perioden højst er et år, og at tallene ikke er negative.';
+    return forklar(f);
+  }
+
+  // ---------- Annoncer ----------
+  function hentAnnoncer(){
+    var liste = $('ann-liste');
+    tøm(liste);
+    var r = lav('tr'), c = lav('td', 'tomt', 'Henter …'); c.colSpan = 9; r.appendChild(c); liste.appendChild(r);
+    json('/rest/v1/annonceforbrug?select=*&order=fra.desc,oprettet.desc&limit=100')
+      .then(function(rk){
+        tøm(liste);
+        if(!rk || !rk.length){
+          var r = lav('tr'), c = lav('td', 'tomt', session && session.aal === 'aal2'
+            ? 'Intet forbrug registreret endnu.'
+            : 'Intet forbrug at vise.' + INGEN_AAL2);
+          c.colSpan = 9; r.appendChild(c); liste.appendChild(r);
+          return;
+        }
+        rk.forEach(function(a){ liste.appendChild(annonceRække(a)); });
+      })
+      .catch(function(f){
+        tøm(liste);
+        vis($('ann-besked'), 'Annoncerne kunne ikke hentes: ' + salgFejl(f, 'se annoncerne'), 'fejl');
+      });
+  }
+
+  function annonceRække(a){
+    var r = lav('tr');
+    r.appendChild(lav('td', null, periode(a.fra, a.til)));
+    r.appendChild(lav('td', null, KANALER[a.kanal] || a.kanal));
+    var k = lav('td', 'sm-kampagne', a.kampagne);
+    if(a.note) k.appendChild(lav('span', 'sm-note', a.note));
+    r.appendChild(k);
+    r.appendChild(lav('td', 'tal-h', kroner(a.beloeb_oere)));
+    [a.klik, a.checkouts, a.koeb].forEach(function(n){
+      r.appendChild(lav('td', 'tal-h', n === null || n === undefined ? '—' : tusind(n)));
+    });
+    /* Pris pr. køb kun på et tal, der kan bære det (Oliivias regel): 5+ køb. */
+    r.appendChild(lav('td', 'tal-h', a.koeb >= 5 ? kroner(Math.round(a.beloeb_oere / a.koeb)) : '—'));
+    var greb = lav('td', 'sm-greb');
+    greb.appendChild(knapFor('Ret', 'knap rolig lille', function(){ åbnAnnonce(a); }));
+    greb.appendChild(knapFor('Slet', 'knap fare lille', function(){ sletAnnonce(a); }));
+    r.appendChild(greb);
+    return r;
+  }
+
+  function sletAnnonce(a){
+    if(!window.confirm('Slette registreringen "' + a.kampagne + '" (' + periode(a.fra, a.til) + ', ' + kroner(a.beloeb_oere) + ')?\n\nDen kan ikke hentes tilbage.')) return;
+    json('/rest/v1/annonceforbrug?id=eq.' + encodeURIComponent(a.id), {
+      method: 'DELETE', headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Intet blev slettet.' + INGEN_AAL2);
+      vis($('ann-besked'), 'Registreringen er slettet.', 'god');
+      hentAnnoncer();
+    }).catch(function(f){ vis($('ann-besked'), salgFejl(f, 'slette'), 'fejl'); });
+  }
+
+  function åbnAnnonce(a){
+    var ny = !a;
+    a = a || { fra: iDag(), til: iDag(), kanal: 'meta', note: '' };
+    var boks = $('ann-form');
+    tøm(boks);
+    $('ann-besked').hidden = true;
+    boks.hidden = false;
+    boks.appendChild(lav('h4', null, ny ? 'Registrér forbrug' : 'Ret registreringen'));
+
+    var felter = {};
+    function felt(holder, navn, tekst, el, hjælp){
+      var id = 'ann-f-' + navn;
+      var l = lav('label', null, tekst); l.htmlFor = id;
+      el.id = id;
+      var w = lav('div'); w.appendChild(l); w.appendChild(el);
+      if(hjælp){ var h = lav('p', 'hint', hjælp); h.id = id + '-hjælp'; el.setAttribute('aria-describedby', h.id); w.appendChild(h); }
+      holder.appendChild(w);
+      felter[navn] = el;
+      return el;
+    }
+    function inp(type, værdi){ var el = lav('input'); el.type = type; el.value = værdi === null || værdi === undefined ? '' : værdi; return el; }
+    function tal(værdi){ var el = inp('text', værdi); el.inputMode = 'numeric'; el.autocomplete = 'off'; return el; }
+
+    var datoer = lav('div', 'sm-felter');
+    felt(datoer, 'fra', 'Startdato', inp('date', a.fra));
+    felt(datoer, 'til', 'Slutdato', inp('date', a.til));
+    var kanal = lav('select');
+    Object.keys(KANALER).forEach(function(v){
+      var o = lav('option', null, KANALER[v]); o.value = v;
+      if(v === a.kanal) o.selected = true;
+      kanal.appendChild(o);
+    });
+    felt(datoer, 'kanal', 'Kanal', kanal);
+    boks.appendChild(datoer);
+
+    var kamp = inp('text', a.kampagne); kamp.maxLength = 200; kamp.autocapitalize = 'off'; kamp.spellcheck = false;
+    felt(boks, 'kampagne', 'Kampagnenavn', kamp, 'Skriv det, som det står i annoncens utm_campaign.');
+    var beløb = inp('text', tilKronerFelt(a.beloeb_oere)); beløb.inputMode = 'decimal'; beløb.autocomplete = 'off';
+    felt(boks, 'beloeb', 'Forbrug i kroner (uden moms)', beløb, 'Som i Ads Manager, fx 1.250,50.');
+
+    var tre = lav('div', 'sm-felter');
+    felt(tre, 'klik', 'Klik', tal(a.klik));
+    felt(tre, 'checkouts', 'Påbegyndte checkouts', tal(a.checkouts));
+    felt(tre, 'koeb', 'Køb ifølge Meta', tal(a.koeb));
+    tre.appendChild(lav('p', 'hint', 'De tre tal er valgfri. Lad feltet stå tomt, hvis du ikke har tallet.'));
+    boks.appendChild(tre);
+
+    var note = lav('textarea'); note.rows = 2; note.maxLength = 1000; note.value = a.note || '';
+    felt(boks, 'note', 'Note (valgfri)', note);
+
+    var linje = lav('div', 'bb-linje'); linje.style.marginTop = '16px';
+    var gem = knapFor(ny ? 'Gem forbruget' : 'Gem rettelsen', 'knap lille', function(){
+      var fejl = function(t, navn){ vis($('ann-besked'), t, 'fejl'); if(navn) felter[navn].focus(); };
+      var krop = {
+        fra: felter.fra.value, til: felter.til.value, kanal: felter.kanal.value,
+        kampagne: felter.kampagne.value.trim(), beloeb_oere: læsKroner(felter.beloeb.value),
+        klik: læsHeltal(felter.klik.value), checkouts: læsHeltal(felter.checkouts.value),
+        koeb: læsHeltal(felter.koeb.value), note: felter.note.value.trim()
+      };
+      if(!krop.fra) return fejl('Vælg en startdato.', 'fra');
+      if(!krop.til) return fejl('Vælg en slutdato.', 'til');
+      if(krop.til < krop.fra) return fejl('Slutdatoen ligger før startdatoen.', 'til');
+      if(!krop.kampagne) return fejl('Skriv kampagnens navn, som det står i utm_campaign.', 'kampagne');
+      if(krop.beloeb_oere === null) return fejl('Skriv forbruget i kroner.', 'beloeb');
+      if(isNaN(krop.beloeb_oere)) return fejl('Forbruget skal være et beløb i kroner, fx 1.250,50.', 'beloeb');
+      var tom = ['klik', 'checkouts', 'koeb'].filter(function(n){ return isNaN(krop[n]); })[0];
+      if(tom) return fejl('Klik, checkouts og køb skal være hele tal (eller stå tomme).', tom);
+      gem.disabled = true;
+      json(ny ? '/rest/v1/annonceforbrug' : '/rest/v1/annonceforbrug?id=eq.' + encodeURIComponent(a.id), {
+        method: ny ? 'POST' : 'PATCH', body: krop, headers: { Prefer: 'return=representation' }
+      }).then(function(rk){
+        if(!rk || !rk.length) throw new Error('Serveren gemte ingenting.' + INGEN_AAL2);
+        boks.hidden = true;
+        tøm(boks);
+        vis($('ann-besked'), ny ? 'Forbruget er registreret.' : 'Rettelsen er gemt.', 'god');
+        hentAnnoncer();
+      }).catch(function(f){
+        gem.disabled = false;
+        vis($('ann-besked'), salgFejl(f, 'registrere forbrug'), 'fejl');
+      });
+    });
+    linje.appendChild(gem);
+    linje.appendChild(knapFor('Fortryd', 'knap rolig lille', function(){ boks.hidden = true; tøm(boks); }));
+    boks.appendChild(linje);
+    (ny ? felter.fra : felter.kampagne).focus();
+  }
+
+  $('ann-ny').addEventListener('click', function(){ åbnAnnonce(null); });
+
+  // ---------- Ugenoter ----------
+  /* ISO-uge: ugen hører til det år, dens torsdag ligger i. */
+  function isoUge(d){
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    var aar = t.getUTCFullYear();
+    return { aar: aar, uge: Math.ceil(((t - Date.UTC(aar, 0, 1)) / 86400000 + 1) / 7) };
+  }
+  function ugeMandag(aar, uge){
+    var j4 = new Date(Date.UTC(aar, 0, 4));
+    return new Date(Date.UTC(aar, 0, 4 - (j4.getUTCDay() || 7) + 1 + (uge - 1) * 7));
+  }
+  function flytUge(u, n){
+    var m = ugeMandag(u.aar, u.uge);
+    return isoUge(new Date(m.getUTCFullYear(), m.getUTCMonth(), m.getUTCDate() + 7 * n));
+  }
+  function ugePeriode(u){
+    var m = ugeMandag(u.aar, u.uge), s = new Date(m.getTime() + 6 * 86400000);
+    var d = function(x){ return x.getUTCDate() + '. ' + MDR_KORT[x.getUTCMonth()]; };
+    return 'Mandag ' + d(m) + ' til søndag ' + d(s) + ' ' + s.getUTCFullYear();
+  }
+
+  var noter = [];
+  var valgtUge = isoUge(new Date());
+  function noteFor(u){
+    return noter.filter(function(n){ return n.aar === u.aar && n.uge === u.uge; })[0] || null;
+  }
+
+  function hentNoter(){
+    var liste = $('note-liste');
+    /* Et udkast overlever, at man kigger i en anden fane og kommer tilbage. */
+    var n = noteFor(valgtUge);
+    var udkast = $('note-tekst').value !== (n ? n.tekst : '') ? $('note-tekst').value : null;
+    var tegn = function(){ tegnUge(); if(udkast !== null) $('note-tekst').value = udkast; };
+    tegn();
+    tøm(liste);
+    liste.appendChild(lav('p', 'hint', 'Henter …'));
+    return json('/rest/v1/ugenote?select=aar,uge,tekst,opdateret&order=aar.desc,uge.desc')
+      .then(function(rk){
+        noter = rk || [];
+        tegn();
+        tegnNoter();
+      })
+      .catch(function(f){
+        tøm(liste);
+        vis($('note-besked'), 'Noterne kunne ikke hentes: ' + salgFejl(f, 'se noterne'), 'fejl');
+      });
+  }
+
+  function tegnUge(){
+    var n = noteFor(valgtUge);
+    $('note-titel').textContent = 'Uge ' + valgtUge.uge + ' · ' + valgtUge.aar;
+    $('note-periode').textContent = ugePeriode(valgtUge) + (n ? ' · rettet ' + dato(n.opdateret) : '');
+    $('note-tekst').value = n ? n.tekst : '';
+    $('note-slet').hidden = !n;
+    $('note-gem').textContent = n ? 'Gem rettelsen' : 'Gem noten';
+    /* Databasen kender ingen uger før 2026. */
+    $('note-forrige').disabled = valgtUge.aar <= 2026 && valgtUge.uge <= 1;
+  }
+
+  function tegnNoter(){
+    var liste = $('note-liste');
+    tøm(liste);
+    if(!noter.length){
+      liste.appendChild(lav('p', 'hint', session && session.aal === 'aal2'
+        ? 'Ingen noter endnu.'
+        : 'Ingen noter at vise.' + INGEN_AAL2));
+      return;
+    }
+    noter.forEach(function(n){
+      var k = lav('div', 'note-kort');
+      k.appendChild(lav('div', 'note-top', 'Uge ' + n.uge + ' · ' + n.aar + ' · rettet ' + dato(n.opdateret)));
+      k.appendChild(lav('div', 'note-tekst', n.tekst));
+      k.appendChild(knapFor('Ret', 'knap rolig lille', function(){
+        if(!forladUge()) return;
+        valgtUge = { aar: n.aar, uge: n.uge };
+        $('note-besked').hidden = true;
+        tegnUge();
+        window.scrollTo(0, 0);
+        $('note-tekst').focus();
+      }));
+      k.appendChild(knapFor('Slet', 'knap fare lille', function(){ sletNote(n); }));
+      liste.appendChild(k);
+    });
+  }
+
+  /* En halvskrevet note forsvinder ikke stille, når man skifter uge. */
+  function forladUge(){
+    var n = noteFor(valgtUge);
+    var før = n ? n.tekst : '';
+    if($('note-tekst').value === før) return true;
+    return window.confirm('Noten for uge ' + valgtUge.uge + ' er ikke gemt.\n\nSkifte uge alligevel?');
+  }
+
+  function skiftUge(n){
+    if(!forladUge()) return;
+    valgtUge = flytUge(valgtUge, n);
+    $('note-besked').hidden = true;
+    tegnUge();
+  }
+  $('note-forrige').addEventListener('click', function(){ skiftUge(-1); });
+  $('note-naeste').addEventListener('click', function(){ skiftUge(1); });
+
+  $('note-gem').addEventListener('click', function(){
+    var gem = this;
+    var tekst = $('note-tekst').value.trim();
+    var n = noteFor(valgtUge);
+    if(!tekst){
+      vis($('note-besked'), n ? 'Noten er tom. Vil du fjerne den, så brug "Slet noten".' : 'Skriv noten først.', 'fejl');
+      $('note-tekst').focus();
+      return;
+    }
+    gem.disabled = true;
+    var u = valgtUge;
+    json(n ? '/rest/v1/ugenote?aar=eq.' + u.aar + '&uge=eq.' + u.uge : '/rest/v1/ugenote', {
+      method: n ? 'PATCH' : 'POST',
+      body: n ? { tekst: tekst } : { aar: u.aar, uge: u.uge, tekst: tekst },
+      headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Serveren gemte ingenting.' + INGEN_AAL2);
+      return hentNoter().then(function(){
+        vis($('note-besked'), 'Noten for uge ' + u.uge + ' er gemt.', 'god');
+      });
+    }).catch(function(f){
+      vis($('note-besked'), f && f.kode === '23505'
+        ? 'Der ligger allerede en note for uge ' + u.uge + '. Hent siden igen, og ret den.'
+        : salgFejl(f, 'skrive noter'), 'fejl');
+    }).then(function(){ gem.disabled = false; });
+  });
+
+  function sletNote(n){
+    if(!window.confirm('Slette noten for uge ' + n.uge + ' · ' + n.aar + '?\n\nDen kan ikke hentes tilbage.')) return;
+    json('/rest/v1/ugenote?aar=eq.' + n.aar + '&uge=eq.' + n.uge, {
+      method: 'DELETE', headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Intet blev slettet.' + INGEN_AAL2);
+      return hentNoter().then(function(){
+        vis($('note-besked'), 'Noten for uge ' + n.uge + ' er slettet.', 'god');
+      });
+    }).catch(function(f){ vis($('note-besked'), salgFejl(f, 'slette noter'), 'fejl'); });
+  }
+  $('note-slet').addEventListener('click', function(){
+    var n = noteFor(valgtUge);
+    if(n) sletNote(n);
+  });
 
   // -------------------------------------------------------------
   // Oversigt
