@@ -64,6 +64,11 @@
 
   `connect-src` er URØRT. Kortet henter kun billeder.
 
+  15/10 — SKRIFTERNE: `font-src 'self'`. Bagrummet henter Arytmis egne
+  Fraunces og Inter fra ../fonts/ (samme filer som arytmi.com/privatliv).
+  Kun vores egen vært - ingen fremmed adresse er kommet til. Kennets valg
+  15/10; før faldt overskrifterne ned i Georgia og brødteksten i Segoe UI.
+
   24/9 — NUMMERPLADERNE (nummerplader.js) kræver to ting mere, og ikke én
   mere end det:
     · `'wasm-unsafe-eval'` i script-src. Motoren er WebAssembly, og en
@@ -72,7 +77,7 @@
     · `'self'` i connect-src. Motoren henter sin .wasm og modellen med
       fetch, fra vores egen vært. Ingen fremmed adresse er kommet til.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://vxleyvtumbwtkejoiaev.supabase.co https://tile.openstreetmap.org; connect-src 'self' https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
 <!--
   12/10 — CLICKJACKING (klar-til-live 2.5). `frame-ancestors` virker ikke i
   et meta-tag, og GitHub Pages kan ikke sende headeren. Så siden gemmer sig
@@ -117,19 +122,16 @@
   rettes et komma. Dashboardet er et værktøj for en, der kan SQL — det er
   ikke et arbejdsbord, og det tilgiver ikke en fejlklikket `delete`.
 
-  HVAD DEN KAN I DAG, OG HVAD DEN IKKE KAN
+  DE FEM RUM (15/10)
 
-    Oversigt   rigtige tal, hentet i samme sekund. Ikke et skøn.
-    Tekster    ret · gem · fortryd. Delt i KATEGORIER, ikke i nøglepræfikser.
-    Ture       ret alt i en destination, lav en ny, tag en ud.
-    Kunder     LÆSES. Der kan endnu ikke oprettes herfra, og mailen kan
-               ikke vises — den ligger i `auth.users`, som PostgREST ikke
-               rører. Begge dele kræver en funktion mere.
-    Billeder   IKKE bygget. Fanen står der og siger det.
+    Oversigt            status og de fire nøgletal - hentet i samme sekund.
+    Salg & Marketing    salg pr. dag og pr. produkt, funnelen, Google-søgning.
+    Brugere             konti, adgang, roller, ordrer - og nye kunder pr. dag.
+    Indhold             Tekster · Vores ture · Arytmi mails · Udgivelser.
+    Drift & sikkerhed   driften, login-misbrug, to-faktor, beredskab og brudlog.
 
-  De to sidste står med vilje som de er. En fane, der ser færdig ud og
-  ikke er det, er værre end ingen fane: den værste tilstand for et værn er
-  at se ud, som om det virker.
+  En fane, der ser færdig ud og ikke er det, er værre end ingen fane: den
+  værste tilstand for et værn er at se ud, som om det virker.
 
   ÉN UDGIV-KNAP, OG DEN SIDDER I TOPPEN. Den sender ALT ud — tekster og
   ture i ét bundt. Sad der en knap i hver fane, ville det se ud, som om
@@ -150,68 +152,97 @@
 -->
 <style>
   /* =============================================================
-     BAGRUMMETS UDSEENDE — omskrevet 17/9 2026
+     BAGRUMMETS UDSEENDE — ét lag, omskrevet 15/10 2026
      =============================================================
 
-     Den forrige udgave var ren og læselig, og den var ikke ARYTMI. Den
-     lånte paletten og intet andet: systemsans hele vejen, flade kort,
-     faner i 14 px dæmpet grå. Den kunne have hørt til et hvilket som
-     helst produkt.
+     Historikken, kort, så næste person ikke gentager den:
+       17/9  Den første udgave var "ren og læselig, og den var ikke ARYTMI".
+             Omskrevet: serif til overskrifter og tal, Udgiv stor og farvet,
+             kort med dybde, fast sidebjælke der bliver bundbjælke på telefon.
+       27/9  Oliivias palet. De gamle variabelnavne blev, kun værdierne skiftede.
+       13/10 LØFT ("ikke særlig lækkert at arbejde i", Kennet): mørk skinne,
+             større titler, nøgletal i serif, rundere kort. Lagt OVENPÅ som en
+             blok - og så stod mange selektorer to steder med hver sin værdi.
+       15/10 Kennet: "meget klodset og svært at læse ... sæt det professionelt
+             op". Forslaget (fem rum, ét designsystem) er godkendt, med palet A
+             (27/9), Arytmis egne skrifter og de fem navne. Det her er TRIN 1:
+             kun udseendet. Faner, knapper og JavaScript er de samme.
 
-     Tre ting er lavet om, og de er alle tre begrundet i noget, appen
-     allerede gør — ikke i smag:
-
-     1 · SKRIFTEN. Appen sætter overskrifter og TAL med serif og brødtekst
-         med sans (ARKITEKTUR.md). Bagrummet gør nu det samme. Der hentes
-         INGEN fontfil: appens egen faldbak-stak er systemskrifter
-         ("Iowan Old Style", Palatino, Georgia), så der skal hverken
-         lægges en binær fil i et offentligt repo eller åbnes `font-src`
-         i indholdspolitikken. Fraunces står først, hvis den en dag
-         kommer med — indtil da falder den ned i stakken, præcis som
-         appen gør det.
-
-     2 · UDGIV ER DEN VIGTIGSTE KNAP I HUSET, og den så ud som "Log ud".
-         Alt, hvad der rettes, er usynligt for kunden, til der trykkes
-         på den. Nu er den kobber, den er større end sine naboer, og når
-         der ER noget at udgive, kan man ikke overse den. En knap, hvis
-         eneste opgave er at gøre arbejdet virkeligt, skal ikke gemme sig.
-
-     3 · FLADERNE HAR FÅET DYBDE. Før var alt en 1 px streg på samme
-         baggrund. Nu ligger kortene en anelse over bunden med en meget
-         blød skygge, og bunden er trukket et par grader varmere. Det er
-         den samme ro som i appen — ikke mere pynt, men mere hierarki.
-
-     ⚠️ KLASSENAVNENE ER URØRT. Ikke ét er omdøbt, og der er ikke
-     tilføjet nogen, som JavaScriptet skal kende. Filen nedenfor kan
-     rulles tilbage alene, uden at røre de 1.100 linjer JavaScript.
+     REGLERNE, DER HOLDER DET SAMLET
+       · Én farve pr. ROLLE (tokens herunder). De gamle navne (--gran, --rav,
+         --fjord, --dæmpet, --flade, --linje) peger på rollerne, så ingen
+         klasse er omdøbt, og JavaScriptet ikke skal kende noget nyt.
+       · Seks skriftstørrelser: 12 (etiket, versaler) · 13 (hjælp, metadata)
+         · 14 (knapper, tabeller) · 15 (brødtekst, felter) · 18 serif
+         (korttitel) · 30 serif (sidetitel, 24 på telefon). Nøgletal 32/40
+         serif. INTET under 12 px.
+       · Ét kort, én tabel, én formular, én slags status. Hver selektor står
+         ÉT sted - ingen lag ovenpå, som 13/10 blev til.
+       · Skrifterne er Arytmis egne, Fraunces og Inter, fra ../fonts/ (samme
+         filer som arytmi.com/privatliv). Det kræver `font-src 'self'` i
+         indholdspolitikken - Kennet 15/10. Indtil da faldt overskrifterne ned
+         i Georgia og brødteksten i Segoe UI.
+       · Status er altid lys + tegn + ord, aldrig farve alene (12/10).
      ============================================================= */
-  /* Ny palette 27/9 2026 — Oliivias, som appen og arytmi.com. Navnene er de
-     gamle, så resten af CSS'en er urørt; kun værdierne er skiftet. */
-  :root{
-    --gran:#4a2417;
-    --gran-mørk:#3a1a10;
-    --fjord:#6f5245;
-    --rav:#8e4333;
-    --rav-mørk:#74362a;
-    --bund:#f4ebdf;
-    --flade:#fcf8f2;
-    --tekst:#4a2417;
-    --dæmpet:#7e6154;
-    --linje:#e6d8c8;
-    --linje-blød:#eee3d6;
-    --fejl:#9c4221;
-    --god:#4f6b4a;
+  @font-face{
+    font-family:'Fraunces';
+    font-style:normal;
+    font-weight:300 700;
+    font-display:swap;
+    src:url('../fonts/fraunces.woff2?v=20261003') format('woff2');
+  }
+  @font-face{
+    font-family:'Inter';
+    font-style:normal;
+    font-weight:400 700;
+    font-display:swap;
+    src:url('../fonts/inter.woff2?v=20261003') format('woff2');
+  }
 
-    /* Appens egen stak. Fraunces er ikke hentet her — den står først,
-       så siden følger med af sig selv, hvis filen en dag lægges ind. */
+  :root{
+    /* ROLLERNE — palet A, Oliivias fra 27/9 (Kennet 15/10). */
+    --bund:#f4ebdf;          /* siden */
+    --flade:#fffdf9;         /* kort, felter, tabeller */
+    --flade-2:#f8f1e7;       /* indfældet: tabelhoved, paneler, valgt segment */
+    --tekst:#4a2417;         /* 13:1 på flade */
+    --tekst-2:#6f5245;       /* al sekundær tekst - 7:1 på flade, 6:1 på bund */
+    --kant:#dccbb8;          /* kort og tabeller */
+    --kant-felt:#b59c86;     /* felter: skal kunne SES, ikke kun ane */
+    --skille:#efe5d8;        /* kun mellem rækker */
+    --mørk:#3a1a10;          /* skinnen og ét ankertal */
+    --mørk-tekst:#f6ede1;
+    --mørk-tekst-2:#cfb3a2;
+    --accent:#8e4333;        /* rust: fokus, aktiv, grafer */
+    --accent-mørk:#74362a;
+    --cta:#e8935a;           /* KUN Udgiv */
+    --cta-mørk:#dc8249;
+    --god:#4f6b4a;   --god-bg:#eef3ec;   --god-kant:#cfdcca;
+    --advar:#7a5310; --advar-bg:#fbf1e2; --advar-kant:#ecd6b0;
+    --fejl:#9c4221;  --fejl-bg:#f7e9e3;  --fejl-kant:#e6cfc4;
+    --graa:#a8968a;
+
+    /* De gamle navne, så klasserne og JavaScriptet er urørte. */
+    --gran:var(--tekst);
+    --gran-mørk:var(--mørk);
+    --fjord:var(--tekst-2);
+    --rav:var(--accent);
+    --rav-mørk:var(--accent-mørk);
+    --dæmpet:var(--tekst-2);
+    --linje:var(--kant);
+    --linje-blød:var(--skille);
+
     --skrift-display:'Fraunces',"Iowan Old Style","Palatino Linotype","Palatino","Georgia",serif;
-    --skrift-brød:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    --skrift-brød:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
     --skrift-kode:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 
-    /* Én skygge, brugt overalt. To ville blive til fem. */
-    --løft:0 1px 2px rgba(74,36,23,.04), 0 4px 14px rgba(74,36,23,.05);
-    --løft-hævet:0 2px 4px rgba(74,36,23,.06), 0 10px 26px rgba(74,36,23,.09);
+    /* To skygger. Flere ville blive til fem. */
+    --løft:0 1px 2px rgba(74,36,23,.05), 0 4px 16px rgba(74,36,23,.05);
+    --løft-hævet:0 2px 4px rgba(74,36,23,.07), 0 12px 30px rgba(74,36,23,.11);
+
+    --r-lille:10px;  /* knapper, felter, segmenter */
+    --r:16px;        /* kort, tabeller, meldinger */
   }
+
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{min-height:100%}
   body{
@@ -231,61 +262,85 @@
   input,textarea,select{font:inherit;color:inherit}
   [hidden]{display:none !important}
 
-  /* Overskrifter og tal i serif — som i appen. */
-  h1,h2,h3{ font-family:var(--skrift-display); font-weight:600; letter-spacing:.1px; color:var(--gran); }
+  h1,h2,h3{ font-family:var(--skrift-display); font-weight:600; letter-spacing:-.005em; color:var(--tekst); text-wrap:balance; }
+
+  /* ---------- ETIKETTEN ----------
+     Én etiket over hele bagrummet. Før stod den samme versal-etiket på
+     11,5 px skrevet ni steder med hver sin farve og afstand. */
+  .db-felt .navn, .db-h4, .bb-gruppe h4, .vl-gruppe h4, .skaerm-flok > h3, .gruppe > h3,
+  .pl-titel, .bb-titel, .afsnit, th, .mail-emne-label{
+    font-family:var(--skrift-brød);
+    font-size:12px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--tekst-2);
+  }
+
+  /* HJÆLPETEKST. Før havde .hint kun regler i fire sammenhænge, så de andre
+     steder stod hjælpen som almindelig brødtekst. */
+  .hint{ font-size:13px; color:var(--tekst-2); line-height:1.5; }
 
   /* ---------- LOGIN ---------- */
   #login{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px; }
-  #login .kort{ width:100%; max-width:390px; }
+  #login .kort{ width:100%; max-width:400px; }
   #login .logo{ width:min(170px,46vw); height:auto; margin:0 auto 30px; display:block; }
   .flade{
-    background:var(--flade); border:1px solid var(--linje);
-    border-radius:18px; padding:28px 26px; box-shadow:var(--løft);
+    background:var(--flade); border:1px solid var(--kant);
+    border-radius:20px; padding:30px 28px; box-shadow:var(--løft);
   }
-  h1{ font-size:23px; line-height:1.25; }
+  h1{ font-size:26px; line-height:1.2; }
+
+  /* ---------- FORMULAREN ----------
+     Én formular overalt: label over feltet, felt i 15 px med synlig kant,
+     hjælp under. Datoer og tal ser ud som tekstfelterne. */
   label{
-    display:block; font-size:12.5px; font-weight:600;
-    letter-spacing:.03em; color:var(--fjord); margin:18px 0 6px;
+    display:block; font-size:13px; font-weight:600;
+    color:var(--tekst-2); margin:18px 0 6px;
   }
-  input[type=email],input[type=password],input[type=search],input[type=text],textarea,select{
-    width:100%; background:#fff; border:1px solid var(--linje);
-    border-radius:11px; padding:11px 13px; color:var(--tekst);
+  input[type=email],input[type=password],input[type=search],input[type=text],input[type=tel],
+  input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=week],
+  textarea,select{
+    width:100%; background:var(--flade); border:1px solid var(--kant-felt);
+    border-radius:var(--r-lille); padding:10px 12px; color:var(--tekst);
+    font-size:15px; font-weight:400; line-height:1.4;
     transition:border-color .15s, box-shadow .15s;
   }
-  input:hover,textarea:hover,select:hover{ border-color:#d6c6b4; }
-  input:focus,textarea:focus,button:focus-visible,select:focus{
-    outline:2px solid var(--rav); outline-offset:1px; border-color:transparent;
+  /* Et felt INDE i en label (fx "Ny bruger") arvede labelens 13 px fed skrift. */
+  label input, label select, label textarea{ margin-top:6px; }
+  input:hover,textarea:hover,select:hover{ border-color:var(--tekst-2); }
+  input:focus,textarea:focus,button:focus-visible,select:focus,summary:focus-visible{
+    outline:2px solid var(--accent); outline-offset:1px; border-color:transparent;
   }
   textarea{ resize:vertical; line-height:1.5; }
+  ::placeholder{ color:#8d7566; opacity:1; }
 
+  /* ---------- KNAPPERNE ----------
+     Fire slags: primær (mørk), rolig (kant), fare (rød kant) og Udgiv
+     (orange - kun den). To højder: 40 og 32 px. */
   .knap{
     display:inline-flex; align-items:center; justify-content:center; gap:7px;
-    background:var(--gran); color:#f8f1e7; border:1px solid var(--gran);
-    border-radius:11px; padding:11px 18px; font-weight:600; font-size:14px;
+    min-height:40px;
+    background:var(--tekst); color:var(--mørk-tekst); border:1px solid var(--tekst);
+    border-radius:12px; padding:9px 18px; font-weight:600; font-size:14px; line-height:1.2;
+    box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 1px 2px rgba(74,36,23,.2);
     transition:background .15s, box-shadow .15s, transform .1s;
   }
-  .knap:hover{ background:var(--gran-mørk); border-color:var(--gran-mørk); }
+  .knap:hover{ background:var(--mørk); border-color:var(--mørk); }
   .knap:active{ transform:translateY(1px); }
   .knap[disabled]{ opacity:.45; cursor:default; transform:none; }
-  .knap.bred{ width:100%; margin-top:24px; padding:13px 18px; }
-  .knap.rolig{ background:transparent; color:var(--fjord); border-color:var(--linje); }
-  .knap.rolig:hover{ background:#f2e9dd; color:var(--tekst); border-color:#d6c6b4; }
-  .knap.lille{ padding:8px 13px; font-size:13px; border-radius:9px; }
-  .knap.fare{ color:var(--fejl); border-color:#e6cfc4; background:transparent; }
-  .knap.fare:hover{ background:#f7e9e3; color:var(--fejl); border-color:#d9b9a9; }
+  .knap.bred{ width:100%; margin-top:24px; min-height:46px; }
+  .knap.rolig{ background:var(--flade); color:var(--tekst); border-color:var(--kant); box-shadow:none; font-weight:500; }
+  .knap.rolig:hover{ background:var(--flade-2); border-color:var(--kant-felt); }
+  .knap.lille{ min-height:32px; padding:6px 12px; font-size:13px; border-radius:var(--r-lille); }
+  .knap.fare{ color:var(--fejl); border-color:var(--fejl-kant); background:var(--flade); box-shadow:none; }
+  .knap.fare:hover{ background:var(--fejl-bg); color:var(--fejl); border-color:#d9b9a9; }
 
-  .besked{ margin-top:16px; font-size:14px; padding:12px 14px; border-radius:11px; }
-  .besked.fejl{ background:#f7e9e3; color:var(--fejl); border:1px solid #e6cfc4; }
-  .besked.god{ background:#e9efe7; color:var(--god); border:1px solid #cfdcca; }
+  /* ---------- SVAR OG STATUS ---------- */
+  .besked{ margin-top:16px; font-size:14px; padding:12px 14px; border-radius:12px; border:1px solid; line-height:1.5; }
+  .besked.fejl{ background:var(--fejl-bg); color:var(--fejl); border-color:var(--fejl-kant); }
+  .besked.god{ background:var(--god-bg); color:var(--god); border-color:var(--god-kant); }
 
   /* ---------- RAMMEN: SKINNE + ARK ----------
-     Sidebjaelken ("skinnen") staar fast; arket ruller. Det er hele
-     forskellen paa en side med faner og et arbejdsbord: navigationen
-     flytter sig ikke, fordi man rullede tre hundrede tekster ned.
-
-     Gitteret er to spor. Paa telefon bliver det ét spor, og skinnen
-     flytter ned i bunden - samme sted som appens egen bundnavigation,
-     saa de to foles ens at bruge. */
+     Sidebjælken ("skinnen") står fast; arket ruller. På telefon bliver den
+     en bundbjælke, samme sted som appens egen. Mørk fra 861 px (13/10). */
   #rum{
     display:grid;
     grid-template-columns:232px minmax(0,1fr);
@@ -294,66 +349,99 @@
 
   .skinne{
     display:flex; flex-direction:column;
-    background:var(--flade);
-    border-right:1px solid var(--linje);
     position:sticky; top:0; height:100dvh;
-    padding:22px 14px 16px;
+    padding:26px 16px 18px;
+    background:linear-gradient(180deg,#4a2417 0%,#37190f 100%);
+    box-shadow:2px 0 28px rgba(58,26,16,.14);
   }
-  .sk-maerke{ padding:0 10px 22px; display:flex; flex-direction:column; gap:1px; }
-  /* Det nye logo (27/9) i stedet for navnet sat med versaler. */
-  .sk-ord{ display:block; width:112px; height:auto; margin-bottom:4px; }
-  .sk-under{ font-size:13px; color:var(--dæmpet); }
+  .sk-maerke{ padding:0 10px 30px; display:flex; flex-direction:column; gap:2px; }
+  .sk-ord{ display:block; width:112px; height:auto; margin-bottom:4px; filter:brightness(0) invert(1); opacity:.93; }
+  .sk-under{ font-size:12px; color:var(--mørk-tekst-2); letter-spacing:.16em; text-transform:uppercase; }
 
-  nav.faner{ display:flex; flex-direction:column; gap:2px; }
+  nav.faner{ display:flex; flex-direction:column; gap:3px; }
   nav.faner button{
     display:flex; align-items:center; gap:11px; width:100%; text-align:left;
-    background:none; border:0; padding:10px 11px;
-    border-radius:11px;
-    font-size:14.5px; font-weight:600; color:var(--fjord);
+    background:none; border:0; padding:10px 12px;
+    border-radius:var(--r-lille);
+    font-size:14px; font-weight:500; color:#ead9c9;
     transition:background .14s, color .14s;
   }
   nav.faner button .ik{
-    width:19px; height:19px; flex:0 0 auto;
-    fill:none; stroke:currentColor; stroke-width:1.5;
+    width:20px; height:20px; flex:0 0 auto;
+    fill:none; stroke:currentColor; stroke-width:1.6;
     stroke-linecap:round; stroke-linejoin:round;
-    opacity:.75;
+    opacity:.85;
   }
-  nav.faner button:hover{ background:#f2e9dd; color:var(--tekst); }
-  nav.faner button[aria-current=page]{ background:var(--gran); color:#f8f1e7; }
+  nav.faner button:hover{ background:rgba(255,255,255,.08); color:#fff; }
+  nav.faner button[aria-current=page]{
+    background:var(--mørk-tekst); color:var(--tekst); font-weight:600;
+    box-shadow:0 2px 10px rgba(0,0,0,.18);
+  }
   nav.faner button[aria-current=page] .ik{ opacity:1; }
 
-  /* Kontoen og udgangen i bunden - vaek fra det, man arbejder med.
-     `margin-top:auto` skubber dem ned, uanset hvor mange punkter der
-     kommer i navigationen senere. */
-  .sk-bund{ margin-top:auto; padding:14px 11px 0; border-top:1px solid var(--linje); }
+  /* Kontoen og udgangen i bunden - væk fra det, man arbejder med. */
+  .sk-bund{ margin-top:auto; padding:14px 12px 0; border-top:1px solid rgba(255,255,255,.13); }
   .sk-hvem{ display:flex; flex-direction:column; margin-bottom:11px; min-width:0; }
-  .sk-hvem b{ font-size:13.5px; font-weight:600; color:var(--tekst); }
+  .sk-hvem b{ font-size:14px; font-weight:600; color:var(--mørk-tekst); }
   .sk-hvem .mail{
-    font-size:12px; color:var(--dæmpet);
+    font-size:12px; color:var(--mørk-tekst-2);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .sk-bund .knap{ width:100%; }
+  .sk-bund .knap{ width:100%; color:var(--mørk-tekst); border-color:rgba(255,255,255,.25); background:transparent; box-shadow:none; }
+  .sk-bund .knap:hover{ background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.4); }
 
   .ark{ min-width:0; display:flex; flex-direction:column; }
 
-  /* ---------- UDGIVELSESLINJEN ----------
-     Husets vigtigste handling faar sin egen linje oeverst i arket, og
-     den KLAEBER: uanset hvor langt man er rullet ned i teksterne, er
-     vejen ud til kunden det foerste man ser, naar man kigger op.
+  /* ---------- DE FEM RUM (15/10) ----------
+     Korte navne på telefon (Salg, Drift); ventetallet på Indhold. */
+  nav.faner button .n-kort{ display:none; }
+  .nav-tal{
+    margin-left:auto; min-width:22px; padding:0 7px; border-radius:999px;
+    background:var(--cta); color:var(--tekst); font-size:12px; font-weight:700;
+    line-height:20px; text-align:center; font-variant-numeric:tabular-nums;
+  }
+  /* Topbjælken findes kun på telefon - se TELEFONEN. */
+  .topbjaelke{ display:none; }
 
-     I hvile er den rolig og creme. Er der noget at udgive, skifter hele
-     linjen til kobber - ikke bare knappen. Skiftet sker paa :has()
-     omkring maerket, som JavaScriptet i forvejen viser og skjuler. */
+  /* Udgiv hører til Indhold - og ikke til mails, der gælder straks. */
+  body:not([data-rum="indhold"]) .udgiv-linje, body[data-under="mails"] .udgiv-linje,
+  body:not([data-rum="indhold"]) .venter-liste, body[data-under="mails"] .venter-liste{ display:none; }
+
+  /* Underfanerne i Indhold. Underfanens navn står i knappen, så de gamle
+     sektionstitler (Tekster, Vores ture ...) skjules - deres indhold er urørt. */
+  .underfaner{
+    display:flex; flex-wrap:wrap; gap:4px; margin:4px 0 24px;
+    padding:4px; background:var(--flade-2); border:1px solid var(--kant); border-radius:12px; width:fit-content; max-width:100%;
+  }
+  .underfaner button{
+    background:none; border:0; border-radius:9px; padding:8px 14px;
+    font-size:14px; font-weight:500; color:var(--tekst-2);
+  }
+  .underfaner button:hover{ color:var(--tekst); }
+  .underfaner button[aria-selected="true"]{ background:var(--flade); color:var(--tekst); font-weight:600; box-shadow:0 1px 3px rgba(74,36,23,.12); }
+  #fane-indhold > section > h2{ display:none; }
+
+  /* Afsnit inde i et rum (fx "Sikkerhed" under Drift & sikkerhed). */
+  .rum-afsnit{ font-size:22px; margin:36px 0 4px; }
+  .rum-afsnit-under{ margin-bottom:8px; }
+  .drift-kort{ margin-bottom:8px; }
+  .db-efter{ margin-top:24px; }
+  /* Id og ikke klasse: vis() skriver hele className om. */
+  #db-fejl-salg, #db-fejl-drift{ margin:0 0 20px; }
+
+  /* ---------- UDGIVELSESLINJEN ----------
+     Husets vigtigste handling har sin egen klæbende linje. Er der noget at
+     udgive, skifter hele linjen til kobber - på :has() omkring mærket. */
   .udgiv-linje{
     position:sticky; top:0; z-index:20;
     display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    padding:13px 30px;
-    background:rgba(252,248,242,.9);
+    min-height:60px; padding:10px 44px;
+    background:rgba(246,237,225,.85);
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--linje);
+    border-bottom:1px solid var(--skille);
     transition:background .2s, border-color .2s;
   }
-  .ul-tekst{ flex:1 1 auto; min-width:0; font-size:13.5px; color:var(--dæmpet); }
+  .ul-tekst{ flex:1 1 auto; min-width:0; font-size:13px; color:var(--tekst-2); }
   .ul-venter{ display:none; }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])){
     background:linear-gradient(180deg,rgba(232,147,90,.2),rgba(142,67,51,.13));
@@ -361,628 +449,241 @@
   }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-ro{ display:none; }
   .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-venter{ display:inline; }
-  .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-tekst{
-    color:var(--gran); font-weight:600;
-  }
+  .udgiv-linje:has(#udgiv-mærke:not([hidden])) .ul-tekst{ color:var(--tekst); font-weight:600; }
 
-  /* UDGIV — kobber, fordi kobber er logoets accent og i appen bruges til
-     ét formaal: det, man skal laegge maerke til. Maerket ved siden af er
-     ANTALLET, der venter. */
   #udgiv{
     flex:0 0 auto;
-    background:#e8935a; border-color:#e8935a; color:var(--gran);  /* CTA Orange, som i appen */
-    padding:9px 18px; font-size:13.5px;
+    background:var(--cta); border-color:var(--cta); color:var(--tekst);
+    padding:9px 20px; font-size:14px; font-weight:700; border-radius:12px;
+    box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 2px 8px rgba(232,147,90,.4);
   }
-  #udgiv:hover{ background:#dc8249; border-color:#dc8249; }
+  #udgiv:hover{ background:var(--cta-mørk); border-color:var(--cta-mørk); }
   #udgiv-mærke{
-    display:inline-block; min-width:20px; padding:0 6px; margin-left:4px;
-    background:rgba(74,36,23,.14); color:var(--gran); border-radius:9px;
-    font-size:11.5px; font-weight:700; line-height:19px; text-align:center;
+    display:inline-block; min-width:22px; padding:0 7px; margin-left:4px;
+    background:rgba(74,36,23,.14); color:var(--tekst); border-radius:999px;
+    font-size:12px; font-weight:700; line-height:20px; text-align:center;
     font-variant-numeric:tabular-nums;
   }
 
-  /* ---------- HVAD VENTER? ---------- */
+  /* ---------- HVAD VENTER? (Kennet 17/9) ---------- */
   .ul-se{
     flex:0 0 auto; background:none; border:1px solid rgba(142,67,51,.45);
-    color:var(--gran); border-radius:9px; padding:8px 12px;
+    color:var(--tekst); border-radius:var(--r-lille); padding:7px 12px;
     font-size:13px; font-weight:600;
   }
   .ul-se:hover{ background:rgba(142,67,51,.12); }
   .venter-liste{
-    position:sticky; top:59px; z-index:19;
-    background:var(--flade); border-bottom:1px solid var(--linje);
-    padding:16px 30px 18px; max-height:52vh; overflow:auto;
+    position:sticky; top:60px; z-index:19;
+    background:var(--flade); border-bottom:1px solid var(--kant);
+    padding:16px 44px 18px; max-height:52vh; overflow:auto;
+    box-shadow:var(--løft);
   }
-  .vl-henter{ color:var(--dæmpet); font-size:13.5px; }
+  .vl-henter{ color:var(--tekst-2); font-size:14px; }
   .vl-gruppe{ margin-bottom:16px; }
   .vl-gruppe:last-child{ margin-bottom:0; }
-  .vl-gruppe h4{
-    font-family:var(--skrift-brød);
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:7px;
-  }
+  .vl-gruppe h4{ margin-bottom:7px; }
   .vl-post{
     display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 14px;
-    padding:8px 0; border-top:1px solid var(--linje-blød); align-items:baseline;
+    padding:8px 0; border-top:1px solid var(--skille); align-items:baseline;
   }
   .vl-navn{ font-size:14px; color:var(--tekst); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .vl-hvem{ font-size:12px; color:var(--dæmpet); white-space:nowrap; text-align:right; }
-  .vl-under{
-    grid-column:1/-1; font-family:var(--skrift-kode);
-    font-size:11.5px; color:var(--dæmpet);
+  .vl-hvem{ font-size:12px; color:var(--tekst-2); white-space:nowrap; text-align:right; }
+  .vl-under{ grid-column:1/-1; font-family:var(--skrift-kode); font-size:12px; color:var(--tekst-2); }
+
+  /* ---------- SIDEN ---------- */
+  main{ flex:1 1 auto; max-width:1200px; width:100%; padding:36px 44px 110px; }
+  h2{ font-size:30px; line-height:1.15; letter-spacing:-.012em; margin-bottom:6px; }
+  .under{ color:var(--tekst-2); font-size:14px; margin-bottom:24px; max-width:68ch; line-height:1.55; }
+  .afsnit{ margin-top:24px; margin-bottom:4px; }
+
+  /* ---------- KORTET ----------
+     Ét kort over hele bagrummet: lys flade, synlig kant, blød skygge, 16 px
+     hjørner. Før fandtes fem varianter med hver sin kant og radius, og kortene
+     skilte sig næsten ikke fra bunden (1,1:1). */
+  .db-kort, .db-felt, .bruger-boks, .rulle, .tal .felt, .skaermkort, .rk, .tur, .mail-kort,
+  .brud-kort, .brud-form{
+    background:var(--flade); border:1px solid var(--kant); border-radius:var(--r);
+    box-shadow:var(--løft);
   }
 
-  /* ---------- BRUGERNE (17/9) ---------- */
+  /* ---------- BRUGERNE ---------- */
   .k-navn{ font-weight:600; }
-  .k-mail{ font-size:12.5px; color:var(--dæmpet); }
-  .k-venter{ font-size:11.5px; color:var(--fejl); margin-top:2px; }
+  /* En lang mail må brydes - ellers bestemmer den hele tabellens bredde. */
+  .k-mail{ font-size:13px; color:var(--tekst-2); overflow-wrap:anywhere; }
+  .k-venter{ font-size:12px; color:var(--fejl); margin-top:2px; }
   .k-rolle{
-    font-size:11.5px; font-weight:700; letter-spacing:.04em;
-    background:#efe5d8; color:var(--fjord); border-radius:999px; padding:3px 9px;
+    display:inline-block;
+    font-size:12px; font-weight:600; letter-spacing:.02em;
+    background:var(--flade-2); color:var(--tekst-2); border:1px solid var(--kant);
+    border-radius:999px; padding:2px 10px;
   }
-  .k-rolle.admin{ background:var(--gran); color:#f8f1e7; }
+  .k-rolle.admin{ background:var(--tekst); color:var(--mørk-tekst); border-color:var(--tekst); }
   .k-handling{ text-align:right; white-space:nowrap; }
-  /* Telefon (13/10): tabellen var 864 px bred på en 390 px skærm, så kun navnet
-     var synligt, og telefon, adgang og dato lå bag en usynlig sidelæns rulning.
-     Nu er hver konto et kort: navn, mail og rolle øverst, så adgang, telefon og
-     oprettet som små linjer, og "Rediger" nederst. Kun Kunder-fanen — "Seneste
-     udgivelser" i Oversigten er stadig en tabel, der ruller. */
+  /* Telefon (13/10): hver konto er et kort - navn, mail og rolle øverst, så
+     adgang, telefon og oprettet som små linjer, og "Rediger" nederst. */
   @media (max-width:720px){
     #fane-kunder .rulle{ overflow:visible; border:0; background:none; box-shadow:none; border-radius:0; }
     #fane-kunder table, #fane-kunder tbody{ display:block; min-width:0; }
     #fane-kunder thead{ display:none; }
     #kunder tr{
       display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; align-items:start;
-      background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
+      background:var(--flade); border:1px solid var(--kant); border-radius:var(--r);
       padding:14px 16px; margin-bottom:10px; box-shadow:var(--løft);
     }
-    #kunder td{ display:block; padding:0; border:0; font-size:13.5px; min-width:0; }
-    #kunder td:nth-child(1){ grid-column:1; grid-row:1; overflow-wrap:anywhere; font-size:14.5px; }
+    #kunder td{ display:block; padding:0; border:0; font-size:14px; min-width:0; }
+    #kunder td:nth-child(1){ grid-column:1; grid-row:1; overflow-wrap:anywhere; font-size:15px; }
     #kunder td:nth-child(5){ grid-column:2; grid-row:1; }
     #kunder td:nth-child(2), #kunder td:nth-child(3), #kunder td:nth-child(4), #kunder td:nth-child(6){ grid-column:1 / -1; }
-    #kunder td:nth-child(2)::before{ content:'Telefon · '; color:var(--dæmpet); }
-    #kunder td:nth-child(3)::before{ content:'Adgang · '; color:var(--dæmpet); }
-    #kunder td:nth-child(4)::before{ content:'Oprettet · '; color:var(--dæmpet); }
+    #kunder td:nth-child(2)::before{ content:'Telefon · '; color:var(--tekst-2); }
+    #kunder td:nth-child(3)::before{ content:'Adgang · '; color:var(--tekst-2); }
+    #kunder td:nth-child(4)::before{ content:'Oprettet · '; color:var(--tekst-2); }
     #kunder td.k-handling{ text-align:left; margin-top:4px; }
     #kunder td.tomt{ grid-column:1 / -1; }
   }
 
-  .bruger-boks{
-    background:var(--flade); border:1px solid var(--linje); border-radius:16px;
-    padding:20px 22px; margin-bottom:18px; box-shadow:var(--løft);
-  }
-  .bruger-boks h3{ font-size:19px; }
-  .bruger-boks > .under{ margin-bottom:6px; }
-  .bb-gruppe{ padding:15px 0; border-top:1px solid var(--linje-blød); }
-  .bb-gruppe h4{
-    font-family:var(--skrift-brød);
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:5px;
-  }
-  .bb-gruppe .hint{ font-size:13px; color:var(--dæmpet); margin-bottom:10px; line-height:1.55; }
+  .bruger-boks{ padding:22px 24px; margin-bottom:20px; }
+  .bruger-boks h3{ font-size:18px; overflow-wrap:anywhere; }
+  .bruger-boks > .under{ margin-bottom:6px; overflow-wrap:anywhere; }
+  .bb-gruppe{ padding:16px 0; border-top:1px solid var(--skille); }
+  .bb-gruppe h4{ margin-bottom:6px; }
+  .bb-gruppe .hint{ margin-bottom:10px; }
   .bb-gruppe .bb-linje{ display:flex; gap:8px; flex-wrap:wrap; }
+  .bb-gruppe.fare{ border-top-color:var(--fejl-kant); }
+  .bb-gruppe.fare h4{ color:var(--fejl); }
+  .bb-luk{ margin-top:14px; }
+  .bruger-boks .status{ font-size:14px; color:var(--tekst-2); margin-top:12px; }
+  .bruger-boks .status.fejl{ color:var(--fejl); }
+  .bruger-boks .status.god{ color:var(--god); }
+  .k-link{
+    margin-top:14px; padding:13px 15px; background:var(--flade-2);
+    border:1px solid var(--kant); border-radius:12px; font-size:13px;
+  }
+  .k-linktekst{
+    display:block; margin-top:7px; font-family:var(--skrift-kode); font-size:12px;
+    word-break:break-all; user-select:all; -webkit-user-select:all; color:var(--tekst);
+  }
 
   /* ---------- DASHBOARDET (2.10) ----------
-     Én accentfarve (rav) i alle grafer: hver graf viser én ting, så farven
-     skal ikke skille serier ad. Status er altid lys + ikon + ord, aldrig farve
-     alene. Tal står i brødskriften (ikke serif), som dashboards skal. */
+     Én accentfarve i alle grafer: hver graf viser én ting. Status er altid
+     lys + ikon + ord. Nøgletal i serif (13/10 vandt over 12/10). */
   .db-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-  .db-top .under{ margin-bottom:16px; }
-  .db-status{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:14px; margin-bottom:18px; font-size:14px; line-height:1.5; border:1px solid; }
-  .db-status.god{ background:#eef3ec; border-color:#cfdcca; color:var(--god); }
-  .db-status.advar{ background:#fbf1e2; border-color:#ecd6b0; color:#7a5310; }
-  .db-status.fejl{ background:#f7e9e3; border-color:#e6cfc4; color:var(--fejl); }
+  .db-top .under{ margin-bottom:24px; }
+  .db-top-knapper{ display:flex; gap:8px; flex:0 0 auto; align-items:flex-start; }
+  .db-status{
+    display:flex; gap:12px; align-items:flex-start; padding:16px 18px; border-radius:var(--r);
+    margin-bottom:20px; font-size:14px; line-height:1.5; border:1px solid; border-left-width:4px;
+  }
+  .db-status.god{ background:var(--god-bg); border-color:var(--god-kant); color:var(--god); }
+  .db-status.advar{ background:var(--advar-bg); border-color:var(--advar-kant); color:var(--advar); }
+  .db-status.fejl{ background:var(--fejl-bg); border-color:var(--fejl-kant); color:var(--fejl); }
   .db-status b{ display:block; font-size:15px; margin-bottom:2px; }
   .db-status ul{ margin:4px 0 0 18px; }
   .db-ikon{ flex:0 0 auto; width:22px; height:22px; margin-top:1px; }
-  .db-tal{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); margin-bottom:16px; }
-  .db-felt{ background:#fff; border:1px solid var(--linje); border-radius:16px; padding:16px 18px; box-shadow:var(--løft); }
-  .db-felt .navn{ font-size:13px; color:var(--fjord); font-weight:600; }
-  .db-felt .vaerdi{ font-size:clamp(22px,2.3vw,30px); font-weight:650; color:var(--gran); line-height:1.15; margin-top:6px; letter-spacing:-.01em; white-space:nowrap; }
-  .db-felt.helt .vaerdi{ font-size:clamp(24px,2.9vw,38px); }
-  .db-felt .note{ font-size:12.5px; color:var(--dæmpet); margin-top:4px; }
-  .db-kort{ background:#fff; border:1px solid var(--linje); border-radius:16px; padding:18px 18px 14px; box-shadow:var(--løft); margin-bottom:16px; min-width:0; }
-  .db-kort h3{ font-family:var(--skrift-brød); font-size:15px; font-weight:650; }
-  .db-under{ font-size:12.5px; color:var(--dæmpet); margin:3px 0 10px; }
+
+  /* Fire nøgletal: 4 i en række på brede skærme, 2 × 2 ellers - aldrig ét alene. */
+  .db-tal{ display:grid; gap:16px; grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:20px; }
+  /* Fire i en række først fra 1400 px: et beløb som "41.880 kr." i serif skal kunne stå. */
+  @media (min-width:1400px){ .db-tal{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
+  .db-felt{ padding:20px 22px; }
+  .db-felt .vaerdi{
+    font-family:var(--skrift-display); font-size:clamp(26px,2.3vw,32px); font-weight:600; color:var(--tekst);
+    line-height:1.1; margin-top:10px; letter-spacing:-.01em; overflow-wrap:normal;
+    font-variant-numeric:tabular-nums lining-nums;
+  }
+  .db-felt.helt .vaerdi{ font-size:clamp(30px,2.8vw,40px); }
+  .db-felt .note{ font-size:13px; color:var(--tekst-2); margin-top:6px; }
+  /* Sidens ankerpunkt: det første nøgletal. Ét mørkt tal pr. side. */
+  .db-felt.helt{
+    background:linear-gradient(150deg,#5c2e1f 0%,var(--mørk) 100%);
+    border-color:transparent; box-shadow:var(--løft-hævet);
+  }
+  .db-felt.helt .navn, .db-felt.helt .note{ color:#dcc3b3; }
+  .db-felt.helt .vaerdi{ color:#fff8ef; }
+
+  .db-kort{ position:relative; padding:22px 24px 20px; margin-bottom:20px; min-width:0; }
+  .db-kort h3{ font-size:18px; font-weight:600; }
+  .db-under{ font-size:13px; color:var(--tekst-2); margin:4px 0 14px; }
   .db-kort-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
-  .db-vaelg{ display:inline-flex; border:1px solid var(--linje); border-radius:10px; overflow:hidden; }
-  .db-vaelg button{ background:#fff; border:0; padding:6px 11px; font-size:12.5px; color:var(--fjord); }
-  .db-vaelg button + button{ border-left:1px solid var(--linje); }
-  .db-vaelg button[aria-pressed="true"]{ background:var(--bund); color:var(--gran); font-weight:600; }
-  .db-to{ display:grid; gap:16px; grid-template-columns:1fr 1fr; }
+  .db-vaelg{ display:inline-flex; background:var(--flade-2); border:1px solid var(--kant); border-radius:var(--r-lille); padding:3px; gap:2px; }
+  .db-vaelg button{ background:none; border:0; border-radius:7px; padding:5px 11px; font-size:13px; color:var(--tekst-2); }
+  .db-vaelg button[aria-pressed="true"]{ background:var(--flade); color:var(--tekst); font-weight:600; box-shadow:0 1px 2px rgba(74,36,23,.12); }
+  .db-to{ display:grid; gap:20px; grid-template-columns:1fr 1fr; }
   .db-to .db-kort{ margin-bottom:0; }
-  .db-to + .db-to, .db-to + h2{ margin-top:16px; }
+  .db-to + .db-to, .db-to + h2{ margin-top:20px; }
   .db-graf{ position:relative; height:200px; }
   .db-graf.lav{ height:150px; }
   .db-graf svg{ display:block; width:100%; height:100%; overflow:visible; }
-  .db-graf .akse{ font-size:11px; fill:var(--dæmpet); font-variant-numeric:tabular-nums; }
-  .db-graf .gitter{ stroke:#efe4d6; stroke-width:1; }
-  .db-graf .grund{ stroke:#d9c8b4; stroke-width:1; }
-  .db-graf .soejle{ fill:var(--rav); }
+  .db-graf .akse{ font-size:12px; fill:var(--tekst-2); font-variant-numeric:tabular-nums; }
+  .db-graf .gitter{ stroke:var(--skille); stroke-width:1; }
+  .db-graf .grund{ stroke:var(--kant); stroke-width:1; }
+  .db-graf .soejle{ fill:var(--accent); }
   .db-graf .ramt{ fill:transparent; cursor:default; }
-  .db-graf .ramt:hover + .soejle, .db-graf .soejle.aktiv{ fill:var(--rav-mørk); }
-  .db-graf .tom{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dæmpet); font-size:13px; text-align:center; padding:0 20px; }
-  .db-tip{ position:absolute; pointer-events:none; background:var(--gran); color:#fff; font-size:12px; line-height:1.35; padding:6px 9px; border-radius:8px; white-space:nowrap; transform:translate(-50%,-100%); margin-top:-8px; box-shadow:var(--løft-hævet); }
+  .db-graf .ramt:hover + .soejle, .db-graf .soejle.aktiv{ fill:var(--accent-mørk); }
+  .db-graf .tom{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--tekst-2); font-size:14px; text-align:center; padding:0 20px; }
+  .db-tip{ position:absolute; pointer-events:none; background:var(--tekst); color:#fff; font-size:12px; line-height:1.35; padding:6px 9px; border-radius:8px; white-space:nowrap; transform:translate(-50%,-100%); margin-top:-8px; box-shadow:var(--løft-hævet); }
   .db-tip b{ font-weight:650; }
-  .db-tabel{ margin-top:8px; font-size:12.5px; }
-  .db-tabel summary{ cursor:pointer; color:var(--fjord); }
+  .db-tabel{ margin-top:10px; font-size:13px; }
+  .db-tabel summary{ cursor:pointer; color:var(--tekst-2); }
+  .db-tabel summary:hover{ color:var(--tekst); }
   .db-tabel table{ margin-top:8px; }
-  .db-prod{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; margin-bottom:12px; font-size:13.5px; }
-  .db-prod .bar{ grid-column:1/-1; height:8px; border-radius:4px; background:var(--bund); overflow:hidden; }
-  .db-prod .bar i{ display:block; height:100%; background:var(--rav); border-radius:4px; }
-  .db-prod .v{ color:var(--dæmpet); font-variant-numeric:tabular-nums; }
+  .db-prod{ display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center; margin-bottom:12px; font-size:14px; }
+  .db-prod .bar{ grid-column:1/-1; height:8px; border-radius:4px; background:var(--flade-2); overflow:hidden; }
+  .db-prod .bar i{ display:block; height:100%; background:var(--accent); border-radius:4px; }
+  .db-prod .v{ color:var(--tekst-2); font-variant-numeric:tabular-nums; }
+  .db-prod .pct{ color:var(--tekst); font-weight:600; }
   .db-tavle{ list-style:none; }
-  .db-tavle li{ display:grid; grid-template-columns:22px 1fr; gap:4px 10px; padding:9px 0; border-top:1px solid var(--linje-blød); font-size:13.5px; }
+  .db-tavle li{ display:grid; grid-template-columns:22px 1fr; gap:4px 10px; padding:10px 0; border-top:1px solid var(--skille); font-size:14px; }
   .db-tavle li:first-child{ border-top:0; }
-  .db-tavle .hvad{ font-weight:600; color:var(--gran); }
-  .db-tavle .hvordan{ grid-column:2; color:var(--dæmpet); font-size:12.5px; }
+  .db-tavle .hvad{ font-weight:600; color:var(--tekst); }
+  .db-tavle .hvordan{ grid-column:2; color:var(--tekst-2); font-size:13px; }
   .db-lys{ width:18px; height:18px; margin-top:1px; }
+  .db-lys .lys-god{ fill:var(--god); }
+  .db-lys .lys-advar{ fill:#b07a16; }
+  .db-lys .lys-fejl{ fill:var(--fejl); }
+  .db-lys .lys-graa{ fill:var(--graa); }
   .db-mini{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-  .db-mini > div{ background:var(--flade); border:1px solid var(--linje-blød); border-radius:12px; padding:10px 12px; }
-  .db-mini .t{ font-size:22px; font-weight:650; color:var(--gran); }
-  .db-mini .n{ font-size:12px; color:var(--dæmpet); }
-  .db-mini > .alarm{ background:#f7e9e3; border-color:#e6cfc4; }
+  .db-mini > div{ background:var(--flade-2); border:1px solid var(--skille); border-radius:12px; padding:10px 12px; }
+  .db-mini .t{ font-family:var(--skrift-display); font-size:22px; font-weight:600; color:var(--tekst); font-variant-numeric:tabular-nums; }
+  .db-mini .n{ font-size:12px; color:var(--tekst-2); }
+  .db-mini > .alarm{ background:var(--fejl-bg); border-color:var(--fejl-kant); }
   .db-mini .alarm .t{ color:var(--fejl); }
   .db-tre{ grid-template-columns:repeat(3,1fr); margin-bottom:12px; }
   .db-indre{ margin-top:16px; }
-  .db-h4{ font-family:var(--skrift-brød); font-size:13px; font-weight:650; color:var(--fjord); margin-bottom:10px; }
-  .db-prod .pct{ color:var(--gran); font-weight:600; }
-  /* Brede skærme (13/10): indholdet fyldte kun halvdelen af en stor skærm.
-     Fra 1360 px bliver arket bredere, og kortene fordeles i to kolonner, der
-     selv holder sig lige lange (CSS-kolonner), uanset hvor høje kortene er.
-     Under 1360 px er intet ændret. `display:contents` på .db-to lader de to
-     kort i hvert par indgå i samme kolonnestrøm. */
+  .db-h4{ margin-bottom:10px; }
+
+  /* Brede skærme: kortene i to kolonner, der selv holder sig lige lange.
+     `display:contents` lader de to kort i hvert par indgå i samme strøm. */
+  /* KUN de direkte par. Før ramte reglen også det indre par i funnel-kortet
+     (tragt + kilder), så det mistede sine to kolonner og sin afstand. */
+  .db-kolonner > .db-to{ display:contents; }
   @media (min-width:1360px){
-    main:has(#fane-oversigt:not([hidden])){ max-width:1320px; }
-    .db-kolonner{ column-count:2; column-gap:16px; }
-    .db-kolonner > .db-kort, .db-kolonner .db-to > .db-kort{ break-inside:avoid; margin-bottom:16px; }
+    .db-kolonner{ column-count:2; column-gap:20px; }
+    .db-kolonner > .db-kort, .db-kolonner > .db-to > .db-kort{ break-inside:avoid; margin-bottom:20px; }
   }
   @media (max-width:720px){
     .db-tre{ grid-template-columns:repeat(3,1fr); gap:8px; }
     .db-to{ grid-template-columns:1fr; }
     .db-to .db-kort{ margin-bottom:16px; }
     .db-to + .db-to{ margin-top:0; }
-    .db-felt .vaerdi{ font-size:28px; }
+    .db-tal{ gap:12px; }
+    .db-felt{ padding:16px 16px; }
+    .db-felt .vaerdi{ font-size:26px; white-space:normal; }
+    /* Ankertallet får hele bredden; står det sidste så alene, får det den også. */
+    .db-felt.helt, .db-tal > .db-felt:last-child:nth-child(even){ grid-column:1 / -1; }
     .db-felt.helt .vaerdi{ font-size:34px; }
+    .db-kort{ padding:18px 16px 16px; }
   }
 
-  /* Beredskab og brudlog (2.7) */
-  .brud-trin{ margin:0 0 10px 18px; font-size:14px; line-height:1.6; }
-  .brud-trin li{ margin-bottom:4px; }
-  .brud-form{ margin-top:14px; padding:4px 16px 16px; border:1px solid var(--linje); border-radius:14px; background:#fff; }
-  .brud-form input[type=datetime-local]{ width:100%; background:#fff; border:1px solid var(--linje); border-radius:11px; padding:10px 12px; }
-  .brud-kort{ margin-top:12px; padding:13px 15px; border:1px solid var(--linje); border-radius:14px; background:#fff; }
-  .brud-kort .brud-top{ font-size:12.5px; color:var(--dæmpet); margin-bottom:4px; }
-  .brud-kort .brud-hvad{ font-size:15px; line-height:1.5; margin-bottom:6px; overflow-wrap:anywhere; }
-  .brud-kort .brud-status{ font-size:13px; margin-bottom:8px; }
-  .brud-kort .brud-status.frist{ color:var(--fejl); font-weight:600; }
-  /* Den uigenkaldelige gruppe skal SES som noget andet end de øvrige. */
-  .bb-gruppe.fare{ border-top-color:#e6cfc4; }
-  .bb-gruppe.fare h4{ color:var(--fejl); }
-  .bb-luk{ margin-top:14px; }
-  .bruger-boks .status{ font-size:13.5px; color:var(--dæmpet); margin-top:12px; }
-  .bruger-boks .status.fejl{ color:var(--fejl); }
-  .bruger-boks .status.god{ color:var(--god); }
-  .k-link{
-    margin-top:14px; padding:13px 15px; background:#f7efe4;
-    border:1px solid #e3d2bd; border-radius:12px; font-size:13px;
-  }
-  .k-linktekst{
-    display:block; margin-top:7px; font-family:var(--skrift-kode); font-size:12px;
-    word-break:break-all; user-select:all; -webkit-user-select:all; color:var(--gran);
-  }
-
-  /* ---------- VÆLG PLACERING (17/9) ---------- */
-  .placering{
-    background:#f8f1e7; border:1px solid var(--linje-blød);
-    border-radius:14px; padding:14px 16px 15px; margin-bottom:14px;
-  }
-  .pl-titel{
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:9px;
-  }
-  .pl-linje{ display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
-  .pl-linje input[type=search]{ flex:1 1 220px; min-width:0; }
-  .pl-linje .knap{ flex:0 0 auto; }
-  .pl-forslag{ display:flex; flex-direction:column; gap:5px; margin-top:9px; }
-  .pl-forslag-knap{
-    text-align:left; background:#fff; border:1px solid var(--linje);
-    border-radius:10px; padding:9px 12px; font-size:13.5px; color:var(--tekst);
-  }
-  .pl-forslag-knap:hover{ border-color:var(--rav); background:#fcf8f2; }
-  .pl-status{ font-size:12.5px; color:var(--dæmpet); margin-top:8px; line-height:1.5; }
-  .pl-status.god{ color:var(--god); }
-  .pl-status.fejl{ color:var(--fejl); }
-  /* ---------- KORTET (17/9) ----------
-     Til stederne UDEN adresse. En p-plads i en skov har ingen vej at slå
-     op, og "Brug min placering" hjælper kun den, der står der. */
-  .pl-kort{
-    height:260px; margin-top:11px; border-radius:12px; overflow:hidden;
-    border:1px solid var(--linje); background:#e9ddcf;
-  }
-  .pl-kort .leaflet-container{ height:100%; width:100%; background:#e9ddcf; font:inherit; }
-  /* Naalen. Samme kobber som resten af fladen, tegnet i CSS og ikke som en
-     billedfil - Leaflets egne markoerbilleder ligger i en `images/`-mappe,
-     vi saa ville skulle slaebe med. En divIcon har ingen. */
-  .pl-naal{
-    width:17px; height:17px; border-radius:50% 50% 50% 2px; transform:rotate(-45deg);
-    background:var(--rav); border:2.5px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.4);
-  }
-  .pl-kort-hint{ font-size:12px; color:var(--dæmpet); margin-top:7px; line-height:1.5; }
-
-  main{ flex:1 1 auto; max-width:940px; width:100%; padding:30px 30px 100px; }
-  h2{ font-size:22px; margin-bottom:5px; }
-  .under{ color:var(--dæmpet); font-size:14px; margin-bottom:22px; max-width:62ch; line-height:1.6; }
-  .afsnit{
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-top:24px; margin-bottom:2px;
-  }
-
-  /* ---------- OVERSIGT ---------- */
-  .tal{ display:grid; gap:13px; grid-template-columns:repeat(auto-fit,minmax(172px,1fr)); margin-bottom:30px; }
-  .tal .felt{
-    background:var(--flade); border:1px solid var(--linje-blød); border-radius:16px;
-    padding:20px 20px 18px; box-shadow:var(--løft);
-  }
-  .tal .felt .stor{
-    font-family:var(--skrift-display); font-size:36px; font-weight:600; line-height:1.05;
-    letter-spacing:-.01em; color:var(--gran); font-variant-numeric:tabular-nums lining-nums;
-  }
-  .tal .felt .navn{ font-size:13px; color:var(--fjord); margin-top:7px; font-weight:600; }
-  .tal .felt .note{ font-size:12px; color:var(--dæmpet); margin-top:8px; line-height:1.45; }
-
-  /* ---------- VÆRKTØJSLINJE ---------- */
-  .værktøjslinje{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:18px; }
-  .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:360px; }
-  .værktøjslinje select{ background:#fff; border:1px solid var(--linje); border-radius:11px; padding:10px 12px; width:auto; }
-  .tæller{ font-size:13px; color:var(--dæmpet); margin-left:auto; font-variant-numeric:tabular-nums; }
-
-  /* ---------- SKAERMENE ----------
-     Foer 13/9 stod her tre kategori-piller og derunder ALLE teksterne i
-     kategorien - over 300 linjer i "Appen" alene, med praefikset raat som
-     overskrift ("vk", "faelles"). Inddelingen fandtes, men paa maskinens
-     sprog.
-
-     Nu er der to trin: vaelg skaermen, ret teksterne. Man lander paa et
-     overblik over appen og trykker sig ind paa "Forsiden" eller
-     "Pakkelisten" - de ord, man selv bruger om dem. */
-  .skaerm-flok{ margin-bottom:30px; }
-  .skaerm-flok > h3{
-    font-family:var(--skrift-brød);
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:4px;
-  }
-  .skaerm-flok > p.om{ color:var(--dæmpet); font-size:13px; margin:0 0 12px; max-width:66ch; }
-  .skaermliste{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(278px,1fr)); }
-  .skaermkort{
-    display:flex; align-items:flex-start; gap:12px; text-align:left; width:100%;
-    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
-    padding:15px 16px; color:inherit; box-shadow:var(--løft);
-    transition:border-color .15s, box-shadow .15s, transform .12s;
-  }
-  .skaermkort:hover{
-    border-color:var(--rav); box-shadow:var(--løft-hævet); transform:translateY(-1px);
-  }
-  .skaermkort .krop{ flex:1 1 auto; min-width:0; }
-  .skaermkort .navn{ font-weight:600; font-size:15.5px; display:block; color:var(--gran); }
-  .skaermkort .om{ color:var(--dæmpet); font-size:12.5px; margin-top:4px; line-height:1.5; }
-  /* Hedder .antal og ikke .tal: .tal er allerede statistik-fliserne paa
-     Oversigt (display:grid), og de to kolliderede - pillen blev et gitter,
-     der aad hele kortets bredde. Set paa foerste skaermbillede 13/9. */
-  .skaermkort .antal{
-    display:block; flex:0 0 auto; font-size:12.5px; color:var(--fjord);
-    font-variant-numeric:tabular-nums; white-space:nowrap;
-    background:#efe5d8; border-radius:999px; padding:3px 10px; font-weight:600;
-  }
-  .skaermkort .antal.rettet{ background:var(--rav); color:#fffaf4; }
-  .skaermkort.tom .antal{ opacity:.45; }
-
-  /* Hovedet, naar EN skaerm er valgt. */
-  .skaerm-hoved{ margin-bottom:18px; }
-  .tilbagelink{
-    background:none; border:0; padding:0; color:var(--fjord);
-    font-size:13.5px; font-weight:600; margin-bottom:10px;
-  }
-  .tilbagelink:hover{ color:var(--tekst); text-decoration:underline; }
-  .skaerm-hoved h3{ font-size:21px; margin:0; }
-  .skaerm-hoved .om{ color:var(--dæmpet); font-size:13.5px; margin:6px 0 0; max-width:66ch; line-height:1.6; }
-
-  /* ---------- TEKSTRÆKKER ---------- */
-  .gruppe{ margin-bottom:26px; }
-  .gruppe > h3{
-    font-family:var(--skrift-brød);
-    font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--dæmpet); margin-bottom:10px; padding-left:2px;
-  }
-  .rk{
-    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
-    padding:15px 17px; margin-bottom:9px; box-shadow:var(--løft);
-  }
-  .rk.rettet{ border-left:3px solid var(--rav); }
-  .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .rk .nøgle{ font-family:var(--skrift-kode); font-size:11.5px; color:var(--dæmpet); }
-  /* Overskriften paa en raekke er TEKSTEN, ikke noeglen. Man leder efter et
-     ord, man har set paa en skaerm - ikke efter "turdato.afgangstid". */
-  .rk .vist{ font-size:15px; font-weight:600; line-height:1.45; flex:1 1 100%; color:var(--gran); }
-  .rk .mærkat{ font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--rav); }
-  .rk .af{ font-size:12px; color:var(--dæmpet); margin-left:auto; }
-  .rk .oprind{ font-size:13px; color:var(--dæmpet); margin-top:8px; padding-left:12px; border-left:2px solid var(--linje); line-height:1.6; }
-  .rk .oprind::before{ content:"Står i koden: "; font-weight:600; color:var(--fjord); }
-  .rk textarea{ margin-top:11px; min-height:54px; }
-  .rk .bund{ display:flex; align-items:center; gap:9px; margin-top:11px; min-height:32px; flex-wrap:wrap; }
-  .rk .bund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
-  .rk .bund .status.fejl{ color:var(--fejl); }
-  .rk .bund .status.god{ color:var(--god); }
-
-  /* ---------- TURE ---------- */
-  .tur{
-    background:var(--flade); border:1px solid var(--linje-blød); border-radius:14px;
-    margin-bottom:10px; overflow:hidden; box-shadow:var(--løft);
-  }
-  .tur.skjult .navn{ color:var(--dæmpet); }
-  .tur > .linje{
-    display:flex; align-items:center; gap:12px; width:100%;
-    padding:14px 17px; background:none; border:0; text-align:left;
-    transition:background .12s;
-  }
-  .tur > .linje:hover{ background:#f6eee3; }
-  .tur .prik{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--god); }
-  .tur .prik.ude{ background:var(--dæmpet); }
-  .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--gran); }
-  .tur .smaa{ font-size:12.5px; color:var(--dæmpet); flex:0 0 auto; }
-  .tur .pil{ color:var(--dæmpet); font-size:11px; flex:0 0 auto; }
-  /* Telefon (13/10): metadata'en ("★★★★ · god til børn · …") tog al pladsen, så
-     turens NAVN blev klippet til "Svanni…" - og det første forsvandt helt. Nu
-     står navnet på sin egen linje, og metadata'en under. */
-  @media (max-width:720px){
-    .tur > .linje{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 12px; align-items:center; }
-    .tur .navn{ white-space:normal; overflow:visible; text-overflow:clip; }
-    .tur .pil{ grid-column:3; grid-row:1; }
-    .tur .smaa{ grid-column:2 / 3; grid-row:2; }
-  }
-
-  .turkrop{ padding:2px 17px 17px; border-top:1px solid var(--linje-blød); }
-  .par{ display:grid; gap:0 15px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
-  .felt .hint{ font-size:12px; color:var(--dæmpet); margin-top:5px; line-height:1.5; }
-  .afkryds{ display:flex; align-items:center; gap:9px; margin-top:15px; font-size:14px; }
-  .afkryds input{ width:17px; height:17px; accent-color:var(--gran); flex:0 0 auto; }
-  .afkryds .hint{ color:var(--dæmpet); font-size:12.5px; }
-  .turbund{
-    display:flex; align-items:center; gap:9px; margin-top:19px;
-    padding-top:15px; border-top:1px solid var(--linje-blød); flex-wrap:wrap;
-  }
-  .turbund .status{ font-size:13px; color:var(--dæmpet); margin-left:auto; text-align:right; }
-  .turbund .status.fejl{ color:var(--fejl); }
-  .turbund .status.god{ color:var(--god); }
-  .billedliste{ font-size:13px; color:var(--dæmpet); margin-top:19px; line-height:1.85; }
-  .billedliste code{ font-family:var(--skrift-kode); font-size:12px; }
-
-  /* ---------- ARYTMI MAILS (14/10) ---------- */
-  .mail-kort{ background:#fff; border:1px solid var(--linje); border-radius:14px; margin-bottom:14px; overflow:hidden; }
-  .mail-hoved{ display:flex; align-items:center; gap:10px; width:100%; padding:16px 18px; background:none; border:0; text-align:left; cursor:pointer; font:inherit; color:var(--gran); }
-  .mail-hoved:hover{ background:#f9f3ea; }
-  .mail-titel{ font-weight:600; font-size:16px; flex:1 1 auto; min-width:0; }
-  .mail-rettet{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#8a5a2f; background:#f6e8d6; border-radius:999px; padding:2px 8px; flex:0 0 auto; }
-  .mail-rettet[hidden]{ display:none; }
-  .mail-pil{ font-size:22px; line-height:1; color:var(--dæmpet); transition:transform .15s; flex:0 0 auto; }
-  .mail-kort.åben .mail-pil{ transform:rotate(90deg); }
-  .mail-krop{ padding:2px 18px 18px; border-top:1px solid var(--linje-blød); }
-  .mail-krop[hidden]{ display:none; }
-  .mail-kort .om{ font-size:13.5px; color:var(--dæmpet); line-height:1.55; margin:14px 0 4px; }
-  .mail-vejl{ font-size:13px; color:var(--dæmpet); line-height:1.5; margin:0 0 14px; }
-  .mail-emne{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .mail-emne-label{ font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--dæmpet); flex:0 0 auto; }
-  .mail-emne input{ flex:1 1 auto; min-width:0; }
-  .mail-laerred[hidden]{ display:none; }
-  .mail-bjaelke{ background:#f9f3ea; border:1px solid var(--linje-blød); border-radius:10px; padding:11px 13px; margin-top:12px; font-size:13.5px; line-height:1.5; }
-  .mail-bjaelke .hint{ font-size:12.5px; color:var(--dæmpet); }
-  .mail-chips{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:7px; }
-  .mail-std{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:7px; }
-  .mail-std .hint{ flex:1 1 200px; min-width:0; }
-  .mail-bund{ display:flex; gap:9px; flex-wrap:wrap; padding-top:15px; margin-top:14px; border-top:1px solid var(--linje-blød); }
-  .mail-kort .status{ font-size:13.5px; color:var(--dæmpet); margin-top:11px; line-height:1.5; }
-  .mail-kort .status.fejl{ color:var(--fejl); }
-  .mail-kort .status.god{ color:var(--god); }
-  .mail-ramme{ display:block; width:100%; height:640px; border:1px solid var(--linje); border-radius:12px; background:#ECEAE3; }
-  .mail-ramme[hidden]{ display:none; }
-
-  /* ---------- BILLEDER PAA EN TUR (17/9) ---------- */
-  .billedboks{ margin-top:20px; padding-top:16px; border-top:1px solid var(--linje-blød); }
-  .bb-titel{ font-size:11.5px; font-weight:700; letter-spacing:.09em;
-    text-transform:uppercase; color:var(--dæmpet); margin-bottom:10px; }
-  .billednet{ display:grid; gap:9px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
-  .bb-flise{
-    position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden;
-    background:#efe5d8; border:1px solid var(--linje-blød);
-    /* `touch-action:none` er ikke pynt: uden den ruller browseren siden,
-       naar man saetter fingeren paa en flise og bevaeger den - og saa kan
-       der aldrig traekkes paa en telefon. */
-    cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
-    transition:box-shadow .14s, transform .14s;
-  }
-  .bb-flise:hover{ box-shadow:var(--løft); }
-  .bb-flise.traekker{
-    cursor:grabbing; opacity:.85; transform:scale(1.04);
-    box-shadow:var(--løft-hævet); border-color:var(--rav); z-index:2;
-  }
-  .bb-flise img{ pointer-events:none; }
-  .bb-flise img{ width:100%; height:100%; object-fit:cover; display:block; }
-  /* De nitten gamle steder peger paa filer, der ligger i APPENS pakke.
-     De kan ikke hentes herfra, og et brudt <img> ville ligne en fejl. */
-  .bb-flise.lokal{ border-style:dashed; }
-  .bb-ifil{
-    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
-    font-size:11.5px; font-weight:600; color:var(--dæmpet); letter-spacing:.03em;
-  }
-  .bb-foerste{
-    position:absolute; left:6px; bottom:6px;
-    background:rgba(40,18,11,.78); color:#f8f1e7;
-    font-size:10.5px; font-weight:700; letter-spacing:.04em;
-    padding:2px 7px; border-radius:999px;
-  }
-  .bb-fjern{
-    position:absolute; top:5px; right:5px; width:24px; height:24px;
-    border:0; border-radius:50%; background:rgba(40,18,11,.72); color:#fff;
-    font-size:15px; line-height:22px; text-align:center; padding:0;
-    opacity:0; transition:opacity .14s;
-  }
-  .bb-flise:hover .bb-fjern, .bb-fjern:focus-visible{ opacity:1; }
-  /* Paa en telefon findes der ingen hover - saa skal krydset altid staa. */
-  @media (hover:none){ .bb-fjern{ opacity:1; } }
-  .bb-tom{ grid-column:1/-1; color:var(--dæmpet); font-size:13.5px; padding:14px 2px; }
-  .bb-linje{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:11px; }
-  .bb-vaelg{ cursor:pointer; }
-  .bb-vaelg.arbejder{ opacity:.55; pointer-events:none; }
-  .bb-linje .status{ font-size:13px; color:var(--dæmpet); }
-  .bb-linje .status.fejl{ color:var(--fejl); }
-  .bb-linje .status.god{ color:var(--god); }
-
-  /* ---------- TABEL ---------- */
-  .rulle{
-    overflow-x:auto; border:1px solid var(--linje-blød); border-radius:14px;
-    background:var(--flade); box-shadow:var(--løft);
-  }
-  table{ border-collapse:collapse; width:100%; min-width:640px; }
-  th,td{ text-align:left; padding:12px 16px; border-bottom:1px solid var(--linje-blød); font-size:14px; }
-  th{
-    font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--dæmpet);
-    font-weight:700; white-space:nowrap; background:#f8f1e7;
-  }
-  tbody tr{ transition:background .12s; }
-  tbody tr:hover{ background:#f8f1e7; }
-  tbody tr:last-child td{ border-bottom:0; }
-  td.dæmp{ color:var(--dæmpet); }
-  td.tal-h,th.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
-  .prik{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--god); margin-right:7px; vertical-align:1px; }
-  .prik.ude{ background:var(--dæmpet); }
-
-  .tomt{ color:var(--dæmpet); font-size:14px; padding:30px 4px; text-align:center; }
-  .advarsel{
-    background:#f7efe4; border:1px solid #e3d2bd; border-radius:14px;
-    padding:15px 17px; font-size:14px; color:var(--gran); margin-bottom:22px; line-height:1.6;
-  }
-  .advarsel b{ font-weight:700; }
-  .advarsel code{ font-family:var(--skrift-kode); font-size:12.5px; }
-
-  /* ---------- SMÅ SKÆRME ----------
-     Oliivia retter tekster fra det, hun har ved hånden. Fanerne bliver
-     derfor klæbende hele vejen ned — skal man fra "Tekster" til "Ture"
-     efter at have rullet gennem tre hundrede linjer, skal man ikke
-     rulle op igen først. */
-  @media (max-width:860px){
-    #rum{ grid-template-columns:minmax(0,1fr); }
-
-    /* Skinnen flytter NED og bliver en bundbjaelke - samme sted og samme
-       form som appens egen, saa de to foles ens at bruge. */
-    .skinne{
-      position:fixed; left:0; right:0; bottom:0; top:auto;
-      height:auto; z-index:40;
-      flex-direction:row; align-items:center;
-      padding:6px 8px calc(6px + env(safe-area-inset-bottom));
-      border-right:0; border-top:1px solid var(--linje);
-      background:rgba(252,248,242,.96);
-      -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-    }
-    /* Maerket ud - titlen staar i browserens egen fane, og en telefon har
-       ikke plads til at gentage den. */
-    .sk-maerke{ display:none; }
-
-    /* ⚠️ "Log ud" maa IKKE skjules. Foerste udgave af den her media query
-       satte `.sk-bund{display:none}`, og saa kunne man ikke logge ud paa
-       en telefon overhovedet. En knap, der kun findes paa store skaerme,
-       er en blindgyde - ikke et design.
-       Navnet og mailen ryger derimod: de er en bekraeftelse paa, hvem man
-       er logget ind som, og det er ikke det, man mangler i en bundbjaelke. */
-    .sk-bund{
-      margin-top:0; padding:0; border-top:0; flex:0 0 auto;
-      display:flex; align-items:center;
-    }
-    .sk-hvem{ display:none; }
-    .sk-bund .knap{
-      width:auto; padding:8px 10px; font-size:11px;
-      border-color:transparent; background:none; border-radius:12px;
-    }
-    .sk-bund .knap:hover{ background:#f2e9dd; }
-
-    nav.faner{
-      flex-direction:row; width:100%; gap:2px;
-      overflow-x:auto; scrollbar-width:none;
-    }
-    nav.faner::-webkit-scrollbar{ display:none; }
-    nav.faner button{
-      flex:1 1 0; min-width:60px;
-      flex-direction:column; gap:3px; padding:7px 4px;
-      font-size:11px; text-align:center; border-radius:12px;
-    }
-    nav.faner button .ik{ width:21px; height:21px; }
-
-    /* Arket maa ikke slutte bag bundbjaelken. */
-    main{ padding:22px 16px 112px; max-width:none; }
-    h2{ font-size:20px; }
-    .udgiv-linje{ padding:11px 16px; gap:10px; }
-    .ul-tekst{ flex:1 1 100%; order:2; font-size:12.5px; }
-    .tal .felt .stor{ font-size:32px; }
-  }
-  @media (prefers-reduced-motion:reduce){
-    *{ transition:none !important; animation:none !important; }
-    .skaermkort:hover{ transform:none; }
-  }
-
-  /* =============================================================
-     LØFT 13/10 2026 — "ikke særlig lækkert at arbejde i" (Kennet)
-     =============================================================
-     Ligger SIDST og lægger sig OVENPÅ det ovenstående: kun værdier og regler,
-     ingen klasser omdøbt og ingen nye, som JavaScriptet skal kende. Fjernes
-     hele blokken, er bagrummet som før.
-
-     Fire ting:
-       1 · SKINNEN er mørk gran på skrivebordet (≥ 861 px) med logoet i lys —
-           bagrummet får en tyngde, og arbejdsfladen skiller sig tydeligere ud.
-       2 · TYPOGRAFI: sidens titel er større, kortenes overskrifter og alle
-           nøgletal står i serif (som appen), og små etiketter er versaler med
-           luft. Det giver hierarki, hvor alt før var lige stort.
-       3 · KORT har større hjørner, mere luft og blødere kanter; det vigtigste
-           tal (salg denne måned) er mørkt og står som sidens ankerpunkt.
-       4 · KNAPPER har en anelse dybde, så de ligner noget, man kan trykke på.
-     Telefon (≤ 860 px) er uændret, undtagen kortenes former og typografi. */
-
-  /* --- 2 · typografi, alle bredder --- */
-  .db-kort h3{ font-family:var(--skrift-display); font-size:19px; font-weight:600; letter-spacing:-.005em; }
-  .db-under{ font-size:13px; margin:4px 0 14px; }
-  .db-felt .navn{ font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--dæmpet); }
-  .db-felt .vaerdi{ font-family:var(--skrift-display); font-weight:600; margin-top:10px; letter-spacing:-.01em; }
-  .db-mini .t{ font-family:var(--skrift-display); font-weight:600; }
-  .db-h4{ font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--dæmpet); }
-
-  /* --- 3 · kort --- */
-  .db-kort, .db-felt, .bruger-boks, .rulle{ border-color:rgba(74,36,23,.09); border-radius:20px; }
-  .db-kort{ padding:22px 24px 18px; }
-  .db-felt{ padding:20px 22px; }
-  .db-status{ border-radius:18px; border-left-width:4px; padding:16px 18px; }
-  .db-mini > div{ border-radius:14px; }
-  .tur, .skaerm-flok{ border-radius:16px; }
-
-  /* Sidens ankerpunkt: det første nøgletal (salg denne måned). */
-  .db-felt.helt{
-    background:linear-gradient(150deg,#5c2e1f 0%,#3a1a10 100%);
-    border-color:transparent; box-shadow:var(--løft-hævet);
-  }
-  .db-felt.helt .navn, .db-felt.helt .note{ color:#dcc3b3; }
-  .db-felt.helt .vaerdi{ color:#fff8ef; }
-
-  /* --- Træk kortene rundt (13/10) --- */
-  .db-top-knapper{ display:flex; gap:8px; flex:0 0 auto; align-items:flex-start; }
-  .db-kolonner .db-to{ display:contents; }
-  .db-kort{ position:relative; }
+  /* --- Træk kortene rundt (Kennet 13/10) --- */
   .db-greb{
     position:absolute; top:4px; left:50%; transform:translateX(-50%);
     width:56px; height:18px; border:0; background:transparent; border-radius:9px;
     cursor:grab; touch-action:none; opacity:0; transition:opacity .15s, background .15s;
     display:flex; align-items:center; justify-content:center; padding:0;
   }
-  .db-greb::before{ content:''; width:30px; height:4px; border-radius:2px; background:var(--dæmpet); opacity:.55; }
+  .db-greb::before{ content:''; width:30px; height:4px; border-radius:2px; background:var(--tekst-2); opacity:.55; }
   .db-kort:hover .db-greb, .db-greb:focus-visible{ opacity:1; }
-  .db-greb:hover{ background:#f2e9dd; }
+  .db-greb:hover{ background:var(--flade-2); }
   .db-greb:active{ cursor:grabbing; }
   @media (hover:none){ .db-greb{ opacity:.7; } }
   .db-kort.traekkes{
@@ -990,53 +691,330 @@
     box-shadow:var(--løft-hævet), 0 20px 44px rgba(74,36,23,.24);
   }
   .db-kort.traekkes .db-greb{ opacity:1; }
-  .db-faldlinje{ position:fixed; height:4px; border-radius:2px; background:var(--rav); z-index:60; pointer-events:none; box-shadow:0 0 0 3px rgba(142,67,51,.18); }
+  .db-faldlinje{ position:fixed; height:4px; border-radius:2px; background:var(--accent); z-index:60; pointer-events:none; box-shadow:0 0 0 3px rgba(142,67,51,.18); }
   body.traekker{ user-select:none; -webkit-user-select:none; cursor:grabbing; }
 
-  /* --- 4 · knapper --- */
-  .knap{ border-radius:12px; box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 1px 2px rgba(74,36,23,.2); }
-  .knap.rolig, .knap.fare{ box-shadow:none; }
-  .knap.lille{ border-radius:10px; }
-  #udgiv{ box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 2px 8px rgba(232,147,90,.4); border-radius:12px; font-weight:700; }
+  /* ---------- BEREDSKAB OG BRUDLOG (2.7) ---------- */
+  .brud-trin{ margin:0 0 10px 18px; font-size:14px; line-height:1.6; }
+  .brud-trin li{ margin-bottom:4px; }
+  .brud-form{ margin-top:14px; padding:4px 18px 18px; box-shadow:none; }
+  .brud-kort{ margin-top:12px; padding:14px 16px; }
+  .brud-kort .brud-top{ font-size:13px; color:var(--tekst-2); margin-bottom:4px; }
+  .brud-kort .brud-hvad{ font-size:15px; line-height:1.5; margin-bottom:6px; overflow-wrap:anywhere; }
+  .brud-kort .brud-status{ font-size:13px; margin-bottom:8px; }
+  .brud-kort .brud-status.frist{ color:var(--fejl); font-weight:600; }
 
-  /* --- 1 · skrivebord: mørk skinne, rummeligere ark --- */
+  /* ---------- VÆLG PLACERING (17/9) ---------- */
+  .placering{
+    background:var(--flade-2); border:1px solid var(--skille);
+    border-radius:14px; padding:14px 16px 16px; margin-bottom:14px;
+  }
+  .pl-titel{ margin-bottom:9px; }
+  .pl-linje{ display:flex; gap:9px; flex-wrap:wrap; align-items:center; }
+  .pl-linje input[type=search]{ flex:1 1 220px; min-width:0; }
+  .pl-linje .knap{ flex:0 0 auto; }
+  .pl-forslag{ display:flex; flex-direction:column; gap:5px; margin-top:9px; }
+  .pl-forslag-knap{
+    text-align:left; background:var(--flade); border:1px solid var(--kant);
+    border-radius:var(--r-lille); padding:9px 12px; font-size:14px; color:var(--tekst);
+  }
+  .pl-forslag-knap:hover{ border-color:var(--accent); }
+  .pl-status{ font-size:13px; color:var(--tekst-2); margin-top:8px; line-height:1.5; }
+  .pl-status.god{ color:var(--god); }
+  .pl-status.fejl{ color:var(--fejl); }
+  /* Kortet: til stederne UDEN adresse. */
+  .pl-kort{
+    height:260px; margin-top:11px; border-radius:12px; overflow:hidden;
+    border:1px solid var(--kant); background:#e9ddcf;
+  }
+  .pl-kort .leaflet-container{ height:100%; width:100%; background:#e9ddcf; font:inherit; }
+  /* Nålen, tegnet i CSS: Leaflets egne markørbilleder ligger i en mappe, vi ellers skulle slæbe med. */
+  .pl-naal{
+    width:17px; height:17px; border-radius:50% 50% 50% 2px; transform:rotate(-45deg);
+    background:var(--accent); border:2.5px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.4);
+  }
+  .pl-kort-hint{ font-size:12px; color:var(--tekst-2); margin-top:7px; line-height:1.5; }
+
+  /* ---------- NØGLETAL (ældre fliser) ---------- */
+  .tal{ display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-bottom:30px; }
+  .tal .felt{ padding:20px 20px 18px; }
+  .tal .felt .stor{
+    font-family:var(--skrift-display); font-size:32px; font-weight:600; line-height:1.05;
+    letter-spacing:-.01em; color:var(--tekst); font-variant-numeric:tabular-nums lining-nums;
+  }
+  .tal .felt .navn{ font-size:13px; color:var(--tekst-2); margin-top:7px; font-weight:600; }
+  .tal .felt .note{ font-size:12px; color:var(--tekst-2); margin-top:8px; line-height:1.45; }
+
+  /* ---------- VÆRKTØJSLINJE ---------- */
+  .værktøjslinje{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:20px; }
+  .værktøjslinje input[type=search]{ flex:1 1 220px; max-width:380px; }
+  .værktøjslinje select{ width:auto; }
+  .tæller{ font-size:13px; color:var(--tekst-2); margin-left:auto; font-variant-numeric:tabular-nums; }
+
+  /* ---------- SKÆRMENE (Tekster, 13/9: to trin - vælg skærmen, ret teksterne) ---------- */
+  .skaerm-flok{ margin-bottom:30px; }
+  .skaerm-flok > h3{ margin-bottom:4px; }
+  .skaerm-flok > p.om{ color:var(--tekst-2); font-size:13px; margin:0 0 12px; max-width:66ch; }
+  .skaermliste{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+  .skaermkort{
+    display:flex; align-items:flex-start; gap:12px; text-align:left; width:100%;
+    padding:16px 18px; color:inherit;
+    transition:border-color .15s, box-shadow .15s, transform .12s;
+  }
+  .skaermkort:hover{ border-color:var(--accent); box-shadow:var(--løft-hævet); transform:translateY(-1px); }
+  .skaermkort .krop{ flex:1 1 auto; min-width:0; }
+  .skaermkort .navn{ font-weight:600; font-size:15px; display:block; color:var(--tekst); }
+  .skaermkort .om{ color:var(--tekst-2); font-size:13px; margin-top:4px; line-height:1.5; }
+  /* Hedder .antal og ikke .tal: .tal er nøgletalsfliserne (display:grid). */
+  .skaermkort .antal{
+    display:block; flex:0 0 auto; font-size:12px; color:var(--tekst-2);
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+    background:var(--flade-2); border:1px solid var(--kant); border-radius:999px; padding:2px 10px; font-weight:600;
+  }
+  .skaermkort .antal.rettet{ background:var(--accent); border-color:var(--accent); color:#fffaf4; }
+  .skaermkort.tom .antal{ opacity:.5; }
+
+  .skaerm-hoved{ margin-bottom:20px; }
+  .tilbagelink{
+    background:none; border:0; padding:0; color:var(--tekst-2);
+    font-size:14px; font-weight:600; margin-bottom:10px;
+  }
+  .tilbagelink:hover{ color:var(--tekst); text-decoration:underline; }
+  .skaerm-hoved h3{ font-size:22px; margin:0; }
+  .skaerm-hoved .om{ color:var(--tekst-2); font-size:14px; margin:6px 0 0; max-width:66ch; line-height:1.55; }
+
+  /* ---------- TEKSTRÆKKER ---------- */
+  .gruppe{ margin-bottom:26px; }
+  .gruppe > h3{ margin-bottom:10px; padding-left:2px; }
+  .rk{ padding:16px 18px; margin-bottom:10px; }
+  .rk.rettet{ border-left:3px solid var(--accent); }
+  .rk .hoved{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .rk .nøgle{ font-family:var(--skrift-kode); font-size:12px; color:var(--tekst-2); }
+  /* Overskriften på en række er TEKSTEN, ikke nøglen. */
+  .rk .vist{ font-size:15px; font-weight:600; line-height:1.45; flex:1 1 100%; color:var(--tekst); }
+  .rk .mærkat{ font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); }
+  .rk .af{ font-size:12px; color:var(--tekst-2); margin-left:auto; }
+  .rk .oprind{ font-size:13px; color:var(--tekst-2); margin-top:8px; padding-left:12px; border-left:2px solid var(--kant); line-height:1.6; }
+  .rk .oprind::before{ content:"Står i koden: "; font-weight:600; color:var(--tekst-2); }
+  .rk textarea{ margin-top:11px; min-height:54px; }
+  .rk .bund{ display:flex; align-items:center; gap:9px; margin-top:11px; min-height:32px; flex-wrap:wrap; }
+  .rk .bund .status{ font-size:13px; color:var(--tekst-2); margin-left:auto; text-align:right; }
+  .rk .bund .status.fejl{ color:var(--fejl); }
+  .rk .bund .status.god{ color:var(--god); }
+
+  /* ---------- TURE ---------- */
+  .tur{ margin-bottom:10px; overflow:hidden; }
+  .tur.skjult .navn{ color:var(--tekst-2); }
+  .tur > .linje{
+    display:flex; align-items:center; gap:12px; width:100%;
+    padding:14px 18px; background:none; border:0; text-align:left;
+    transition:background .12s;
+  }
+  .tur > .linje:hover{ background:var(--flade-2); }
+  .tur .prik{ flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--god); }
+  .tur .prik.ude{ background:var(--graa); }
+  .tur .navn{ font-weight:600; flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--tekst); }
+  .tur .smaa{ font-size:13px; color:var(--tekst-2); flex:0 0 auto; }
+  .tur .pil{ color:var(--tekst-2); font-size:12px; flex:0 0 auto; }
+  /* Telefon (13/10): navnet på sin egen linje, metadata'en under. */
+  @media (max-width:720px){
+    .tur > .linje{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 12px; align-items:center; }
+    .tur .navn{ white-space:normal; overflow:visible; text-overflow:clip; }
+    .tur .pil{ grid-column:3; grid-row:1; }
+    .tur .smaa{ grid-column:2 / 3; grid-row:2; }
+  }
+
+  .turkrop{ padding:2px 18px 18px; border-top:1px solid var(--skille); }
+  .par{ display:grid; gap:0 16px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+  .felt .hint{ font-size:12px; margin-top:5px; }
+  .afkryds{ display:flex; align-items:center; gap:9px; margin-top:16px; font-size:14px; }
+  .afkryds input{ width:18px; height:18px; accent-color:var(--tekst); flex:0 0 auto; }
+  .afkryds .hint{ font-size:13px; }
+  .turbund{
+    display:flex; align-items:center; gap:9px; margin-top:20px;
+    padding-top:16px; border-top:1px solid var(--skille); flex-wrap:wrap;
+  }
+  .turbund .status{ font-size:13px; color:var(--tekst-2); margin-left:auto; text-align:right; }
+  .turbund .status.fejl{ color:var(--fejl); }
+  .turbund .status.god{ color:var(--god); }
+  .billedliste{ font-size:13px; color:var(--tekst-2); margin-top:19px; line-height:1.85; }
+  .billedliste code{ font-family:var(--skrift-kode); font-size:12px; }
+
+  /* ---------- ARYTMI MAILS (14/10) ----------
+     Forhåndsvisningen (.mail-ramme) beholder MAILENS farver, ikke
+     bagrummets: den skal ligne den mail, kunden får. */
+  .mail-kort{ margin-bottom:12px; overflow:hidden; }
+  .mail-hoved{ display:flex; align-items:center; gap:10px; width:100%; padding:16px 18px; background:none; border:0; text-align:left; cursor:pointer; font:inherit; color:var(--tekst); }
+  .mail-hoved:hover{ background:var(--flade-2); }
+  .mail-titel{ font-weight:600; font-size:15px; flex:1 1 auto; min-width:0; }
+  .mail-rettet{ font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--accent); background:var(--flade-2); border:1px solid var(--kant); border-radius:999px; padding:1px 9px; flex:0 0 auto; }
+  .mail-rettet[hidden]{ display:none; }
+  .mail-pil{ font-size:22px; line-height:1; color:var(--tekst-2); transition:transform .15s; flex:0 0 auto; }
+  .mail-kort.åben .mail-pil{ transform:rotate(90deg); }
+  .mail-krop{ padding:2px 18px 18px; border-top:1px solid var(--skille); }
+  .mail-krop[hidden]{ display:none; }
+  .mail-kort .om{ font-size:14px; color:var(--tekst-2); line-height:1.55; margin:14px 0 4px; }
+  .mail-vejl{ font-size:13px; color:var(--tekst-2); line-height:1.5; margin:0 0 14px; }
+  .mail-emne{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .mail-emne-label{ flex:0 0 auto; }
+  .mail-emne input{ flex:1 1 auto; min-width:0; }
+  .mail-laerred[hidden]{ display:none; }
+  .mail-bjaelke{ background:var(--flade-2); border:1px solid var(--skille); border-radius:var(--r-lille); padding:11px 13px; margin-top:12px; font-size:14px; line-height:1.5; }
+  .mail-bjaelke .hint{ font-size:13px; }
+  .mail-chips{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:7px; }
+  .mail-std{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:7px; }
+  .mail-std .hint{ flex:1 1 200px; min-width:0; }
+  .mail-bund{ display:flex; gap:9px; flex-wrap:wrap; padding-top:16px; margin-top:14px; border-top:1px solid var(--skille); }
+  .mail-kort .status{ font-size:14px; color:var(--tekst-2); margin-top:11px; line-height:1.5; }
+  .mail-kort .status.fejl{ color:var(--fejl); }
+  .mail-kort .status.god{ color:var(--god); }
+  .mail-ramme{ display:block; width:100%; height:640px; border:1px solid var(--kant); border-radius:12px; background:#ECEAE3; }
+  .mail-ramme[hidden]{ display:none; }
+
+  /* ---------- BILLEDER PÅ EN TUR (17/9) ---------- */
+  .billedboks{ margin-top:20px; padding-top:16px; border-top:1px solid var(--skille); }
+  .bb-titel{ margin-bottom:10px; }
+  .billednet{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); }
+  .bb-flise{
+    position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden;
+    background:var(--flade-2); border:1px solid var(--skille);
+    /* `touch-action:none` er ikke pynt: uden den ruller browseren siden,
+       når man sætter fingeren på en flise - og så kan der aldrig trækkes. */
+    cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:box-shadow .14s, transform .14s;
+  }
+  .bb-flise:hover{ box-shadow:var(--løft); }
+  .bb-flise.traekker{
+    cursor:grabbing; opacity:.85; transform:scale(1.04);
+    box-shadow:var(--løft-hævet); border-color:var(--accent); z-index:2;
+  }
+  .bb-flise img{ pointer-events:none; width:100%; height:100%; object-fit:cover; display:block; }
+  /* De nitten gamle steder peger på filer i APPENS pakke - de kan ikke hentes herfra. */
+  .bb-flise.lokal{ border-style:dashed; }
+  .bb-ifil{
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600; color:var(--tekst-2); letter-spacing:.03em;
+  }
+  .bb-foerste{
+    position:absolute; left:6px; bottom:6px;
+    background:rgba(40,18,11,.8); color:#f8f1e7;
+    font-size:12px; font-weight:600; letter-spacing:.03em;
+    padding:1px 8px; border-radius:999px;
+  }
+  .bb-fjern{
+    position:absolute; top:5px; right:5px; width:26px; height:26px;
+    border:0; border-radius:50%; background:rgba(40,18,11,.75); color:#fff;
+    font-size:15px; line-height:24px; text-align:center; padding:0;
+    opacity:0; transition:opacity .14s;
+  }
+  .bb-flise:hover .bb-fjern, .bb-fjern:focus-visible{ opacity:1; }
+  /* På en telefon findes der ingen hover - så skal krydset altid stå. */
+  @media (hover:none){ .bb-fjern{ opacity:1; } }
+  .bb-tom{ grid-column:1/-1; color:var(--tekst-2); font-size:14px; padding:14px 2px; }
+  .bb-linje{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-top:11px; }
+  .bb-vaelg{ cursor:pointer; }
+  .bb-vaelg.arbejder{ opacity:.55; pointer-events:none; }
+  .bb-linje .status{ font-size:13px; color:var(--tekst-2); }
+  .bb-linje .status.fejl{ color:var(--fejl); }
+  .bb-linje .status.god{ color:var(--god); }
+
+  /* ---------- TABELLEN ----------
+     min-width gælder KUN tabeller i .rulle. Før gjaldt den alle tabeller, så
+     de små "Vis som tabel" rullede sidelæns på en telefon. */
+  .rulle{ overflow-x:auto; }
+  table{ border-collapse:collapse; width:100%; }
+  .rulle table{ min-width:640px; }
+  th,td{ text-align:left; padding:12px; border-bottom:1px solid var(--skille); font-size:14px; }
+  th:first-child, td:first-child{ padding-left:18px; }
+  th:last-child, td:last-child{ padding-right:18px; }
+  th{ white-space:nowrap; letter-spacing:.05em; background:var(--flade-2); border-bottom-color:var(--kant); }
+  .db-tabel th, .db-tabel td{ padding:7px 10px; font-size:13px; }
+  tbody tr{ transition:background .12s; }
+  tbody tr:hover{ background:var(--flade-2); }
+  tbody tr:last-child td{ border-bottom:0; }
+  td.dæmp{ color:var(--tekst-2); }
+  td.tal-h,th.tal-h{ text-align:right; font-variant-numeric:tabular-nums; }
+  .prik{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--god); margin-right:7px; vertical-align:1px; }
+  .prik.ude{ background:var(--graa); }
+
+  .tomt{ color:var(--tekst-2); font-size:14px; padding:30px 4px; text-align:center; }
+  .advarsel{
+    background:var(--advar-bg); border:1px solid var(--advar-kant); border-left-width:4px; border-radius:var(--r);
+    padding:15px 18px; font-size:14px; color:var(--tekst); margin-bottom:24px; line-height:1.6;
+  }
+  .advarsel b{ font-weight:700; }
+  .advarsel code{ font-family:var(--skrift-kode); font-size:13px; }
+
+  /* ---------- SKRIVEBORDET: lidt lys i hjørnet ---------- */
   @media (min-width:861px){
     body{ background:radial-gradient(1100px 480px at 80% -6%, #fcf5ea 0%, rgba(252,245,234,0) 62%), var(--bund); }
+  }
+  /* En lille bærbar: skinnen tager 232 px, så arket får mindre margen. */
+  @media (min-width:861px) and (max-width:1100px){
+    main{ padding:30px 28px 110px; }
+    .udgiv-linje{ padding:10px 28px; }
+    .venter-liste{ padding:16px 28px 18px; }
+  }
+
+  /* ---------- TELEFONEN ----------
+     Skinnen flytter NED og bliver en bundbjælke, som appens egen. ALLE
+     punkter skal kunne ses: før havde hver knap min-width:60px og en skjult
+     vandret rulning, og Sikkerhed lå ude over kanten uden tegn på det
+     (set 15/10). Nu deler knapperne bredden. Trin 2 (fem rum) giver dem
+     mere plads. */
+  @media (max-width:860px){
+    #rum{ grid-template-columns:minmax(0,1fr); }
 
     .skinne{
-      background:linear-gradient(180deg,#4a2417 0%,#37190f 100%);
-      border-right:0; box-shadow:2px 0 28px rgba(58,26,16,.14);
-      padding:26px 16px 18px;
+      position:fixed; left:0; right:0; bottom:0; top:auto;
+      height:auto; z-index:40;
+      flex-direction:row; align-items:stretch; gap:2px;
+      padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+      background:rgba(255,253,249,.97); box-shadow:0 -1px 0 var(--kant), 0 -6px 20px rgba(74,36,23,.06);
+      -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     }
-    .sk-ord{ filter:brightness(0) invert(1); opacity:.93; }
-    .sk-under{ color:#cfb3a2; font-size:11px; letter-spacing:.16em; text-transform:uppercase; }
-    .sk-maerke{ padding-bottom:30px; }
-    nav.faner{ gap:3px; }
-    nav.faner button{ color:#ead9c9; padding:11px 12px; font-weight:550; }
-    nav.faner button .ik{ opacity:.85; }
-    nav.faner button:hover{ background:rgba(255,255,255,.08); color:#fff; }
-    nav.faner button[aria-current=page]{
-      background:#f6ede1; color:var(--gran);
-      box-shadow:0 2px 10px rgba(0,0,0,.18);
-    }
-    nav.faner button[aria-current=page] .ik{ opacity:1; }
-    .sk-bund{ border-top-color:rgba(255,255,255,.13); }
-    .sk-hvem b{ color:#f6ede1; }
-    .sk-hvem .mail{ color:#c9ac9a; }
-    .sk-bund .knap{ color:#f6ede1; border-color:rgba(255,255,255,.25); background:transparent; }
-    .sk-bund .knap:hover{ background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.4); }
+    .sk-maerke{ display:none; }
 
-    .udgiv-linje{ padding:14px 44px; background:rgba(246,237,225,.8); border-bottom-color:rgba(74,36,23,.08); }
-    main{ padding:38px 44px 110px; }
-    main:has(#fane-kunder:not([hidden])){ max-width:1120px; }
-    h2{ font-size:34px; line-height:1.12; letter-spacing:-.012em; margin-bottom:8px; }
-    .under{ font-size:15px; color:var(--dæmpet); }
-    .db-top .under{ margin-bottom:22px; }
-    .db-tal{ gap:16px; margin-bottom:20px; }
-    .db-felt.helt .vaerdi{ font-size:clamp(32px,3.2vw,44px); }
-    .db-felt .vaerdi{ font-size:clamp(26px,2.5vw,34px); }
-    .db-kolonner{ column-gap:20px; }
-    .db-kort, .db-kolonner .db-kort{ margin-bottom:20px; }
+    /* ⚠️ "Log ud" må IKKE skjules (17/9): en knap, der kun findes på store
+       skærme, er en blindgyde. På telefon står den i topbjælken (15/10), så
+       bundbjælken har plads til de fem rum. */
+    .sk-bund{ display:none; }
+    .topbjaelke{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px; padding-top:calc(10px + env(safe-area-inset-top));
+      background:var(--flade); border-bottom:1px solid var(--kant);
+    }
+    .tb-ord{ width:84px; height:auto; display:block; }
+    .tb-hvem{ margin-left:auto; font-size:13px; color:var(--tekst-2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    nav.faner{ flex-direction:row; flex:1 1 auto; min-width:0; gap:2px; }
+    nav.faner button{
+      position:relative; flex:1 1 0; min-width:0; min-height:54px;
+      flex-direction:column; justify-content:center; gap:3px; padding:6px 2px;
+      font-size:12px; font-weight:500; line-height:1.15; text-align:center; border-radius:12px;
+      color:var(--tekst-2);
+    }
+    nav.faner button:has(.n-kort) .n-lang{ display:none; }
+    nav.faner button .n-kort{ display:inline; }
+    nav.faner button .nav-tal{ position:absolute; top:3px; left:calc(50% + 6px); margin:0; min-width:18px; padding:0 5px; line-height:18px; }
+    nav.faner button .ik{ width:21px; height:21px; opacity:1; }
+    nav.faner button:hover{ background:var(--flade-2); color:var(--tekst); }
+    nav.faner button[aria-current=page]{ background:var(--flade-2); color:var(--tekst); font-weight:600; box-shadow:inset 0 0 0 1px var(--kant); }
+
+    /* Arket må ikke slutte bag bundbjælken. */
+    main{ padding:22px 16px 116px; max-width:none; }
+    h2{ font-size:24px; }
+    .udgiv-linje{ padding:10px 16px; gap:10px; min-height:0; }
+    .ul-tekst{ flex:1 1 100%; order:2; font-size:12px; }
+    .venter-liste{ padding:14px 16px 16px; position:static; }
+    input[type=email],input[type=password],input[type=search],input[type=text],input[type=tel],
+    input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=week],
+    textarea,select{ font-size:16px; }
+    .tal .felt .stor{ font-size:28px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; animation:none !important; }
+    .skaermkort:hover{ transform:none; }
   }
 </style>
 </head>
@@ -1099,12 +1077,11 @@
     man mister ikke sin plads, fordi man rullede gennem tre hundrede
     tekster. Paa telefon bliver den til en bundbjaelke, som appens egen.
 
-    ⚠️ JAVASCRIPTET ER IKKE ROERT. Det haenger fast i fire ting, og alle
-    fire staar uaendret: knapperne ligger i #faner og har data-fane,
-    sektionerne hedder #fane-<navn>, og #udgiv / #udgiv-ord /
-    #udgiv-maerke / #ud / #hvem-navn / #hvem-mail findes stadig.
-    skiftFane() bruger event-delegation med closest(), saa knapperne maa
-    gerne staa et andet sted, end de gjorde.
+    JAVASCRIPTET: knapperne ligger i #faner og har data-fane. skiftFane()
+    slaar rummet op i RUM (rum -> sektion) og viser underfanerne i Indhold.
+    #udgiv / #udgiv-ord / #udgiv-maerke / #ud / #hvem-navn / #hvem-mail
+    findes stadig. Event-delegation med closest(), saa knapperne maa staa,
+    hvor de vil.
 
     IKONERNE ER APPENS EGNE. Stierne er kopieret fra IKONER i app.js -
     hjem, blyant, kort og folk. Der gentegnes ikke noget af Kennets.
@@ -1116,6 +1093,18 @@
     mere ville vaere det samme indhold et sted til.
     Det ene, den kunne, som turene ikke kan, var at vise hvilke steder der
     MANGLER billeder. Den oplysning staar nu paa turlinjen i stedet.
+
+    FEM RUM, 15/10 (Kennet: "meget klodset og svaert at laese ... saet det
+    professionelt op"). Oversigt · Salg & Marketing · Brugere · Indhold ·
+    Drift & sikkerhed. Hver ting har ét sted: salg, funnel og Google i Salg &
+    Marketing; tekster, ture, mails og udgivelser som underfaner i Indhold;
+    driften, login-misbrug, to-faktor og brudloggen i Drift & sikkerhed.
+    Oversigt viser kun status og de fire noegletal. Udgiv staar kun i
+    Indhold - stadig ÉN knap, der sender tekster og ture samlet - og ikke
+    ved mails, der gaelder straks. Paa telefon fem punkter i bundbjaelken
+    (korte navne: Salg, Drift) og "Log ud" i en tynd topbjaelke. Rummet og
+    underfanen staar i adressen (#salg, #indhold/mails), saa en
+    genindlaesning lander, hvor man var.
   -->
   <aside class="skinne">
     <div class="sk-maerke">
@@ -1126,27 +1115,24 @@
     <nav class="faner" id="faner" aria-label="Områder">
       <button type="button" data-fane="oversigt" aria-current="page">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 11.5 12 4.5l7.5 7v7.3a1.2 1.2 0 0 1-1.2 1.2H14v-5.5h-4V20H5.7a1.2 1.2 0 0 1-1.2-1.2Z"/></svg>
-        <span>Oversigt</span>
+        <span class="n-lang">Oversigt</span>
       </button>
-      <button type="button" data-fane="tekster">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 19.2 5.4 15l9-9a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8l-9 9Z"/><path d="M13.2 7.6 16.4 10.8" opacity=".55"/></svg>
-        <span>Tekster</span>
-      </button>
-      <button type="button" data-fane="ture">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5-4.5 2v12L9 17l6 2 4.5-2V5L15 7Z"/><path d="M9 5v12M15 7v12" opacity=".5"/></svg>
-        <span>Vores ture</span>
-      </button>
-      <button type="button" data-fane="mails">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.8" y="6" width="16.4" height="12" rx="1.8"/><path d="m4.6 7.4 7.4 5.6 7.4-5.6" opacity=".6"/></svg>
-        <span>Arytmi mails</span>
+      <button type="button" data-fane="salg">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h5l1.5-3.5L10 15.5 11.5 5 13 16.5 14.5 10 16 12h6"/></svg>
+        <span class="n-lang">Salg &amp; Marketing</span><span class="n-kort">Salg</span>
       </button>
       <button type="button" data-fane="kunder">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.9-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="8.5" r="2.4" opacity=".7"/><path d="M15 13.6c2 .2 3.6 1.7 4.2 4.4" opacity=".7"/></svg>
-        <span>Brugere</span>
+        <span class="n-lang">Brugere</span>
       </button>
-      <button type="button" data-fane="sikkerhed">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6 5.6 6.2v5.3c0 4 2.6 7.6 6.4 8.9 3.8-1.3 6.4-4.9 6.4-8.9V6.2Z"/><path d="m9.3 12.3 1.9 1.9 3.5-3.7" opacity=".55"/></svg>
-        <span>Sikkerhed</span>
+      <button type="button" data-fane="indhold">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 19.2 5.4 15l9-9a2 2 0 0 1 2.8 0l.8.8a2 2 0 0 1 0 2.8l-9 9Z"/><path d="M13.2 7.6 16.4 10.8" opacity=".55"/></svg>
+        <span class="n-lang">Indhold</span>
+        <span class="nav-tal" id="nav-venter" hidden></span>
+      </button>
+      <button type="button" data-fane="drift">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+        <span class="n-lang">Drift &amp; sikkerhed</span><span class="n-kort">Drift</span>
       </button>
     </nav>
 
@@ -1160,6 +1146,13 @@
   </aside>
 
   <div class="ark">
+    <!-- TOPBJÆLKEN (telefon, 15/10). Bundbjælken har kun plads til de fem
+         rum, så kontoen og "Log ud" bor her. Log ud skjules ALDRIG (17/9). -->
+    <div class="topbjaelke">
+      <img class="tb-ord" src="../logo-2026.svg" alt="Arytmi" width="967" height="430">
+      <span class="tb-hvem" id="tb-hvem"></span>
+      <button type="button" class="knap rolig lille" id="tb-ud">Log ud</button>
+    </div>
     <!--
       UDGIVELSESLINJEN. Foer var Udgiv en lille knap mellem navnet og
       "Log ud". Alt hvad der rettes er usynligt for kunden, indtil der
@@ -1196,7 +1189,6 @@
           <p class="under" id="db-hvornaar">Henter …</p>
         </div>
         <div class="db-top-knapper">
-          <button type="button" class="knap rolig lille" id="db-nulstil" hidden>Nulstil rækkefølge</button>
           <button type="button" class="knap rolig lille" id="db-opdater">Opdater</button>
         </div>
       </div>
@@ -1205,8 +1197,24 @@
 
       <div class="db-tal" id="db-tal"></div>
 
-      <!-- Kortene. Under 1360 px ligger de under hinanden; på brede skærme
-           fordeles de i to kolonner (CSS, .db-kolonner). -->
+    </section>
+
+
+    <!-- ---------- SALG & MARKETING (15/10) ----------
+         Salget, funnelen og Google, flyttet fra Oversigt. Kortene kan trækkes
+         rundt (Kennet 13/10; flyttede med hertil 15/10). Annonceforbrug og
+         ugenoter kommer her i næste skridt (klar-til-live 3.9). -->
+    <section id="fane-salg" hidden>
+      <div class="db-top">
+        <div>
+          <h2>Salg &amp; Marketing</h2>
+          <p class="under">Salget, besøgene på funnelen og Google-søgning. Træk i stregen øverst på et kort for at flytte det.</p>
+        </div>
+        <div class="db-top-knapper">
+          <button type="button" class="knap rolig lille" id="db-nulstil" hidden>Nulstil rækkefølge</button>
+        </div>
+      </div>
+      <p class="besked fejl db-fejl" id="db-fejl-salg" hidden role="alert"></p>
       <div class="db-kolonner">
       <div class="db-kort" data-kort="salg">
         <div class="db-kort-top">
@@ -1220,6 +1228,12 @@
           </div>
         </div>
         <div class="db-graf" id="db-graf-salg"></div>
+      </div>
+
+      <div class="db-kort" data-kort="saelger">
+        <h3>Salg pr. produkt</h3>
+        <p class="db-under">Betalte ordrer i alt, inkl. moms, efter produkt.</p>
+        <div id="db-produkter"></div>
       </div>
 
       <!-- BESØG PÅ FUNNELEN (2.10, omgang 2). Vores egen tæller: visninger,
@@ -1257,43 +1271,20 @@
         </div>
         <p class="hint" id="db-gsc-tom" hidden></p>
       </div>
-
-      <div class="db-to">
-        <div class="db-kort" data-kort="nye">
-          <h3>Nye kunder pr. dag</h3>
-          <p class="db-under" id="db-nye-under"></p>
-          <div class="db-graf lav" id="db-graf-nye"></div>
-        </div>
-        <div class="db-kort" data-kort="saelger">
-          <h3>Det sælger</h3>
-          <p class="db-under">Betalte ordrer i alt, efter produkt.</p>
-          <div id="db-produkter"></div>
-        </div>
-      </div>
-
-      <div class="db-to">
-        <div class="db-kort" data-kort="drift">
-          <h3>Driften</h3>
-          <p class="db-under">Grønt er i orden. Gråt er ikke sat op endnu.</p>
-          <ul class="db-tavle" id="db-drift"></ul>
-        </div>
-        <div class="db-kort" data-kort="login">
-          <h3>Login og misbrug — seneste døgn</h3>
-          <p class="db-under">Koder på mail og invitationer. Et ramt loft er værd at kigge på.</p>
-          <div class="db-mini" id="db-login"></div>
-        </div>
-      </div>
       </div><!-- /db-kolonner -->
-
-      <h2 style="margin-top:34px">Seneste udgivelser</h2>
-      <p class="under">Hver gang indholdet sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
-      <div class="rulle">
-        <table>
-          <thead><tr><th>Nr.</th><th>Hvornår</th><th>Af</th><th class="tal-h">Tekster</th><th class="tal-h">Ture</th><th></th></tr></thead>
-          <tbody id="historik"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
-        </table>
-      </div>
     </section>
+
+    <!-- ---------- INDHOLD (15/10) ----------
+         Tekster, ture, mails og udgivelser som underfaner. Udgiv-linjen vises
+         kun her (CSS på body[data-rum]) - og ikke ved mails, der gælder straks. -->
+    <section id="fane-indhold" hidden>
+      <h2>Indhold</h2>
+      <div class="underfaner" id="underfaner" role="tablist" aria-label="Indhold">
+        <button type="button" role="tab" data-under="tekster" aria-selected="true">Tekster</button>
+        <button type="button" role="tab" data-under="ture" aria-selected="false">Vores ture</button>
+        <button type="button" role="tab" data-under="mails" aria-selected="false">Arytmi mails</button>
+        <button type="button" role="tab" data-under="udgivelser" aria-selected="false">Udgivelser</button>
+      </div>
 
     <!-- ---------- TEKSTER ---------- -->
     <section id="fane-tekster" hidden>
@@ -1343,10 +1334,23 @@
       <h2>Arytmi mails</h2>
       <p class="under">
         Teksten i de mails, Arytmi sender af sig selv. Du retter ordene; designet sidder fast.
-        Kode- og kodeordsmailen (login) kan ikke rettes her.
+        En rettelse gælder straks og skal ikke udgives. Kode- og kodeordsmailen (login) kan ikke rettes her.
       </p>
       <div id="mails"><p class="tomt">Henter …</p></div>
     </section>
+
+    <!-- ---------- UDGIVELSER (flyttet fra Oversigt 15/10) ---------- -->
+    <section id="fane-udgivelser" hidden>
+      <h2>Udgivelser</h2>
+      <p class="under">Hver gang indholdet sendes ud, lægges der en linje her. Linjen kan ikke rettes bagefter — heller ikke af en administrator.</p>
+      <div class="rulle">
+        <table>
+          <thead><tr><th>Nr.</th><th>Hvornår</th><th>Af</th><th class="tal-h">Tekster</th><th class="tal-h">Ture</th><th></th></tr></thead>
+          <tbody id="historik"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    </section><!-- /fane-indhold -->
 
     <!-- ---------- KUNDER ---------- -->
     <section id="fane-kunder" hidden>
@@ -1371,6 +1375,13 @@
           <tbody id="kunder"><tr><td colspan="6" class="tomt">Henter …</td></tr></tbody>
         </table>
       </div>
+
+      <!-- Nye kunder pr. dag (flyttet fra Oversigt 15/10). -->
+      <div class="db-kort db-efter">
+        <h3>Nye kunder pr. dag</h3>
+        <p class="db-under" id="db-nye-under"></p>
+        <div class="db-graf lav" id="db-graf-nye"></div>
+      </div>
     </section>
 
     <!-- =========================================================
@@ -1389,12 +1400,26 @@
          siden af — et kamera, der ikke vil fokusere, må ikke kunne
          spærre nogen ude fra sin egen tilmelding. -->
     <section id="fane-sikkerhed" hidden>
-      <h2>Sikkerhed</h2>
-      <p class="under">
-        To-faktor beskytter det, der er farligt: brugerlisten, adgange, roller, sletning
-        og udgivelse. At <em>læse</em> teksterne og turene kræver den ikke — en tom skærm
-        forklarer ingenting, men en afvist gemning kan vi sætte ord på.
-      </p>
+      <h2>Drift &amp; sikkerhed</h2>
+      <p class="under">Backup, test, fejl og login — og hvad vi gør, hvis noget slipper ud.</p>
+
+      <!-- Driften og login-misbrug (flyttet fra Oversigt 15/10). -->
+      <p class="besked fejl db-fejl" id="db-fejl-drift" hidden role="alert"></p>
+      <div class="db-to drift-kort">
+        <div class="db-kort">
+          <h3>Driften</h3>
+          <p class="db-under">Grønt er i orden. Gråt er ikke sat op endnu.</p>
+          <ul class="db-tavle" id="db-drift"></ul>
+        </div>
+        <div class="db-kort">
+          <h3>Login og misbrug — seneste døgn</h3>
+          <p class="db-under">Koder på mail og invitationer. Et ramt loft er værd at kigge på.</p>
+          <div class="db-mini" id="db-login"></div>
+        </div>
+      </div>
+
+      <h3 class="rum-afsnit">Sikkerhed</h3>
+      <p class="hint rum-afsnit-under">To-faktor beskytter det farlige: brugerlisten, adgange, roller, sletning og udgivelse.</p>
 
       <div class="bb-gruppe" id="mfa-status-boks">
         <h4>Din to-faktor</h4>
@@ -1484,6 +1509,8 @@
   var ture = [];
   var kunder = [];
   var sidsteUdgivelse = null;
+  /* Ventetallet regnes FRA den seneste udgivelse - før den er hentet, kendes det ikke. */
+  var udgivelserHentet = false;
   var hentet = {};
 
   // -------------------------------------------------------------
@@ -2024,7 +2051,12 @@
     /* Der logges ud på serveren OG lokalt. Kun lokalt ville lade
        opdateringstokenet leve videre i en time — det ville se ud som et
        log-ud uden at være det. */
-    kald('/auth/v1/logout', { method:'POST', body:{} }).catch(function(){});
+    /* Tokenet tages FØR glem() rydder sessionen. Før 15/10 læste kald() det
+       først bagefter - så kaldet til serveren blev aldrig sendt (granskning). */
+    var tok = session && session.token;
+    if(tok) fetch(PROJEKT_URL + '/auth/v1/logout', {
+      method:'POST', headers:{ apikey:ANON, Authorization:'Bearer ' + tok }
+    }).catch(function(){});
     glem();
   });
 
@@ -2042,41 +2074,91 @@
         mig = p;
         $('hvem-navn').textContent = p.navn || 'Administrator';
         $('hvem-mail').textContent = session.mail ? '· ' + session.mail : '';
+        $('tb-hvem').textContent = p.navn || '';
         $('login').hidden = true;
         $('rum').hidden = false;
         $('login-besked').hidden = true;
-        skiftFane('oversigt');
+        /* Rummet står i adressen (#salg, #indhold/mails), så en
+           genindlæsning - også den efter to-faktor - lander, hvor man var. */
+        var adr = String(location.hash || '').replace(/^#/, '').split('/');
+        skiftFane(adr[0] || 'oversigt', adr[1]);
+        /* Ventetallet på Udgiv skal passe fra første øjeblik - ikke først
+           når Tekster OG Ture er åbnet (fejlen indtil 15/10). */
+        hentUdgivelser();
+        if(!hentet.tekster){ hentet.tekster = true; hentTekster(); }
+        if(!hentet.ture){    hentet.ture = true;    hentTure(); }
       });
   }
 
   // -------------------------------------------------------------
   // Fanerne
   // -------------------------------------------------------------
-  function skiftFane(navn){
-    var knapper = $('faner').querySelectorAll('button');
+  /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', drift:'fane-sikkerhed' };
+  var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
+  var valgtUnder = 'tekster';
+
+  /* Kun et rum og en underfane i adressen - aldrig persondata. replaceState,
+     så tilbage-knappen ikke skal igennem hver fane, man har kigget i. */
+  function skrivAdresse(navn){
+    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '');
+    if(location.hash !== h){ try { history.replaceState(null, '', h); } catch(e){} }
+  }
+
+  function visUnder(u){
+    if(UNDER.indexOf(u) < 0) u = valgtUnder;
+    valgtUnder = u;
+    UNDER.forEach(function(x){ $('fane-' + x).hidden = x !== u; });
+    $('underfaner').querySelectorAll('button[data-under]').forEach(function(b){
+      b.setAttribute('aria-selected', String(b.getAttribute('data-under') === u));
+    });
+    document.body.setAttribute('data-under', u);
+    if(u === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
+    if(u === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
+    if(u === 'mails'   && !hentet.mails){   hentet.mails = true;   hentMails(); }
+    if(u === 'udgivelser'){ hentUdgivelser(); }
+  }
+
+  function skiftFane(navn, under){
+    if(!RUM[navn]) navn = 'oversigt';
+    var knapper = $('faner').querySelectorAll('button[data-fane]');
     for(var i=0;i<knapper.length;i++){
-      var er = knapper[i].getAttribute('data-fane') === navn;
-      if(er) knapper[i].setAttribute('aria-current','page');
+      if(knapper[i].getAttribute('data-fane') === navn) knapper[i].setAttribute('aria-current','page');
       else knapper[i].removeAttribute('aria-current');
-      $('fane-' + knapper[i].getAttribute('data-fane')).hidden = !er;
     }
-    if(navn === 'oversigt'){ hentOversigt(); }
-    if(navn === 'tekster' && !hentet.tekster){ hentet.tekster = true; hentTekster(); }
-    if(navn === 'ture'    && !hentet.ture){    hentet.ture = true;    hentTure(); }
+    Object.keys(RUM).forEach(function(r){ $(RUM[r]).hidden = r !== navn; });
+    /* Udgiv-linjen vises kun i Indhold (CSS på body[data-rum]). */
+    document.body.setAttribute('data-rum', navn);
+    if(navn === 'indhold') visUnder(under || valgtUnder);
+    else document.body.removeAttribute('data-under');
+    /* Tallene i Oversigt, Salg & Marketing og Drift kommer fra samme kald
+       (edge-funktionen overblik) og hentes, hver gang et af rummene åbnes. */
+    if(navn === 'oversigt' || navn === 'salg' || navn === 'drift' || (navn === 'kunder' && !overblik)){ hentOverblik(); }
     if(navn === 'kunder'  && !hentet.kunder){  hentet.kunder = true;  hentKunder(); }
-    if(navn === 'mails'   && !hentet.mails){   hentet.mails = true;   hentMails(); }
+    tegnGrafer();
+    skrivAdresse(navn);
+    window.scrollTo(0, 0);
     /* Sikkerhed hentes HVER gang og caches ikke i `hentet`. Tilstanden
        kan have flyttet sig, siden man sidst kiggede — man kan have slået
        to-faktor til i en anden fane eller på en anden maskine — og en
        skærm, der påstår "ikke slået til" om en konto, der har den, er
        værre end et kald for meget. */
-    if(navn === 'sikkerhed'){ tegnSikkerhed(); hentBrud(); }
+    if(navn === 'drift'){ tegnSikkerhed(); hentBrud(); }
   }
 
   $('faner').addEventListener('click', function(e){
     var k = e.target.closest('button[data-fane]');
     if(k) skiftFane(k.getAttribute('data-fane'));
   });
+  $('underfaner').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-under]');
+    if(!b) return;
+    visUnder(b.getAttribute('data-under'));
+    skrivAdresse('indhold');
+    window.scrollTo(0, 0);
+  });
+  /* "Log ud" i topbjælken (telefon) gør det samme som den i skinnen. */
+  $('tb-ud').addEventListener('click', function(){ $('ud').click(); });
 
   // -------------------------------------------------------------
   // Brudloggen (klar-til-live 2.7, 0054)
@@ -2275,9 +2357,9 @@
 
   /* LYSET: status er altid farve + tegn + ord, aldrig farve alene. */
   function lys(slags){
-    var farve = { god:'#4f6b4a', advar:'#b07a16', fejl:'#9c4221', graa:'#b9a898' }[slags];
+    /* Farven kommer fra CSS (.lys-god osv.), så den følger paletten. */
     var s = svg('svg', { viewBox:'0 0 20 20', 'class':'db-lys', 'aria-hidden':'true' });
-    s.appendChild(svg('circle', { cx:10, cy:10, r:9, fill:farve }));
+    s.appendChild(svg('circle', { cx:10, cy:10, r:9, 'class':'lys-' + slags }));
     var tegn = { god:'M6 10.4l2.6 2.6L14 7.6', fejl:'M7 7l6 6M13 7l-6 6', advar:'M10 5.5v5.5M10 14.2v.1', graa:'M6.5 10h7' }[slags];
     s.appendChild(svg('path', { d:tegn, stroke:'#fff', 'stroke-width':'2', 'stroke-linecap':'round', 'stroke-linejoin':'round', fill:'none' }));
     return s;
@@ -2324,7 +2406,7 @@
         søjle = svg('rect', { 'class':'soejle', x:x, y:y, width:tyk, height:h });
       }
       ramt.addEventListener('mouseenter', function(){
-        tip.innerHTML = '';
+        tøm(tip);
         tip.appendChild(lav('b', null, langDato(p.dag)));
         tip.appendChild(document.createElement('br'));
         tip.appendChild(document.createTextNode(valg.tip(p)));
@@ -2385,8 +2467,19 @@
   function hentOverblik(){
     $('db-hvornaar').textContent = 'Henter …';
     json('/functions/v1/overblik', { method:'POST', body:{} })
-      .then(function(d){ overblik = d; tegnOverblik(); })
+      .then(function(d){
+        overblik = d;
+        $('db-fejl-salg').hidden = true; $('db-fejl-drift').hidden = true;
+        tegnOverblik();
+      })
       .catch(function(f){
+        /* Tallene i Salg & Marketing og Drift kommer fra samme kald. Fejler
+           det, skal det stå dér - og står der gamle tal, skal det siges. */
+        var hvorfor = f && f.kode === 'mfa_paakraevet'
+          ? 'log ind igen og bekræft med din engangskode.' : forklar(f);
+        var tekst = (overblik ? 'Tallene kunne ikke opdateres, så de viste kan være forældede: ' : 'Tallene kunne ikke hentes: ') + hvorfor;
+        vis($('db-fejl-salg'), tekst, 'fejl');
+        vis($('db-fejl-drift'), tekst, 'fejl');
         $('db-hvornaar').textContent = '';
         var st = $('db-status');
         tøm(st); st.hidden = false; st.className = 'db-status fejl';
@@ -2433,7 +2526,7 @@
     tx.appendChild(lav('b', null, slags === 'god' ? 'Alt kører'
       : (fejl.length + advar.length) + (fejl.length + advar.length === 1 ? ' ting kræver' : ' ting kræver') + ' din opmærksomhed'));
     if(slags === 'god'){
-      tx.appendChild(document.createTextNode('Ingen fejl i cron, backup, mails eller login. Det, der ikke er sat op endnu, står gråt under Driften.'));
+      tx.appendChild(document.createTextNode('Ingen fejl i cron, backup, mails eller login. Det, der ikke er sat op endnu, står gråt under Drift & sikkerhed → Driften.'));
     } else {
       var ul = lav('ul');
       fejl.concat(advar).forEach(function(t){ ul.appendChild(lav('li', null, t)); });
@@ -2448,8 +2541,6 @@
     tal.appendChild(dbFelt('Salg i dag', kr(sa.i_dag && sa.i_dag.oere), (sa.i_dag && sa.i_dag.antal || 0) + ' ordrer · ' + kr(sa.syv_dage && sa.syv_dage.oere) + ' på 7 dage'));
     tal.appendChild(dbFelt('Aktive brugere', tusind(ku.aktive || 0), (ku.nye_30d || 0) + ' nye konti de seneste 30 dage'));
     tal.appendChild(dbFelt('Udløber inden 30 dage', tusind(ku.udloeber_30d || 0), 'adgange, der skal fornyes'));
-
-    tegnGrafer();
 
     // --- Besøg på funnelen (omgang 2) ---
     var bs = d.besoeg || {};
@@ -2616,24 +2707,30 @@
       c.appendChild(lav('div','n', r[0]));
       lo.appendChild(c);
     });
+
+    /* Til sidst: først nu er alle bokse vist eller skjult, så graferne kan måles. */
+    tegnGrafer();
   }
 
   /* Graferne tegnes for sig: de skal kunne tegnes om, når perioden skiftes
      eller vinduet ændrer bredde, uden et nyt kald til serveren. */
   function tegnGrafer(){
-    var d = overblik; if(!d || $('fane-oversigt').hidden) return;
+    /* Hver graf tegnes kun, når den kan ses: en skjult graf har ingen
+       bredde at regne med. skiftFane() tegner igen, når rummet åbnes. */
+    var d = overblik; if(!d) return;
+    var synlig = function(el){ return !!el && el.offsetParent !== null; };
     var salg = (d.salg && d.salg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.oere, antal:p.antal }; });
     var sumKr = salg.reduce(function(n, p){ return n + p.v; }, 0);
     var sumAntal = salg.reduce(function(n, p){ return n + p.antal; }, 0);
     $('db-salg-under').textContent = kr(sumKr) + ' på ' + sumAntal + ' ordrer de seneste ' + dbDage + ' dage.';
-    søjler($('db-graf-salg'), salg, {
+    if(synlig($('db-graf-salg'))) søjler($('db-graf-salg'), salg, {
       akse: function(v){ return v === 0 ? '0' : tusind(v / 100); },
       tip: function(p){ return p.antal + (p.antal === 1 ? ' ordre · ' : ' ordrer · ') + kr(p.v); },
       kolonne: 'Salg',
       tom: 'Ingen salg i perioden endnu.',
       aria: function(){ return 'Salg pr. dag de seneste ' + dbDage + ' dage: ' + kr(sumKr) + ' i alt.'; }
     });
-    if(d.besoeg && d.besoeg.status === 'ok'){
+    if(d.besoeg && d.besoeg.status === 'ok' && synlig($('db-graf-besoeg'))){
       var bes = (d.besoeg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.salgsside, betaling:p.betaling, tak:p.tak }; });
       søjler($('db-graf-besoeg'), bes, {
         akse: function(v){ return tusind(v); },
@@ -2646,7 +2743,7 @@
     var nye = (d.kunder && d.kunder.nye_pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.antal }; });
     var sumNye = nye.reduce(function(n, p){ return n + p.v; }, 0);
     $('db-nye-under').textContent = sumNye + ' nye konti de seneste ' + dbDage + ' dage.';
-    søjler($('db-graf-nye'), nye, {
+    if(synlig($('db-graf-nye'))) søjler($('db-graf-nye'), nye, {
       akse: function(v){ return tusind(v); },
       tip: function(p){ return p.v + (p.v === 1 ? ' ny konto' : ' nye konti'); },
       kolonne: 'Nye konti',
@@ -2807,12 +2904,13 @@
     nulstil.addEventListener('click', function(){ anvend(STANDARD); gem(STANDARD); tegnGrafer(); });
   })();
 
-  function hentOversigt(){
-    hentOverblik();
-
+  /* Udgivelseshistorikken (Indhold -> Udgivelser) og den seneste udgivelse,
+     som ventetallet regnes fra. Hentes ved login og efter hver udgivelse. */
+  function hentUdgivelser(){
     json('/rest/v1/indhold_udgivelse?select=id,udgivet_kl,antal,antal_ture,profiler(navn)&order=id.desc&limit=10')
       .then(function(rk){
         sidsteUdgivelse = (rk && rk[0]) || null;
+        udgivelserHentet = true;
         var krop = $('historik');
         tøm(krop);
         if(!rk || !rk.length){
@@ -2866,7 +2964,7 @@
     knap.disabled = true;
     knap.textContent = 'Sender …';
     json('/functions/v1/udgiv-tekster', { method:'POST', body:{ rul_tilbage:id } })
-      .then(function(){ hentOversigt(); })
+      .then(function(){ hentUdgivelser(); })
       .catch(function(f){
         knap.disabled = false;
         knap.textContent = 'Send ud igen';
@@ -2892,8 +2990,10 @@
 
   function opdaterUdgivMærke(){
     var m = $('udgiv-mærke');
-    var n = (tekster.length || ture.length) ? venter() : 0;
+    var n = (udgivelserHentet && (tekster.length || ture.length)) ? venter() : 0;
     if(n > 0){ m.textContent = n; m.hidden = false; } else { m.hidden = true; }
+    var nv = $('nav-venter');
+    if(n > 0){ nv.textContent = n; nv.hidden = false; nv.title = n + ' rettelser venter på at blive udgivet'; } else { nv.hidden = true; }
     $('ul-se').hidden = !(n > 0);
     if(!(n > 0)){ $('venter-liste').hidden = true; $('ul-se').setAttribute('aria-expanded','false'); }
     else if(!$('venter-liste').hidden) tegnVenter();
@@ -3005,7 +3105,7 @@
         knap.disabled = false;
         if(hentet.tekster) hentTekster();
         if(hentet.ture) hentTure();
-        hentOversigt();
+        hentUdgivelser();
         window.alert('Udgivet.\n\n' + s.antal + (s.antal === 1 ? ' rettet tekst' : ' rettede tekster')
           + ' og ' + s.antal_ture + (s.antal_ture === 1 ? ' tur' : ' ture') + ' er ude nu.');
       })
@@ -3032,7 +3132,7 @@
       : '\n\nDet sender både teksterne og turene.';
     if(!window.confirm('Udgive alt indhold?' + hvad
       + '\n\nDet bliver synligt i appen, næste gang den åbnes. Du kan altid sende en '
-      + 'tidligere udgivelse ud igen fra Oversigt.')) return;
+      + 'tidligere udgivelse ud igen under Indhold → Udgivelser.')) return;
     udgiv({});
   });
 
