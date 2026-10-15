@@ -1757,7 +1757,7 @@
        midt i et engangskode-trin efterlade kodefeltet på skærmen OG et
        faktor-id i hukommelsen — og næste login ville se ud som om den
        allerede var halvvejs igennem. */
-    ventendeFaktor = null;
+    ventendeFaktor = null; ventendeFaktorer = [];
     tilmeldFaktor = null;
     $('mfa-kode').value = '';
     visKodetrin(false);
@@ -1793,6 +1793,7 @@
         var bekraeftet = faktorer.filter(function(f){ return f.status === 'verified'; });
         if(!bekraeftet.length) return start();
         ventendeFaktor = bekraeftet[0].id;
+        ventendeFaktorer = bekraeftet.map(function(f){ return f.id; });
         visKodetrin(true);
         $('mfa-kode').value = '';
         $('mfa-kode').focus();
@@ -1833,7 +1834,8 @@
     $('mfa-form').hidden = !paa;
   }
 
-  var ventendeFaktor = null;   // faktoren, der skal bevises ved login
+  var ventendeFaktor = null;   // faktoren, der skal bevises ved login (den første)
+  var ventendeFaktorer = [];   // ALLE bekræftede faktorer: koden prøves mod dem i tur og orden
   var tilmeldFaktor = null;    // faktoren, der er ved at blive tilmeldt
 
   function hentFaktorer(){
@@ -1867,6 +1869,18 @@
       .then(function(d){ gemSession(d); return d; });
   }
 
+  /* Har kontoen flere bekræftede faktorer (fx gammel og ny telefon), ved vi ikke, hvilken app koden
+     kommer fra. Prøv dem i tur og orden; den første, der siger ja, giver aal2-sessionen. */
+  function besvarEnAfFaktorerne(ider, kode){
+    var sidsteFejl = null;
+    return ider.reduce(function(kaede, id){
+      return kaede.catch(function(f){
+        if(f) sidsteFejl = f;
+        return besvarFaktor(id, kode);
+      });
+    }, Promise.reject(null)).catch(function(f){ throw f || sidsteFejl || new Error('Koden passer ikke. Prøv den næste.'); });
+  }
+
   $('mfa-form').addEventListener('submit', function(e){
     e.preventDefault();
     var knap = $('mfa-knap');
@@ -1878,7 +1892,7 @@
     knap.disabled = true;
     knap.textContent = 'Bekræfter …';
 
-    besvarFaktor(ventendeFaktor, kode).then(function(){
+    besvarEnAfFaktorerne(ventendeFaktorer.length ? ventendeFaktorer : [ventendeFaktor], kode).then(function(){
       visKodetrin(false);
       return start();
     }).catch(function(f){
@@ -1914,17 +1928,16 @@
           ? 'To-faktor er slået til, og den er bekræftet i den her session.'
           : 'To-faktor er slået til, men IKKE bekræftet i den her session — '
             + 'brugerlisten og alt der gemmer vil blive afvist. Log ud og ind igen.';
-        knapper.appendChild(knapFor('Slå to-faktor fra', 'knap fare lille', function(){
-          if(!window.confirm('Slå to-faktor fra?\n\nSå er et kodeord igen det eneste, '
-            + 'der står mellem en fremmed og brugerlisten.')) return;
-          kald('/auth/v1/factors/' + bekraeftet[0].id, { method:'DELETE' })
-            .then(function(r){
-              if(!r.ok) throw new Error('Kunne ikke slå den fra.');
-              vis($('mfa-besked'), 'To-faktor er slået fra.', 'god');
-              tegnSikkerhed();
-            })
-            .catch(function(f){ vis($('mfa-besked'), f.message, 'fejl'); });
-        }));
+        /* TO-FAKTOR KAN IKKE SLÅS FRA HERFRA (14/10, Kennet: "hvis man er hacker, kan man bare slå
+           det fra, hvis man kommer ind"). En bekræftet faktor kan ikke slettes af appen eller API'et
+           - databasen afviser det (0060). Den fjernes kun med SQL i Supabase (supabase/GENSKAB.md,
+           "Skift eller mist telefonen"). Skifter du telefon, TILFØJER du den nye her, mens den gamle
+           virker; login prøver alle bekræftede faktorer. */
+        knapper.appendChild(knapFor('Tilføj en ekstra faktor (ny telefon)', 'knap lille', startTilmelding));
+        knapper.appendChild(lav('p', 'hint',
+          'To-faktor kan ikke slås fra herfra, og det er med vilje: så kan en, der kommer ind, heller ikke '
+          + 'slå den fra. Skifter eller mister du telefonen, så tilføj den nye her (mens den gamle virker), '
+          + 'eller se "Skift eller mist telefonen" i supabase/GENSKAB.md.'));
       } else {
         status.textContent = 'To-faktor er ikke slået til på din konto.';
         knapper.appendChild(knapFor('Slå to-faktor til', 'knap lille', startTilmelding));
@@ -1950,7 +1963,7 @@
     }).then(function(){
       return kald('/auth/v1/factors', {
         method:'POST',
-        body:{ factor_type:'totp', friendly_name:'Bagrummet ' + new Date().getFullYear() }
+        body:{ factor_type:'totp', friendly_name:'Bagrummet ' + new Date().toISOString().slice(0, 16).replace('T', ' ') }
       });
     }).then(function(r){
       return r.json().then(function(d){
@@ -4831,6 +4844,7 @@
         var bekraeftet = faktorer.filter(function(f){ return f.status === 'verified'; });
         if(!bekraeftet.length) return start();
         ventendeFaktor = bekraeftet[0].id;
+        ventendeFaktorer = bekraeftet.map(function(f){ return f.id; });
         visKodetrin(true);
         $('login').hidden = false;
         $('mfa-kode').focus();
