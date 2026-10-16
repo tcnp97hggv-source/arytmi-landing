@@ -726,6 +726,7 @@
   #ann-liste .sm-note{ display:block; font-size:12px; color:var(--tekst-2); margin-top:2px; }
   #ann-liste td.sm-greb{ text-align:right; }
   #ann-liste td.sm-greb .knap + .knap{ margin-left:6px; }
+  #ann-liste .sm-hentet{ font-size:12px; color:var(--tekst-2); white-space:nowrap; }
   #note-tekst{ margin-top:0; }
   .note-kort{ margin-top:12px; padding:14px 16px; }
   .note-kort .note-top{ font-size:13px; color:var(--tekst-2); margin-bottom:4px; }
@@ -1413,13 +1414,14 @@
       </div><!-- /db-kolonner -->
       </div><!-- /salg-tal -->
 
-      <!-- ANNONCER (3.9 trin 3, 0065). Forbruget tastes fra Ads Manager - ingen
-           API i første udgave. Kun en bekræftet admin (RLS), som brudloggen. -->
+      <!-- ANNONCER (3.9 trin 3, 0065). Metas kampagner hentes hver nat af
+           hent-meta-annoncer (0068) og kan ikke rettes her; andet tastes i hånden.
+           Kun en bekræftet admin (RLS), som brudloggen. -->
       <div id="salg-annoncer" hidden>
         <div class="sm-top">
           <div>
             <h3>Annoncer</h3>
-            <p class="db-under">Forbruget, som det står i Ads Manager, uden moms. De seneste først.</p>
+            <p class="db-under">Forbruget uden moms, de seneste først. Metas kampagner hentes hver nat. Tast kun det, der ikke kommer derfra.</p>
           </div>
           <button type="button" class="knap lille" id="ann-ny">Registrér forbrug</button>
         </div>
@@ -2675,8 +2677,14 @@
     /* Pris pr. køb kun på et tal, der kan bære det (Oliivias regel): 5+ køb. */
     r.appendChild(lav('td', 'tal-h', a.koeb >= 5 ? kroner(Math.round(a.beloeb_oere / a.koeb)) : '—'));
     var greb = lav('td', 'sm-greb');
-    greb.appendChild(knapFor('Ret', 'knap rolig lille', function(){ åbnAnnonce(a); }));
-    greb.appendChild(knapFor('Slet', 'knap fare lille', function(){ sletAnnonce(a); }));
+    /* Hentet af hent-meta-annoncer (0068): kan ikke rettes eller slettes -
+       databasen nægter det, og næste nat ville skrive den over igen. */
+    if(a.kilde === 'meta_api'){
+      greb.appendChild(lav('span', 'sm-hentet', 'Hentet fra Meta'));
+    } else {
+      greb.appendChild(knapFor('Ret', 'knap rolig lille', function(){ åbnAnnonce(a); }));
+      greb.appendChild(knapFor('Slet', 'knap fare lille', function(){ sletAnnonce(a); }));
+    }
     r.appendChild(greb);
     return r;
   }
