@@ -706,7 +706,8 @@
 
   /* ---------- SALG & MARKETING: annoncer og ugenoter (3.9 trin 3) ---------- */
   /* Nulstil-knappen hører til tallenes kort - ikke til annoncerne. */
-  body[data-salg="annoncer"] #db-nulstil, body[data-salg="ugenoter"] #db-nulstil{ display:none; }
+  body[data-salg="annoncer"] #db-nulstil, body[data-salg="ugenoter"] #db-nulstil,
+  body[data-salg="produkter"] #db-nulstil{ display:none; }
   .sm-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
   .sm-top h3, .sm-h3{ font-size:18px; font-weight:600; }
   .sm-h3{ margin:28px 0 4px; }
@@ -730,6 +731,28 @@
   .note-kort .note-top{ font-size:13px; color:var(--tekst-2); margin-bottom:4px; }
   .note-kort .note-tekst{ font-size:15px; line-height:1.5; margin-bottom:8px; white-space:pre-wrap; overflow-wrap:anywhere; }
   .note-kort .knap + .knap{ margin-left:6px; }
+
+  /* ---------- SALG & MARKETING: produkter (3.9 trin 4) ---------- */
+  #vare-form, #vare-besked, #cf-besked, #omk-besked{ margin:0 0 16px; }
+  #gebyr-besked{ margin:14px 0 0; }
+  #vare-liste td{ white-space:nowrap; }
+  #vare-liste td.sm-kampagne{ white-space:normal; overflow-wrap:anywhere; min-width:140px; }
+  #vare-liste .sm-note{ display:block; font-size:12px; color:var(--tekst-2); margin-top:2px; }
+  #vare-liste tr.sm-arkiv td{ color:var(--tekst-2); }
+  #vare-liste td.sm-greb{ text-align:right; }
+  #vare-liste td.sm-greb .knap + .knap{ margin-left:6px; }
+  .sm-gebyr{ padding:14px 18px 18px; }
+  .sm-gebyr label{ margin-top:12px; }
+  .sm-ordre-top{ margin-top:28px; }
+  .sm-vis-alle{ margin:0 0 14px; }
+  .afkryds label{ margin:0; font-size:14px; font-weight:400; color:var(--tekst); }
+  .cf-kort .cf-navn, .omk-kort .omk-hvad{ font-size:15px; line-height:1.5; overflow-wrap:anywhere; }
+  .cf-kort .cf-ukoblet{ color:var(--fejl); font-weight:600; }
+  .cf-kort label{ margin:10px 0 0; }
+  .omk-kort .omk-mangler{ color:var(--fejl); font-size:14px; margin:4px 0 8px; overflow-wrap:anywhere; }
+  .omk-kort .omk-klar{ font-size:14px; margin:4px 0 8px; }
+  .omk-kort .omk-tal{ font-size:14px; line-height:1.6; margin:4px 0 8px; }
+  .omk-kort .brud-form{ margin-top:10px; }
 
   /* ---------- VÆLG PLACERING (17/9) ---------- */
   .placering{
@@ -1247,6 +1270,7 @@
         <button type="button" role="tab" data-salg="tal" aria-selected="true">Tal</button>
         <button type="button" role="tab" data-salg="annoncer" aria-selected="false">Annoncer</button>
         <button type="button" role="tab" data-salg="ugenoter" aria-selected="false">Ugenoter</button>
+        <button type="button" role="tab" data-salg="produkter" aria-selected="false">Produkter</button>
       </div>
       <div id="salg-tal">
       <p class="besked fejl db-fejl" id="db-fejl-salg" hidden role="alert"></p>
@@ -1354,6 +1378,60 @@
         </div>
         <h3 class="sm-h3">Tidligere noter</h3>
         <div id="note-liste"><p class="hint">Henter …</p></div>
+      </div>
+
+      <!-- PRODUKTER (3.9 trin 4, 0066). Omkostningerne pr. vare og det fælles
+           betalingsgebyr. En betalt ordre får et øjebliksbillede af tallene;
+           en ny pris rammer kun ordrer bagefter. -->
+      <div id="salg-produkter" hidden>
+        <div class="sm-top">
+          <div>
+            <h3>Varer</h3>
+            <p class="db-under">Omkostninger pr. stk. uden moms. En ny pris gælder ordrer fra nu af — de gamle beholder deres tal.</p>
+          </div>
+          <button type="button" class="knap lille" id="vare-ny">Opret vare</button>
+        </div>
+        <div id="vare-form" class="brud-form" hidden></div>
+        <div id="vare-besked" class="besked" hidden role="alert"></div>
+        <div class="rulle">
+          <table>
+            <thead><tr><th>Vare</th><th class="tal-h">Indkøb</th><th class="tal-h">Fragt</th><th class="tal-h">Øvrige</th>
+              <th class="tal-h">I alt pr. stk.</th><th class="tal-h">Varianter</th><th></th></tr></thead>
+            <tbody id="vare-liste"><tr><td colspan="7" class="tomt">Henter …</td></tr></tbody>
+          </table>
+        </div>
+
+        <h3 class="sm-h3">Varer fra ClickFunnels</h3>
+        <p class="hint">Hver variant, der har stået på en ordre, kommer her af sig selv. Kobl den til den vare, den koster som — fx alle bilmodeller af samme madras til én vare.</p>
+        <div id="cf-besked" class="besked" hidden role="alert"></div>
+        <div id="cf-liste"><p class="hint">Henter …</p></div>
+
+        <h3 class="sm-h3">Betalingsgebyr</h3>
+        <div class="db-kort sm-gebyr">
+          <p class="db-under" id="gebyr-under">Én sats for alle betalinger, regnet af det betalte beløb med moms.</p>
+          <div class="sm-felter">
+            <div><label for="gebyr-pct">Procent</label>
+              <input id="gebyr-pct" type="text" inputmode="decimal" autocomplete="off" placeholder="fx 1,5"></div>
+            <div><label for="gebyr-fast">Fast beløb i kroner</label>
+              <input id="gebyr-fast" type="text" inputmode="decimal" autocomplete="off" placeholder="fx 1,80"></div>
+          </div>
+          <div class="bb-linje"><button type="button" class="knap lille" id="gebyr-gem">Gem gebyret</button></div>
+          <div id="gebyr-besked" class="besked" hidden role="alert"></div>
+        </div>
+
+        <div class="sm-top sm-ordre-top">
+          <div>
+            <h3>Ordrer uden omkostninger</h3>
+            <p class="db-under">Betalte ordrer, hvor en vare ikke er koblet, eller gebyret mangler. De fyldes ikke af sig selv, når du kobler — tryk på knappen.</p>
+          </div>
+          <button type="button" class="knap lille" id="omk-udfyld-alle">Udfyld alle</button>
+        </div>
+        <div class="afkryds sm-vis-alle">
+          <input type="checkbox" id="omk-vis-alle">
+          <label for="omk-vis-alle">Vis også ordrer, der har deres tal</label>
+        </div>
+        <div id="omk-besked" class="besked" hidden role="alert"></div>
+        <div id="omk-liste"><p class="hint">Henter …</p></div>
       </div>
     </section>
 
@@ -2206,7 +2284,7 @@
   /* Salg & Marketing: tallene, annoncerne og ugenoterne (3.9 trin 3).
      Annoncer og noter hentes, hver gang underfanen åbnes - Oliivia og
      Kennet kan begge rette, og en gammel liste er værre end et kald for meget. */
-  var SALG_UNDER = ['tal', 'annoncer', 'ugenoter'];
+  var SALG_UNDER = ['tal', 'annoncer', 'ugenoter', 'produkter'];
   var valgtSalg = 'tal';
   function visSalg(u){
     if(SALG_UNDER.indexOf(u) < 0) u = valgtSalg;
@@ -2218,6 +2296,7 @@
     document.body.setAttribute('data-salg', u);
     if(u === 'annoncer') hentAnnoncer();
     if(u === 'ugenoter') hentNoter();
+    if(u === 'produkter') hentProdukter();
   }
 
   function skiftFane(navn, under){
@@ -2766,6 +2845,384 @@
     var n = noteFor(valgtUge);
     if(n) sletNote(n);
   });
+
+  // ---------- Produkter (3.9 trin 4, 0066) ----------
+  /* Varerne, koblingerne, gebyret og ordrerne hentes samlet, hver gang
+     underfanen åbnes: en kobling ændrer, hvad ordrerne mangler. Ordrernes
+     tal ligger i `salg`, som er lukket - de tre rpc-døre er eneste vej. */
+  var varer = [], cfVarer = [], gebyr = null;
+  var SLAGS_NAVN = { koeb:'Køb', fornyelse:'Fornyelse' };
+  var STATUS_NAVN = { refunderet:'refunderet', delvist_refunderet:'delvist refunderet', omtvistet:'omtvistet' };
+
+  function produktFejl(f, hvad){
+    if(f && f.kode === '23505') return 'Der findes allerede en vare med det navn.';
+    if(f && f.kode === '23503') return 'Varen er koblet til en variant fra ClickFunnels og kan ikke slettes. Fjern fluebenet ved "Sælges stadig" i stedet.';
+    if(f && f.kode === '23514') return 'Serveren afviste et felt. Beløbene skal være 0 kr. eller derover.';
+    return salgFejl(f, hvad);
+  }
+  function rpc(navn, krop){ return json('/rest/v1/rpc/' + navn, { method:'POST', body: krop || {} }); }
+  function ordreNavn(o){ return o.ordrenummer || ('faktura ' + o.faktura_id); }
+
+  function hentProdukter(){
+    return Promise.all([
+      json('/rest/v1/vare?select=*&order=aktiv.desc,navn.asc'),
+      json('/rest/v1/cf_vare?select=*&order=foerst_set.desc'),
+      json('/rest/v1/betalingsgebyr?select=procent_bp,fast_oere,opdateret&id=eq.1')
+    ]).then(function(r){
+      varer = r[0] || []; cfVarer = r[1] || []; gebyr = (r[2] || [])[0] || null;
+      tegnVarer(); tegnCfVarer(); tegnGebyr();
+      return hentOmk();
+    }).catch(function(f){
+      vis($('vare-besked'), 'Produkterne kunne ikke hentes: ' + produktFejl(f, 'se produkterne'), 'fejl');
+    });
+  }
+
+  function antalVarianter(id){ return cfVarer.filter(function(c){ return c.vare_id === id; }).length; }
+
+  function tegnVarer(){
+    var liste = $('vare-liste');
+    tøm(liste);
+    if(!varer.length){
+      var r = lav('tr'), c = lav('td', 'tomt', session && session.aal === 'aal2'
+        ? 'Ingen varer endnu. Opret den første, og kobl varianterne fra ClickFunnels til den nedenfor.'
+        : 'Ingen varer at vise.' + INGEN_AAL2);
+      c.colSpan = 7; r.appendChild(c); liste.appendChild(r);
+      return;
+    }
+    varer.forEach(function(v){
+      var r = lav('tr', v.aktiv ? null : 'sm-arkiv');
+      var n = lav('td', 'sm-kampagne', v.navn + (v.aktiv ? '' : ' (sælges ikke)'));
+      if(v.note) n.appendChild(lav('span', 'sm-note', v.note));
+      r.appendChild(n);
+      [v.indkoeb_oere, v.fragt_oere, v.oevrige_oere, v.indkoeb_oere + v.fragt_oere + v.oevrige_oere].forEach(function(o){
+        r.appendChild(lav('td', 'tal-h', kroner(o)));
+      });
+      var antal = antalVarianter(v.id);
+      r.appendChild(lav('td', 'tal-h', String(antal)));
+      var greb = lav('td', 'sm-greb');
+      greb.appendChild(knapFor('Ret', 'knap rolig lille', function(){ åbnVare(v); }));
+      /* En koblet vare kan ikke slettes (databasen siger også nej) - den arkiveres. */
+      if(!antal) greb.appendChild(knapFor('Slet', 'knap fare lille', function(){ sletVare(v); }));
+      r.appendChild(greb);
+      liste.appendChild(r);
+    });
+  }
+
+  function sletVare(v){
+    if(!window.confirm('Slette varen "' + v.navn + '"?\n\nOrdrer, der allerede har deres tal, beholder dem.')) return;
+    json('/rest/v1/vare?id=eq.' + encodeURIComponent(v.id), {
+      method: 'DELETE', headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Intet blev slettet.' + INGEN_AAL2);
+      vis($('vare-besked'), 'Varen er slettet.', 'god');
+      return hentProdukter();
+    }).catch(function(f){ vis($('vare-besked'), produktFejl(f, 'slette varer'), 'fejl'); });
+  }
+
+  /* `kobling` er en variant fra ClickFunnels, der skal kobles til varen,
+     når den er oprettet ("+ Opret en ny vare" i listen nedenfor). */
+  function åbnVare(v, kobling){
+    var ny = !v || !v.id;
+    v = v || {};
+    var boks = $('vare-form');
+    tøm(boks);
+    $('vare-besked').hidden = true;
+    boks.hidden = false;
+    boks.appendChild(lav('h4', null, ny ? 'Opret vare' : 'Ret varen'));
+    if(kobling) boks.appendChild(lav('p', 'hint', 'Varianten "' + (kobling.navn || kobling.variant_id) + '" kobles til varen, når den er gemt.'));
+
+    var felter = {};
+    function felt(holder, navn, tekst, el, hjælp){
+      var id = 'vare-f-' + navn;
+      var l = lav('label', null, tekst); l.htmlFor = id;
+      el.id = id;
+      var w = lav('div'); w.appendChild(l); w.appendChild(el);
+      if(hjælp){ var h = lav('p', 'hint', hjælp); h.id = id + '-hjælp'; el.setAttribute('aria-describedby', h.id); w.appendChild(h); }
+      holder.appendChild(w);
+      felter[navn] = el;
+      return el;
+    }
+    function beløb(oere){
+      var el = lav('input'); el.type = 'text'; el.inputMode = 'decimal'; el.autocomplete = 'off';
+      el.value = oere ? tilKronerFelt(oere) : '';
+      return el;
+    }
+
+    var navn = lav('input'); navn.type = 'text'; navn.maxLength = 120; navn.value = v.navn || '';
+    felt(boks, 'navn', 'Varens navn', navn, 'Fx "Selvnivellerende madras". Bilmodeller med samme pris deler én vare.');
+    var tre = lav('div', 'sm-felter');
+    felt(tre, 'indkoeb', 'Indkøbspris', beløb(v.indkoeb_oere));
+    felt(tre, 'fragt', 'Leverandørfragt', beløb(v.fragt_oere));
+    felt(tre, 'oevrige', 'Øvrige variable', beløb(v.oevrige_oere));
+    tre.appendChild(lav('p', 'hint', 'Kroner pr. stk. uden moms, fx 1.250,50. Et tomt felt er 0 kr.'));
+    boks.appendChild(tre);
+    var note = lav('textarea'); note.rows = 2; note.maxLength = 1000; note.value = v.note || '';
+    felt(boks, 'note', 'Note (valgfri)', note);
+
+    var aktiv = null;
+    if(!ny){
+      var rA = lav('div', 'afkryds');
+      aktiv = lav('input'); aktiv.type = 'checkbox'; aktiv.id = 'vare-f-aktiv'; aktiv.checked = v.aktiv !== false;
+      var la = lav('label', null, 'Sælges stadig'); la.htmlFor = 'vare-f-aktiv';
+      rA.appendChild(aktiv); rA.appendChild(la);
+      rA.appendChild(lav('span', 'hint', '— uden flueben kan varen ikke vælges til nye koblinger'));
+      boks.appendChild(rA);
+    }
+
+    var linje = lav('div', 'bb-linje'); linje.style.marginTop = '16px';
+    var gem = knapFor(ny ? 'Opret varen' : 'Gem rettelsen', 'knap lille', function(){
+      var fejl = function(t, n){ vis($('vare-besked'), t, 'fejl'); if(n) felter[n].focus(); };
+      var b = {};
+      var forkert = ['indkoeb', 'fragt', 'oevrige'].filter(function(n){
+        var x = læsKroner(felter[n].value);
+        b[n] = x === null ? 0 : x;
+        return isNaN(x);
+      })[0];
+      var krop = { navn: felter.navn.value.trim(), indkoeb_oere: b.indkoeb, fragt_oere: b.fragt,
+                   oevrige_oere: b.oevrige, note: felter.note.value.trim() };
+      if(aktiv) krop.aktiv = aktiv.checked;
+      if(!krop.navn) return fejl('Giv varen et navn.', 'navn');
+      if(forkert) return fejl('Beløbet skal være i kroner, fx 1.250,50.', forkert);
+      gem.disabled = true;
+      json(ny ? '/rest/v1/vare' : '/rest/v1/vare?id=eq.' + encodeURIComponent(v.id), {
+        method: ny ? 'POST' : 'PATCH', body: krop, headers: { Prefer: 'return=representation' }
+      }).then(function(rk){
+        if(!rk || !rk.length) throw new Error('Serveren gemte ingenting.' + INGEN_AAL2);
+        if(!kobling) return rk;
+        return json('/rest/v1/cf_vare?variant_id=eq.' + encodeURIComponent(kobling.variant_id), {
+          method: 'PATCH', body: { vare_id: rk[0].id }, headers: { Prefer: 'return=representation' }
+        });
+      }).then(function(){
+        boks.hidden = true;
+        tøm(boks);
+        vis($('vare-besked'), kobling ? 'Varen er oprettet og koblet. Ordrer, der manglede den, kan nu udfyldes nederst.'
+                                     : ny ? 'Varen er oprettet.' : 'Rettelsen er gemt. Den gælder ordrer fra nu af.', 'god');
+        return hentProdukter();
+      }).catch(function(f){
+        gem.disabled = false;
+        vis($('vare-besked'), produktFejl(f, ny ? 'oprette varer' : 'rette varer'), 'fejl');
+      });
+    });
+    linje.appendChild(gem);
+    linje.appendChild(knapFor('Fortryd', 'knap rolig lille', function(){ boks.hidden = true; tøm(boks); }));
+    boks.appendChild(linje);
+    felter.navn.focus();
+  }
+
+  $('vare-ny').addEventListener('click', function(){ åbnVare(null); });
+
+  function tegnCfVarer(){
+    var liste = $('cf-liste');
+    tøm(liste);
+    if(!cfVarer.length){
+      liste.appendChild(lav('p', 'hint', session && session.aal === 'aal2'
+        ? 'Ingen varianter endnu. De kommer, når den første ordre er betalt.'
+        : 'Ingen varianter at vise.' + INGEN_AAL2));
+      return;
+    }
+    /* De ukoblede først - det er dem, der skal gøres noget ved. */
+    var sorteret = cfVarer.filter(function(c){ return !c.vare_id; })
+      .concat(cfVarer.filter(function(c){ return c.vare_id; }));
+    sorteret.forEach(function(c){
+      var k = lav('div', 'note-kort cf-kort');
+      k.appendChild(lav('div', 'note-top', 'Set første gang ' + dato(c.foerst_set) + ' · variant ' + c.variant_id));
+      k.appendChild(lav('div', 'cf-navn', c.navn || '(uden navn)'));
+      if(!c.vare_id) k.appendChild(lav('div', 'cf-ukoblet', 'Ikke koblet — ordrer med den mangler omkostninger'));
+      var id = 'cf-v-' + c.variant_id;
+      var l = lav('label', null, 'Koster som'); l.htmlFor = id;
+      k.appendChild(l);
+      var s = lav('select'); s.id = id;
+      var o0 = lav('option', null, '— Ikke koblet —'); o0.value = ''; s.appendChild(o0);
+      varer.forEach(function(v){
+        if(!v.aktiv && v.id !== c.vare_id) return;
+        var o = lav('option', null, v.navn + (v.aktiv ? '' : ' (sælges ikke)'));
+        o.value = v.id;
+        if(v.id === c.vare_id) o.selected = true;
+        s.appendChild(o);
+      });
+      var oNy = lav('option', null, '+ Opret en ny vare …'); oNy.value = '__ny'; s.appendChild(oNy);
+      s.addEventListener('change', function(){
+        if(s.value === '__ny'){
+          s.value = c.vare_id || '';
+          åbnVare({ navn: c.navn }, c);
+          $('vare-form').scrollIntoView({ block:'start' });
+          return;
+        }
+        kobl(c, s.value || null, s);
+      });
+      k.appendChild(s);
+      liste.appendChild(k);
+    });
+  }
+
+  function kobl(c, vareId, s){
+    s.disabled = true;
+    return json('/rest/v1/cf_vare?variant_id=eq.' + encodeURIComponent(c.variant_id), {
+      method: 'PATCH', body: { vare_id: vareId }, headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Serveren gemte ingenting.' + INGEN_AAL2);
+      vis($('cf-besked'), vareId ? 'Koblet. Ordrer, der manglede den, kan nu udfyldes nederst.' : 'Koblingen er fjernet.', 'god');
+      return hentProdukter();
+    }).catch(function(f){
+      s.disabled = false;
+      s.value = c.vare_id || '';
+      vis($('cf-besked'), produktFejl(f, 'koble varer'), 'fejl');
+    });
+  }
+
+  function tegnGebyr(){
+    var sat = !!gebyr && gebyr.procent_bp !== null && gebyr.fast_oere !== null;
+    $('gebyr-pct').value = sat ? tilKronerFelt(gebyr.procent_bp) : '';
+    $('gebyr-fast').value = sat ? tilKronerFelt(gebyr.fast_oere) : '';
+    $('gebyr-under').textContent = 'Én sats for alle betalinger, regnet af det betalte beløb med moms. '
+      + (!gebyr ? '' : sat ? 'Rettet ' + dato(gebyr.opdateret) + '.' : 'Ikke sat endnu — indtil da mangler alle ordrer gebyret.');
+  }
+
+  $('gebyr-gem').addEventListener('click', function(){
+    var knap = this, besked = $('gebyr-besked');
+    /* Procent med to decimaler er hundrededele procent - samme regning som øre. */
+    var p = læsKroner($('gebyr-pct').value), f = læsKroner($('gebyr-fast').value);
+    if(p === null || isNaN(p) || p > 10000){ vis(besked, 'Skriv procenten som et tal, fx 1,5.', 'fejl'); $('gebyr-pct').focus(); return; }
+    if(f === null || isNaN(f) || f > 100000){ vis(besked, 'Skriv det faste beløb i kroner, fx 1,80. Er der intet fast beløb, så skriv 0.', 'fejl'); $('gebyr-fast').focus(); return; }
+    knap.disabled = true;
+    json('/rest/v1/betalingsgebyr?id=eq.1', {
+      method: 'PATCH', body: { procent_bp: p, fast_oere: f }, headers: { Prefer: 'return=representation' }
+    }).then(function(rk){
+      if(!rk || !rk.length) throw new Error('Serveren gemte ingenting.' + INGEN_AAL2);
+      knap.disabled = false;
+      vis(besked, 'Gebyret er gemt. Det gælder ordrer fra nu af — og dem, du udfylder nederst.', 'god');
+      return hentProdukter();
+    }).catch(function(fe){
+      knap.disabled = false;
+      vis(besked, produktFejl(fe, 'rette gebyret'), 'fejl');
+    });
+  });
+
+  function hentOmk(){
+    var liste = $('omk-liste');
+    var alle = $('omk-vis-alle').checked;
+    tøm(liste);
+    liste.appendChild(lav('p', 'hint', 'Henter …'));
+    return rpc('salg_omkostninger_liste', { p_kun_mangler: !alle }).then(function(rk){
+      rk = rk || [];
+      tøm(liste);
+      $('omk-udfyld-alle').hidden = !rk.some(function(o){ return !o.omk_kilde && !(o.mangler && o.mangler.length); });
+      if(!rk.length){
+        liste.appendChild(lav('p', 'hint', alle ? 'Ingen betalte ordrer endnu.' : 'Ingen ordrer mangler omkostninger.'));
+        return;
+      }
+      rk.forEach(function(o){ liste.appendChild(omkKort(o)); });
+    }).catch(function(f){
+      tøm(liste);
+      $('omk-udfyld-alle').hidden = true;
+      vis($('omk-besked'), 'Ordrerne kunne ikke hentes: ' + produktFejl(f, 'se ordrernes omkostninger'), 'fejl');
+    });
+  }
+
+  function omkKort(o){
+    var k = lav('div', 'note-kort omk-kort');
+    var top = [ordreNavn(o), dato(o.tid), SLAGS_NAVN[o.slags] || o.slags];
+    if(STATUS_NAVN[o.status]) top.push(STATUS_NAVN[o.status]);
+    if(o.live === false) top.push('demo');
+    k.appendChild(lav('div', 'note-top', top.join(' · ')));
+
+    /* Setup-gebyret og prøven er samme vare - vis navnet én gang. */
+    var navne = [];
+    (o.varer || []).forEach(function(l){
+      var n = (l.antal > 1 ? l.antal + ' × ' : '') + (l.navn || 'uden navn');
+      if(!l.setup && navne.indexOf(n) < 0) navne.push(n);
+    });
+    k.appendChild(lav('div', 'omk-hvad', kroner(o.brutto_oere) + ' betalt' + (navne.length ? ' · ' + navne.join(', ') : '')));
+
+    var klar = !(o.mangler && o.mangler.length);
+    if(o.omk_kilde){
+      var sum = o.omk_vare_oere + o.omk_fragt_oere + o.omk_oevrige_oere + o.omk_gebyr_oere;
+      k.appendChild(lav('div', 'omk-tal', 'Varer ' + kroner(o.omk_vare_oere) + ' · fragt ' + kroner(o.omk_fragt_oere)
+        + ' · øvrige ' + kroner(o.omk_oevrige_oere) + ' · gebyr ' + kroner(o.omk_gebyr_oere) + ' = ' + kroner(sum)));
+      k.appendChild(lav('div', 'note-top', (o.omk_kilde === 'manuel' ? 'Tastet i hånden ' : 'Regnet af varerne ') + dato(o.omk_kl)));
+    } else if(!klar){
+      k.appendChild(lav('div', 'omk-mangler', 'Mangler: ' + o.mangler.join(', ')));
+    } else {
+      k.appendChild(lav('div', 'omk-klar', 'Alt er på plads — klar til at blive udfyldt.'));
+    }
+
+    var linje = lav('div', 'bb-linje');
+    if(klar) linje.appendChild(knapFor(o.omk_kilde ? 'Udfyld med nuværende tal' : 'Udfyld',
+      o.omk_kilde ? 'knap rolig lille' : 'knap lille', function(){ udfyld(o); }));
+    linje.appendChild(knapFor(o.omk_kilde ? 'Ret i hånden' : 'Tast i hånden', 'knap rolig lille', function(){ håndForm(k, o); }));
+    k.appendChild(linje);
+    return k;
+  }
+
+  function udfyld(o){
+    if(o.omk_kilde && !window.confirm('Ordre ' + ordreNavn(o) + ' har allerede sine tal fra ' + dato(o.omk_kl)
+      + '.\n\nErstatte dem med de nuværende priser og gebyret?')) return;
+    rpc('udfyld_omkostninger', { p_faktura: o.faktura_id }).then(function(n){
+      vis($('omk-besked'), n ? 'Ordre ' + ordreNavn(o) + ' er udfyldt.'
+                             : 'Ordre ' + ordreNavn(o) + ' kunne ikke udfyldes — der mangler stadig noget.', n ? 'god' : 'fejl');
+      return hentOmk();
+    }).catch(function(f){ vis($('omk-besked'), produktFejl(f, 'udfylde omkostninger'), 'fejl'); });
+  }
+
+  $('omk-udfyld-alle').addEventListener('click', function(){
+    var knap = this;
+    knap.disabled = true;
+    rpc('udfyld_omkostninger', {}).then(function(n){
+      knap.disabled = false;
+      vis($('omk-besked'), n === 1 ? 'Én ordre er udfyldt.' : n + ' ordrer er udfyldt.', n ? 'god' : 'fejl');
+      return hentOmk();
+    }).catch(function(f){
+      knap.disabled = false;
+      vis($('omk-besked'), produktFejl(f, 'udfylde omkostninger'), 'fejl');
+    });
+  });
+
+  $('omk-vis-alle').addEventListener('change', hentOmk);
+
+  /* I hånden: én formular ad gangen, inde i ordrens eget kort. */
+  function håndForm(k, o){
+    var gammel = document.querySelector('.omk-kort .brud-form');
+    if(gammel) gammel.parentNode.removeChild(gammel);
+    var boks = lav('div', 'brud-form');
+    var felter = {};
+    var fire = lav('div', 'sm-felter');
+    [['vare', 'Varer', o.omk_vare_oere], ['fragt', 'Fragt', o.omk_fragt_oere],
+     ['oevrige', 'Øvrige', o.omk_oevrige_oere], ['gebyr', 'Gebyr', o.omk_gebyr_oere]].forEach(function(x){
+      var id = 'omk-f-' + x[0];
+      var l = lav('label', null, x[1]); l.htmlFor = id;
+      var el = lav('input'); el.type = 'text'; el.inputMode = 'decimal'; el.autocomplete = 'off'; el.id = id;
+      el.value = x[2] === null || x[2] === undefined ? '' : tilKronerFelt(x[2]);
+      var w = lav('div'); w.appendChild(l); w.appendChild(el); fire.appendChild(w);
+      felter[x[0]] = el;
+    });
+    fire.appendChild(lav('p', 'hint', 'Kroner for hele ordren uden moms (gebyret som trukket). Et tomt felt er 0 kr.'));
+    boks.appendChild(fire);
+    var linje = lav('div', 'bb-linje');
+    var gem = knapFor('Gem tallene', 'knap lille', function(){
+      var b = {};
+      var forkert = Object.keys(felter).filter(function(n){
+        var x = læsKroner(felter[n].value);
+        b[n] = x === null ? 0 : x;
+        return isNaN(x);
+      })[0];
+      if(forkert){ vis($('omk-besked'), 'Beløbet skal være i kroner, fx 1.250,50.', 'fejl'); felter[forkert].focus(); return; }
+      gem.disabled = true;
+      rpc('saet_omkostninger', { p_faktura: o.faktura_id, p_vare: b.vare, p_fragt: b.fragt,
+                                 p_oevrige: b.oevrige, p_gebyr: b.gebyr }).then(function(ok){
+        if(!ok) throw new Error('Ordren blev ikke fundet.');
+        vis($('omk-besked'), 'Tallene for ordre ' + ordreNavn(o) + ' er gemt.', 'god');
+        return hentOmk();
+      }).catch(function(f){
+        gem.disabled = false;
+        vis($('omk-besked'), produktFejl(f, 'rette omkostninger'), 'fejl');
+      });
+    });
+    linje.appendChild(gem);
+    linje.appendChild(knapFor('Fortryd', 'knap rolig lille', function(){ boks.parentNode.removeChild(boks); }));
+    boks.appendChild(linje);
+    k.appendChild(boks);
+    felter.vare.focus();
+  }
 
   // -------------------------------------------------------------
   // Oversigt
