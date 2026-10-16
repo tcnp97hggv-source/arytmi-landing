@@ -726,6 +726,7 @@
   #ann-liste .sm-note{ display:block; font-size:12px; color:var(--tekst-2); margin-top:2px; }
   #ann-liste td.sm-greb{ text-align:right; }
   #ann-liste td.sm-greb .knap + .knap{ margin-left:6px; }
+  #ann-flere{ margin-top:10px; }
   #ann-liste .sm-hentet{ font-size:12px; color:var(--tekst-2); white-space:nowrap; }
   #note-tekst{ margin-top:0; }
   .note-kort{ margin-top:12px; padding:14px 16px; }
@@ -1435,6 +1436,7 @@
             <tbody id="ann-liste"><tr><td colspan="9" class="tomt">Henter …</td></tr></tbody>
           </table>
         </div>
+        <button type="button" class="knap rolig lille" id="ann-flere" hidden>Vis flere</button>
         <p class="hint sm-hint">Pris pr. køb vises først ved 5 køb ifølge Meta. Færre er for få at regne på.</p>
       </div>
 
@@ -2641,14 +2643,29 @@
   }
 
   // ---------- Annoncer ----------
-  function hentAnnoncer(){
-    var liste = $('ann-liste');
-    tøm(liste);
-    var r = lav('tr'), c = lav('td', 'tomt', 'Henter …'); c.colSpan = 9; r.appendChild(c); liste.appendChild(r);
-    json('/rest/v1/annonceforbrug?select=*&order=fra.desc,oprettet.desc&limit=100')
+  /* 100 ad gangen. Metas kampagner giver én række pr. dag (0068), så listen
+     vokser hurtigt - "Vis flere" henter de næste. id til sidst i sorteringen,
+     så en side aldrig gentager eller springer en række over. */
+  var ANN_SIDE = 100, annVist = 0;
+  function hentAnnoncer(flere){
+    var liste = $('ann-liste'), knap = $('ann-flere');
+    knap.hidden = true;
+    if(!flere){
+      annVist = 0;
+      tøm(liste);
+      var r = lav('tr'), c = lav('td', 'tomt', 'Henter …'); c.colSpan = 9; r.appendChild(c); liste.appendChild(r);
+    }
+    json('/rest/v1/annonceforbrug?select=*&order=fra.desc,oprettet.desc,id.desc&limit=' + ANN_SIDE + '&offset=' + annVist)
       .then(function(rk){
-        tøm(liste);
-        if(!rk || !rk.length){
+        if(!flere) tøm(liste);
+        rk = rk || [];
+        annVist += rk.length;
+        knap.hidden = rk.length < ANN_SIDE;
+        if(flere){
+          rk.forEach(function(a){ liste.appendChild(annonceRække(a)); });
+          return;
+        }
+        if(!rk.length){
           var r = lav('tr'), c = lav('td', 'tomt', session && session.aal === 'aal2'
             ? 'Intet forbrug registreret endnu.'
             : 'Intet forbrug at vise.' + INGEN_AAL2);
@@ -2658,7 +2675,7 @@
         rk.forEach(function(a){ liste.appendChild(annonceRække(a)); });
       })
       .catch(function(f){
-        tøm(liste);
+        if(!flere) tøm(liste); else knap.hidden = false;
         vis($('ann-besked'), 'Annoncerne kunne ikke hentes: ' + salgFejl(f, 'se annoncerne'), 'fejl');
       });
   }
@@ -2788,6 +2805,7 @@
   }
 
   $('ann-ny').addEventListener('click', function(){ åbnAnnonce(null); });
+  $('ann-flere').addEventListener('click', function(){ hentAnnoncer(true); });
 
   // ---------- Ugenoter ----------
   /* ISO-uge: ugen hører til det år, dens torsdag ligger i. */
