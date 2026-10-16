@@ -732,6 +732,36 @@
   .note-kort .note-tekst{ font-size:15px; line-height:1.5; margin-bottom:8px; white-space:pre-wrap; overflow-wrap:anywhere; }
   .note-kort .knap + .knap{ margin-left:6px; }
 
+  /* ---------- SALG & MARKETING: nøgletal (3.9 trin 5) ---------- */
+  .nt-filtre{ display:flex; flex-wrap:wrap; gap:12px 20px; align-items:flex-end; padding:16px 20px; }
+  .nt-filtre label{ margin:0; }
+  .nt-valgfri, .nt-vaelgere{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; }
+  .nt-valgfri input{ width:auto; min-width:150px; }
+  .nt-vaelgere select{ width:auto; min-width:160px; max-width:100%; }
+  .nt-filtre label.nt-demo{ display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px; color:var(--tekst); padding-bottom:10px; }
+  .nt-demo input{ width:18px; height:18px; margin:0; accent-color:var(--accent); }
+  .nt-periodetekst{ flex-basis:100%; margin:0; }
+  /* Syv tal: omsætningen er ankeret og fylder to pladser - så går rækkerne op. */
+  .nt-tal .db-felt.helt{ grid-column:span 2; }
+  /* Under 360 px kan "Dækningsbidrag" og "2.000 kr." ikke stå i en halv bredde. */
+  @media (max-width:359px){ .nt-tal{ grid-template-columns:1fr; } .nt-tal .db-felt.helt{ grid-column:auto; } }
+  .nt-tal .db-felt .vaerdi.tom{ color:var(--tekst-2); }
+  #nt-advarsler .knap{ margin-top:8px; }
+  /* Den anden serie i "Annonceforbrug og omsætning": paletens petrol. */
+  .db-graf .soejle.anden{ fill:#5f746f; }
+  .db-graf .ramt:hover + .soejle + .soejle.anden, .db-graf .soejle.anden.aktiv{ fill:#47584f; }
+  .nt-forklaring{ display:flex; gap:16px; font-size:13px; color:var(--tekst-2); margin:-6px 0 10px; }
+  .nt-forklaring span{ display:inline-flex; align-items:center; gap:6px; }
+  .nt-prik{ display:inline-block; width:10px; height:10px; border-radius:3px; background:var(--accent); }
+  .nt-prik.anden{ background:#5f746f; }
+  #nt-funnels .db-prod > span:first-child{ overflow-wrap:anywhere; }
+  .nt-fdetalje{ grid-column:1/-1; font-size:13px; color:var(--tekst-2); margin-top:-2px; }
+  @media (max-width:520px){
+    .nt-vaelgere label:not(.nt-demo), .nt-vaelgere select{ width:100%; }
+    .nt-valgfri label{ flex:1 1 130px; }
+    .nt-valgfri input{ min-width:0; width:100%; }
+  }
+
   /* ---------- SALG & MARKETING: produkter (3.9 trin 4) ---------- */
   #vare-form, #vare-besked, #cf-besked, #omk-besked{ margin:0 0 16px; }
   #gebyr-besked{ margin:14px 0 0; }
@@ -1273,33 +1303,83 @@
         <button type="button" role="tab" data-salg="produkter" aria-selected="false">Produkter</button>
       </div>
       <div id="salg-tal">
+      <!-- NØGLETAL (3.9 trin 5, 0067). Fra ClickFunnels' fakturaer (salg)
+           gennem salg_noegletal - kun summer. Afløste 16/10 "Salg pr. dag" og
+           "Salg pr. produkt", der kom fra Stripe-ordrerne inkl. moms (Kennet:
+           ét tal for salget). Kun live-ordrer, medmindre demo er slået til. -->
+      <div class="db-kort nt-filtre">
+        <div class="db-vaelg" role="group" aria-label="Periode" id="nt-periode">
+          <button type="button" data-nt="0" aria-pressed="false">I dag</button>
+          <button type="button" data-nt="7" aria-pressed="false">7 dage</button>
+          <button type="button" data-nt="30" aria-pressed="true">30 dage</button>
+          <button type="button" data-nt="valgfri" aria-pressed="false">Valgfri</button>
+        </div>
+        <div class="nt-valgfri" id="nt-valgfri" hidden>
+          <label>Fra <input type="date" id="nt-fra"></label>
+          <label>Til <input type="date" id="nt-til"></label>
+          <button type="button" class="knap lille" id="nt-vis">Vis</button>
+        </div>
+        <div class="nt-vaelgere">
+          <label>Funnel <select id="nt-funnel"><option value="*">Alle funnels</option></select></label>
+          <label>Kampagne <select id="nt-kampagne"><option value="*">Alle kampagner</option></select></label>
+          <label class="nt-demo"><input type="checkbox" id="nt-demo"> Vis demo-ordrer</label>
+        </div>
+        <p class="db-under nt-periodetekst" id="nt-periodetekst"></p>
+      </div>
+      <p class="besked fejl" id="nt-fejl" hidden role="alert"></p>
+      <div class="db-status advar" id="nt-demo-maerke" hidden></div>
+      <div class="db-status advar" id="nt-advarsler" hidden></div>
+      <div class="db-tal nt-tal" id="nt-tal"></div>
+
       <p class="besked fejl db-fejl" id="db-fejl-salg" hidden role="alert"></p>
       <div class="db-kolonner">
-      <div class="db-kort" data-kort="salg">
-        <div class="db-kort-top">
-          <div>
-            <h3>Salg pr. dag</h3>
-            <p class="db-under" id="db-salg-under"></p>
-          </div>
-          <div class="db-vaelg" role="group" aria-label="Periode">
-            <button type="button" data-dage="30" aria-pressed="true">30 dage</button>
-            <button type="button" data-dage="90" aria-pressed="false">90 dage</button>
-          </div>
-        </div>
-        <div class="db-graf" id="db-graf-salg"></div>
+      <div class="db-kort" data-kort="omsaetning">
+        <h3>Omsætning pr. dag</h3>
+        <p class="db-under" id="nt-oms-under"></p>
+        <div class="db-graf" id="nt-graf-oms"></div>
       </div>
 
-      <div class="db-kort" data-kort="saelger">
-        <h3>Salg pr. produkt</h3>
-        <p class="db-under">Betalte ordrer i alt, inkl. moms, efter produkt.</p>
-        <div id="db-produkter"></div>
+      <div class="db-kort" data-kort="ordrer">
+        <h3>Ordrer pr. dag</h3>
+        <p class="db-under" id="nt-ordrer-under"></p>
+        <div class="db-graf lav" id="nt-graf-ordrer"></div>
+      </div>
+
+      <div class="db-kort" data-kort="annonce-oms">
+        <h3>Annonceforbrug og omsætning</h3>
+        <p class="db-under" id="nt-par-under"></p>
+        <div class="nt-forklaring" aria-hidden="true">
+          <span><i class="nt-prik"></i>Omsætning</span><span><i class="nt-prik anden"></i>Annonceforbrug</span>
+        </div>
+        <div class="db-graf" id="nt-graf-par"></div>
+      </div>
+
+      <div class="db-kort" data-kort="produkt-oms">
+        <h3>Omsætning pr. produkt</h3>
+        <p class="db-under">Ekskl. moms, efter refusioner. Antal er stk. på ordrer, der ikke er refunderet.</p>
+        <div id="nt-produkter"></div>
+      </div>
+
+      <div class="db-kort" data-kort="funnels">
+        <h3>Resultat pr. funnel</h3>
+        <p class="db-under">Bidrag er dækningsbidraget før annoncer: annonceforbruget kan ikke fordeles på funnels.</p>
+        <div id="nt-funnels"></div>
       </div>
 
       <!-- BESØG PÅ FUNNELEN (2.10, omgang 2). Vores egen tæller: visninger,
            ikke personer — ingen cookies, ingen IP (docs/funnel-taeller.md). -->
       <div class="db-kort" data-kort="besoeg">
-        <h3>Besøg på funnelen</h3>
-        <p class="db-under" id="db-besoeg-under"></p>
+        <div class="db-kort-top">
+          <div>
+            <h3>Besøg på funnelen</h3>
+            <p class="db-under" id="db-besoeg-under"></p>
+          </div>
+          <!-- Flyttet hertil fra "Salg pr. dag" 16/10; styrer også "Nye konti" i Brugere. -->
+          <div class="db-vaelg" role="group" aria-label="Periode for besøgene">
+            <button type="button" data-dage="30" aria-pressed="true">30 dage</button>
+            <button type="button" data-dage="90" aria-pressed="false">90 dage</button>
+          </div>
+        </div>
         <div id="db-besoeg">
           <div class="db-mini db-tre" id="db-besoeg-tal"></div>
           <div class="db-graf lav" id="db-graf-besoeg"></div>
@@ -2294,6 +2374,7 @@
       b.setAttribute('aria-selected', String(b.getAttribute('data-salg') === u));
     });
     document.body.setAttribute('data-salg', u);
+    if(u === 'tal') hentNoegletal();
     if(u === 'annoncer') hentAnnoncer();
     if(u === 'ugenoter') hentNoter();
     if(u === 'produkter') hentProdukter();
@@ -3546,24 +3627,6 @@
       }
     }
 
-    // --- Det sælger ---
-    var pr = $('db-produkter'); tøm(pr);
-    var liste = sa.produkter || [];
-    if(!liste.length){
-      pr.appendChild(lav('p','hint','Ingen betalte ordrer endnu.'));
-    } else {
-      var top = liste[0].oere || 1;
-      liste.forEach(function(p){
-        var r = lav('div','db-prod');
-        r.appendChild(lav('span', null, p.produkt));
-        r.appendChild(lav('span','v', p.antal + ' · ' + kr(p.oere)));
-        var b = lav('div','bar'), i = document.createElement('i');
-        i.style.width = Math.max(2, p.oere / top * 100) + '%';
-        b.appendChild(i); r.appendChild(b);
-        pr.appendChild(r);
-      });
-    }
-
     // --- Driften ---
     var tv = $('db-drift'); tøm(tv);
     function linje(slags, hvad, hvordan){
@@ -3627,19 +3690,9 @@
   function tegnGrafer(){
     /* Hver graf tegnes kun, når den kan ses: en skjult graf har ingen
        bredde at regne med. skiftFane() tegner igen, når rummet åbnes. */
+    tegnNtGrafer();
     var d = overblik; if(!d) return;
     var synlig = function(el){ return !!el && el.offsetParent !== null; };
-    var salg = (d.salg && d.salg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.oere, antal:p.antal }; });
-    var sumKr = salg.reduce(function(n, p){ return n + p.v; }, 0);
-    var sumAntal = salg.reduce(function(n, p){ return n + p.antal; }, 0);
-    $('db-salg-under').textContent = kr(sumKr) + ' på ' + sumAntal + ' ordrer de seneste ' + dbDage + ' dage.';
-    if(synlig($('db-graf-salg'))) søjler($('db-graf-salg'), salg, {
-      akse: function(v){ return v === 0 ? '0' : tusind(v / 100); },
-      tip: function(p){ return p.antal + (p.antal === 1 ? ' ordre · ' : ' ordrer · ') + kr(p.v); },
-      kolonne: 'Salg',
-      tom: 'Ingen salg i perioden endnu.',
-      aria: function(){ return 'Salg pr. dag de seneste ' + dbDage + ' dage: ' + kr(sumKr) + ' i alt.'; }
-    });
     if(d.besoeg && d.besoeg.status === 'ok' && synlig($('db-graf-besoeg'))){
       var bes = (d.besoeg.pr_dag || []).slice(-dbDage).map(function(p){ return { dag:p.dag, v:p.salgsside, betaling:p.betaling, tak:p.tak }; });
       søjler($('db-graf-besoeg'), bes, {
@@ -3662,10 +3715,12 @@
     });
   }
 
-  document.querySelectorAll('.db-vaelg button').forEach(function(b){
+  /* Kun knapperne MED data-dage: ugenoternes pile og nøgletallenes periode
+     sidder også i en .db-vaelg og gav før dbDage = NaN. */
+  document.querySelectorAll('.db-vaelg button[data-dage]').forEach(function(b){
     b.addEventListener('click', function(){
       dbDage = parseInt(b.getAttribute('data-dage'), 10);
-      document.querySelectorAll('.db-vaelg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      document.querySelectorAll('.db-vaelg button[data-dage]').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
       tegnGrafer();
     });
   });
@@ -3675,6 +3730,344 @@
     window.clearTimeout(dbVent);
     dbVent = window.setTimeout(tegnGrafer, 150);
   });
+
+  // -------------------------------------------------------------
+  // Nøgletal og grafer (klar-til-live 3.9 trin 5, 0067)
+  //
+  // Alt regnes i databasen (salg_noegletal) - her vises det kun. Reglerne
+  // (Kennet 16/10): fornyelser er med i omsætningen, men ikke i ordrerne;
+  // ordrer uden omkostninger er udeladt af dækningsbidraget og står som
+  // advarsel; demo-ordrer kun, når fluebenet er sat; CPA kun på Metas køb.
+  // -------------------------------------------------------------
+  var nt = null;                   // det sidste svar
+  var ntPeriode = '30';            // '0' = i dag, '7', '30' eller 'valgfri'
+  var ntNr = 0;                    // kun det seneste kald må tegne
+
+  function idagKbh(){
+    return new Intl.DateTimeFormat('sv-SE', { timeZone:'Europe/Copenhagen' }).format(new Date());
+  }
+  function plusDage(iso, n){
+    var d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function dageMellem(a, b){ return Math.round((new Date(b + 'T12:00:00Z') - new Date(a + 'T12:00:00Z')) / 864e5); }
+  function isoUge(iso){
+    var d = new Date(iso + 'T12:00:00Z');
+    var dag = (d.getUTCDay() + 6) % 7;
+    d.setUTCDate(d.getUTCDate() - dag + 3);
+    var jan4 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    return 1 + Math.round(((d - jan4) / 864e5 - 3 + (jan4.getUTCDay() + 6) % 7) / 7);
+  }
+  function krEllerStreg(oere){ return oere === null || oere === undefined ? '—' : kr(oere); }
+
+  function ntDatoer(){
+    var til = idagKbh();
+    if(ntPeriode === 'valgfri') return { fra: $('nt-fra').value, til: $('nt-til').value };
+    var n = parseInt(ntPeriode, 10);
+    return { fra: plusDage(til, n > 0 ? -(n - 1) : 0), til: til };
+  }
+
+  function ntValg(id){ var v = $(id).value; return v === '*' ? null : v; }
+
+  function hentNoegletal(){
+    var p = ntDatoer(), fejl = $('nt-fejl');
+    fejl.hidden = true;
+    if(!p.fra || !p.til){ vis(fejl, 'Vælg både en fra- og en til-dato.', 'fejl'); return; }
+    if(p.til < p.fra){ vis(fejl, 'Til-datoen ligger før fra-datoen.', 'fejl'); return; }
+    if(dageMellem(p.fra, p.til) > 366){ vis(fejl, 'Perioden kan højst være et år.', 'fejl'); return; }
+    var nr = ++ntNr;
+    $('nt-periodetekst').textContent = 'Henter …';
+    rpc('salg_noegletal', {
+      p_fra: p.fra, p_til: p.til, p_demo: $('nt-demo').checked,
+      p_funnel: ntValg('nt-funnel'), p_kampagne: ntValg('nt-kampagne')
+    }).then(function(d){
+      if(nr !== ntNr) return;
+      nt = d;
+      tegnNoegletal();
+    }).catch(function(f){
+      if(nr !== ntNr) return;
+      $('nt-periodetekst').textContent = '';
+      vis(fejl, 'Nøgletallene kunne ikke hentes: ' + salgFejl(f, 'se nøgletallene'), 'fejl');
+    });
+  }
+
+  /* Filtrenes valg kommer fra svaret: alle funnels og kampagner, der findes.
+     Det valgte bliver stående, også hvis det ikke findes i det nye svar. */
+  function fyldValg(id, alle, liste, uden){
+    var sel = $(id), før = sel.value;
+    tøm(sel);
+    var o = lav('option', null, alle); o.value = '*'; sel.appendChild(o);
+    (liste || []).forEach(function(n){ var x = lav('option', null, n); x.value = n; sel.appendChild(x); });
+    var u = lav('option', null, uden); u.value = ''; sel.appendChild(u);
+    if(før !== '*' && før !== '' && (liste || []).indexOf(før) < 0){
+      var g = lav('option', null, før); g.value = før; sel.appendChild(g);
+    }
+    sel.value = før;
+  }
+
+  function tegnNoegletal(){
+    var d = nt; if(!d) return;
+    var a = d.advarsler || {};
+    fyldValg('nt-funnel', 'Alle funnels', d.valg && d.valg.funnels, 'Uden funnel');
+    fyldValg('nt-kampagne', 'Alle kampagner', d.valg && d.valg.kampagner, 'Uden kampagne');
+
+    var tekst = d.fra === d.til ? langDato(d.fra) : langDato(d.fra) + ' – ' + langDato(d.til);
+    var filtre = [];
+    if(d.funnel !== null) filtre.push(d.funnel === '' ? 'uden funnel' : 'funnel “' + d.funnel + '”');
+    if(d.kampagne !== null) filtre.push(d.kampagne === '' ? 'uden kampagne' : 'kampagne “' + d.kampagne + '”');
+    $('nt-periodetekst').textContent = tekst + (filtre.length ? ' · ' + filtre.join(' · ') : '') + '. Danske dage; et salg tæller på betalingsdagen.';
+
+    var dm = $('nt-demo-maerke');
+    dm.hidden = !d.demo;
+    if(d.demo){
+      tøm(dm);
+      var dt = lav('div');
+      dt.appendChild(lav('b', null, 'DEMO-TAL'));
+      dt.appendChild(document.createTextNode(a.demo
+        ? a.demo + (a.demo === 1 ? ' demo-ordre er' : ' demo-ordrer er') + ' regnet med. Tallene er ikke rigtige.'
+        : 'Demo-ordrer er slået til, men der er ingen i perioden.'));
+      dm.appendChild(dt);
+    }
+
+    // --- Advarslerne: hvad tallene IKKE rummer ---
+    var adv = [];
+    if(a.omk_mangler) adv.push(a.omk_mangler + (a.omk_mangler === 1 ? ' ordre' : ' ordrer') + ' (' + kr(a.omk_mangler_oere) +
+      ') mangler omkostninger og er ikke med i dækningsbidraget og resultatet.');
+    if(a.moms_mangler) adv.push(a.moms_mangler + (a.moms_mangler === 1 ? ' live-faktura' : ' live-fakturaer') + ' på ' +
+      kr(a.moms_mangler_brutto_oere) + ' har moms 0 kr. De er ikke regnet med i omsætningen — tjek fakturaen i ClickFunnels.');
+    if(a.refusion_uden_beloeb) adv.push(a.refusion_uden_beloeb + (a.refusion_uden_beloeb === 1 ? ' delvis refusion' : ' delvise refusioner') +
+      ' mangler beløbet og er regnet som ikke refunderet.');
+    if(a.omtvistet) adv.push(a.omtvistet + (a.omtvistet === 1 ? ' ordre er omtvistet' : ' ordrer er omtvistede') + ' og står med det fulde beløb.');
+    if(a.uden_live) adv.push(a.uden_live + (a.uden_live === 1 ? ' faktura' : ' fakturaer') + ' uden live/demo-markering er ikke med.');
+    var av = $('nt-advarsler'); tøm(av); av.hidden = !adv.length;
+    if(adv.length){
+      av.appendChild(lys('advar'));
+      var tx = lav('div');
+      tx.appendChild(lav('b', null, 'Tallene er ikke hele billedet'));
+      var ul = lav('ul'); adv.forEach(function(t){ ul.appendChild(lav('li', null, t)); }); tx.appendChild(ul);
+      if(a.omk_mangler){
+        var k = lav('button', 'knap rolig lille', 'Udfyld under Produkter'); k.type = 'button';
+        k.addEventListener('click', function(){ visSalg('produkter'); skrivAdresse('salg'); window.scrollTo(0, 0); });
+        tx.appendChild(k);
+      }
+      av.appendChild(tx);
+    }
+
+    // --- De syv tal ---
+    var tal = $('nt-tal'); tøm(tal);
+    function felt(navn, oere, note, helt){
+      var f = dbFelt(navn, krEllerStreg(oere), note, helt);
+      if(oere === null || oere === undefined) f.querySelector('.vaerdi').classList.add('tom');
+      tal.appendChild(f);
+    }
+    felt('Omsætning', d.omsaetning_oere, 'ekskl. moms, efter refusioner' +
+      (d.fornyelser ? ' · heraf fornyelser ' + kr(d.fornyelser_oere) + ' (' + d.fornyelser + ' stk.)' : ''), true);
+    var of = dbFelt('Antal ordrer', tusind(d.ordrer || 0), 'gennemførte køb, ikke fuldt refunderede' +
+      (a.refunderede ? ' · ' + a.refunderede + ' refunderet' : ''));
+    tal.appendChild(of);
+    felt('Gns. ordreværdi', d.ordrevaerdi_oere, 'omsætning fra køb ÷ ordrer');
+    var forbrugNote = d.annonceforbrug_oere === null ? 'kan ikke fordeles på funnels'
+      : !d.annonce_raekker ? 'intet registreret i perioden'
+      : 'tastet under Annoncer' + (d.annonce_delvise ? ' · fordelt efter dage' : '');
+    felt('Annonceforbrug', d.annonceforbrug_oere, forbrugNote);
+    var cpaNote = {
+      funnel: 'kan ikke fordeles på funnels',
+      intet_forbrug: 'intet annonceforbrug i perioden',
+      koeb_mangler: 'Metas køb mangler på en registrering',
+      faa_koeb: 'først ved 5 køb ifølge Meta (nu ' + String(d.annonce_koeb || 0).replace('.', ',') + ')'
+    }[d.cpa_grund] || String(d.annonce_koeb).replace('.', ',') + ' køb ifølge Meta';
+    felt('Pris pr. køb (CPA)', d.cpa_oere, cpaNote);
+    var dbNote = d.daekningsbidrag_oere === null ? 'ingen ordrer med omkostninger endnu'
+      : a.omk_mangler ? 'kun ' + d.db_ordrer + ' ordrer med omkostninger' : 'omsætning minus variable omkostninger';
+    felt('Dækningsbidrag før annoncer', d.daekningsbidrag_oere, dbNote);
+    felt('Resultat efter annoncer', d.resultat_oere,
+      d.resultat_oere === null ? (d.annonceforbrug_oere === null ? 'annoncerne kan ikke fordeles på funnels' : 'kræver et dækningsbidrag')
+        : 'dækningsbidrag minus annonceforbrug');
+
+    // --- Produkterne ---
+    var pr = $('nt-produkter'); tøm(pr);
+    var liste = (d.produkter || []).filter(function(p){ return p.oms > 0 || p.antal > 0; });
+    if(!liste.length){
+      pr.appendChild(lav('p', 'hint', 'Ingen omsætning i perioden.'));
+    } else {
+      var top = Math.max.apply(null, liste.map(function(p){ return p.oms; })) || 1;
+      liste.forEach(function(p){
+        var r = lav('div', 'db-prod');
+        r.appendChild(lav('span', null, p.produkt));
+        r.appendChild(lav('span', 'v', p.antal + ' stk. · ' + kr(p.oms)));
+        var b = lav('div', 'bar'), i = document.createElement('i');
+        i.style.width = Math.max(2, p.oms / top * 100) + '%';
+        b.appendChild(i); r.appendChild(b);
+        pr.appendChild(r);
+      });
+    }
+
+    // --- Funnels: kun når der er salg med en funnel ---
+    var fu = $('nt-funnels'); tøm(fu);
+    var fl = d.funnels || [];
+    if(!fl.some(function(f){ return f.funnel; })){
+      fu.appendChild(lav('p', 'hint', fl.length ? 'Ingen af periodens ordrer har en funnel.' : 'Ingen omsætning i perioden.'));
+    } else {
+      /* Som produkterne: navn, tal og en søjle for omsætningen. En tabel med
+         fire kolonner kunne ikke stå i 320 px. */
+      var fTop = Math.max.apply(null, fl.map(function(f){ return f.oms; })) || 1;
+      fl.forEach(function(f){
+        var r = lav('div', 'db-prod');
+        r.appendChild(lav('span', null, f.funnel || 'Uden funnel'));
+        r.appendChild(lav('span', 'v', kr(f.oms)));
+        var b = lav('div', 'bar'), i = document.createElement('i');
+        i.style.width = Math.max(2, f.oms / fTop * 100) + '%';
+        b.appendChild(i); r.appendChild(b);
+        r.appendChild(lav('span', 'nt-fdetalje', f.ordrer + (f.ordrer === 1 ? ' ordre' : ' ordrer') + ' · bidrag ' + krEllerStreg(f.db) +
+          (f.omk_mangler ? ' · ' + f.omk_mangler + ' uden omkostninger' : '')));
+        fu.appendChild(r);
+      });
+    }
+
+    tegnNtGrafer();
+  }
+
+  /* Graferne tegnes for sig, så de kan tegnes om ved en ny bredde. */
+  function tegnNtGrafer(){
+    var d = nt; if(!d) return;
+    var synlig = function(el){ return !!el && el.offsetParent !== null; };
+    var dage = d.pr_dag || [];
+    var sumO = 0, sumN = 0, sumF = 0;
+    dage.forEach(function(p){ sumO += p.oms; sumN += p.ordrer; sumF += p.forbrug; });
+    var periode = dage.length === 1 ? 'i dag' : 'de ' + dage.length + ' dage';
+
+    $('nt-oms-under').textContent = kr(sumO) + ' ekskl. moms ' + periode + '.';
+    if(synlig($('nt-graf-oms'))) søjler($('nt-graf-oms'), dage.map(function(p){ return { dag:p.dag, v:p.oms }; }), {
+      akse: function(v){ return v === 0 ? '0' : tusind(v / 100); },
+      tip: function(p){ return kr(p.v); },
+      kolonne: 'Omsætning',
+      tom: 'Ingen omsætning i perioden.',
+      aria: function(){ return 'Omsætning pr. dag ' + periode + ': ' + kr(sumO) + ' i alt.'; }
+    });
+
+    $('nt-ordrer-under').textContent = sumN + (sumN === 1 ? ' ordre ' : ' ordrer ') + periode + '. Fornyelser tæller ikke.';
+    if(synlig($('nt-graf-ordrer'))) søjler($('nt-graf-ordrer'), dage.map(function(p){ return { dag:p.dag, v:p.ordrer }; }), {
+      /* Med én ordre er midten 0,5 - tusind() ville runde den til 1. */
+      akse: function(v){ return v % 1 ? String(v).replace('.', ',') : tusind(v); },
+      tip: function(p){ return p.v + (p.v === 1 ? ' ordre' : ' ordrer'); },
+      kolonne: 'Ordrer',
+      tom: 'Ingen ordrer i perioden.',
+      aria: function(s){ return 'Ordrer pr. dag ' + periode + ': ' + s + ' i alt.'; }
+    });
+
+    /* Mere end en måned: pr. uge, ellers bliver søjleparrene for tynde. */
+    var punkter = [];
+    if(dage.length <= 31){
+      punkter = dage.map(function(p){ return { navn:langDato(p.dag), kort:dagDato(p.dag), a:p.oms, b:p.forbrug }; });
+    } else {
+      dage.forEach(function(p){
+        var u = 'uge ' + isoUge(p.dag), sidst = punkter[punkter.length - 1];
+        if(!sidst || sidst.kort !== u){ sidst = { navn:u + ' (fra ' + dagDato(p.dag) + ')', kort:u, a:0, b:0 }; punkter.push(sidst); }
+        sidst.a += p.oms; sidst.b += p.forbrug;
+      });
+    }
+    var forbrugUkendt = d.annonceforbrug_oere === null;
+    $('nt-par-under').textContent = forbrugUkendt
+      ? 'Med et funnel-filter er annonceforbruget ukendt — vælg "Alle funnels".'
+      : kr(sumO) + ' i omsætning og ' + kr(sumF) + ' i annoncer ' + periode +
+        (sumF > 0 ? ' · ' + (sumO / sumF).toFixed(1).replace('.', ',') + ' kr. omsætning pr. annoncekrone' : '') + '.';
+    if(synlig($('nt-graf-par'))) parSøjler($('nt-graf-par'), punkter, forbrugUkendt);
+  }
+
+  /* TO SERIER side om side: omsætning (rust) og annonceforbrug (petrol).
+     Samme form som søjler(): tre tal på y-aksen, få etiketter, tooltip og
+     en tabel bag "Vis som tabel". */
+  function parSøjler(boks, punkter, utenB){
+    tøm(boks);
+    var W = Math.max(boks.clientWidth, 260), H = boks.clientHeight || 200;
+    var V = 46, T = 10, B = 24, bredde = W - V, højde = H - T - B;
+    var maks = 0, sumA = 0, sumB = 0;
+    punkter.forEach(function(p){ maks = Math.max(maks, p.a, utenB ? 0 : p.b); sumA += p.a; sumB += p.b; });
+    var loft = pæntLoft(maks);
+    var s = svg('svg', { viewBox:'0 0 ' + W + ' ' + H, role:'img',
+      'aria-label':'Omsætning ' + kr(sumA) + (utenB ? '' : ' og annonceforbrug ' + kr(sumB)) + ' i perioden.' });
+    [0, 0.5, 1].forEach(function(f){
+      var y = T + højde - f * højde;
+      s.appendChild(svg('line', { x1:V, x2:W, y1:y, y2:y, 'class': f === 0 ? 'grund' : 'gitter' }));
+      var t = svg('text', { x:V - 8, y:y + 4, 'text-anchor':'end', 'class':'akse' });
+      t.textContent = f === 0 ? '0' : tusind(f * loft / 100);
+      s.appendChild(t);
+    });
+    var plads = bredde / Math.max(punkter.length, 1);
+    var tyk = Math.max(2, Math.min(14, (plads - 4) / 2));
+    var tip = lav('div', 'db-tip'); tip.hidden = true;
+    function søjle(x, v, klasse){
+      var h = v > 0 ? Math.max(2, v / loft * højde) : 0;
+      return svg('rect', { 'class':'soejle' + (klasse ? ' ' + klasse : ''), x:x, y:T + højde - h, width:tyk, height:h, rx:Math.min(3, tyk / 2) });
+    }
+    punkter.forEach(function(p, i){
+      var x = V + i * plads + (plads - 2 * tyk - 1) / 2;
+      var ramt = svg('rect', { x:V + i * plads, y:T, width:plads, height:højde, 'class':'ramt' });
+      var sa = søjle(x, p.a), sb = søjle(x + tyk + 1, utenB ? 0 : p.b, 'anden');
+      ramt.addEventListener('mouseenter', function(){
+        tøm(tip);
+        tip.appendChild(lav('b', null, p.navn));
+        tip.appendChild(document.createElement('br'));
+        tip.appendChild(document.createTextNode('Omsætning ' + kr(p.a) + (utenB ? '' : ' · annoncer ' + kr(p.b))));
+        tip.style.left = (x + tyk) / W * 100 + '%';
+        tip.style.top = Math.min(T + højde - Math.max(p.a, utenB ? 0 : p.b) / loft * højde, T + højde - 2) + 'px';
+        tip.hidden = false;
+        sa.classList.add('aktiv'); sb.classList.add('aktiv');
+      });
+      ramt.addEventListener('mouseleave', function(){ tip.hidden = true; sa.classList.remove('aktiv'); sb.classList.remove('aktiv'); });
+      s.appendChild(ramt); s.appendChild(sa); s.appendChild(sb);
+    });
+    var n = punkter.length;
+    (n === 1 ? [0] : [0, Math.round((n - 1) / 3), Math.round(2 * (n - 1) / 3), n - 1]).forEach(function(i, j, alle){
+      if(j > 0 && i === alle[j - 1]) return;
+      var t = svg('text', { x:V + i * plads + plads / 2, y:H - 6, 'class':'akse',
+        'text-anchor': n === 1 ? 'middle' : j === 0 ? 'start' : j === alle.length - 1 ? 'end' : 'middle' });
+      t.textContent = punkter[i].kort;
+      s.appendChild(t);
+    });
+    boks.appendChild(s); boks.appendChild(tip);
+    if(sumA === 0 && (utenB || sumB === 0)) boks.appendChild(lav('div', 'tom', 'Hverken omsætning eller annonceforbrug i perioden.'));
+
+    var med = punkter.filter(function(p){ return p.a > 0 || (!utenB && p.b > 0); });
+    var dt = lav('details', 'db-tabel');
+    dt.appendChild(lav('summary', null, 'Vis som tabel'));
+    if(med.length){
+      var tb = lav('table'), hd = lav('tr');
+      hd.appendChild(lav('th', null, 'Periode')); hd.appendChild(lav('th', 'tal-h', 'Omsætning'));
+      if(!utenB) hd.appendChild(lav('th', 'tal-h', 'Annoncer'));
+      tb.appendChild(hd);
+      med.forEach(function(p){
+        var tr = lav('tr');
+        tr.appendChild(lav('td', null, p.navn));
+        tr.appendChild(lav('td', 'tal-h', kr(p.a)));
+        if(!utenB) tr.appendChild(lav('td', 'tal-h', kr(p.b)));
+        tb.appendChild(tr);
+      });
+      dt.appendChild(tb);
+    } else {
+      dt.appendChild(lav('p', 'hint', 'Intet i perioden.'));
+    }
+    var gammel = boks.nextSibling;
+    if(gammel && gammel.classList && gammel.classList.contains('db-tabel')) gammel.remove();
+    boks.parentNode.insertBefore(dt, boks.nextSibling);
+  }
+
+  // Filtrene
+  $('nt-periode').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-nt]'); if(!b) return;
+    ntPeriode = b.getAttribute('data-nt');
+    $('nt-periode').querySelectorAll('button[data-nt]').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    $('nt-valgfri').hidden = ntPeriode !== 'valgfri';
+    if(ntPeriode === 'valgfri'){
+      if(!$('nt-til').value) $('nt-til').value = idagKbh();
+      if(!$('nt-fra').value) $('nt-fra').value = plusDage($('nt-til').value, -29);
+      $('nt-fra').focus();
+      return;
+    }
+    hentNoegletal();
+  });
+  $('nt-vis').addEventListener('click', hentNoegletal);
+  ['nt-funnel', 'nt-kampagne', 'nt-demo'].forEach(function(id){ $(id).addEventListener('change', hentNoegletal); });
 
   /* ---------- Træk kortene rundt i Oversigten (13/10) ----------
      Kennet: "jeg vil gerne kunne trække rundt på kortene i overblikket".
