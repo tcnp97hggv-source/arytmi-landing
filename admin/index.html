@@ -606,6 +606,8 @@
   .db-kort-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
   .db-vaelg{ display:inline-flex; background:var(--flade-2); border:1px solid var(--kant); border-radius:var(--r-lille); padding:3px; gap:2px; }
   .db-vaelg button{ background:none; border:0; border-radius:7px; padding:5px 11px; font-size:13px; color:var(--tekst-2); }
+  .db-tragt-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .db-tragt-top .db-h4{ margin:0; }
   .db-vaelg button[aria-pressed="true"]{ background:var(--flade); color:var(--tekst); font-weight:600; box-shadow:0 1px 2px rgba(74,36,23,.12); }
   .db-to{ display:grid; gap:20px; grid-template-columns:1fr 1fr; }
   .db-to .db-kort{ margin-bottom:0; }
@@ -1387,7 +1389,15 @@
           <div class="db-graf lav" id="db-graf-besoeg"></div>
           <div class="db-to db-indre">
             <div>
-              <h4 class="db-h4">Tragten, 30 dage</h4>
+              <!-- "I dag" ved siden af 30 dage (K 24/10): annoncen kører, og
+                   dagens tragt druknede i en måned. Tallene kommer fra pr_dag. -->
+              <div class="db-tragt-top">
+                <h4 class="db-h4">Tragten</h4>
+                <div class="db-vaelg" role="group" aria-label="Periode for tragten">
+                  <button type="button" data-tragt="dag" aria-pressed="true">I dag</button>
+                  <button type="button" data-tragt="30" aria-pressed="false">30 dage</button>
+                </div>
+              </div>
               <div id="db-tragt"></div>
             </div>
             <div>
@@ -3344,6 +3354,7 @@
   // -------------------------------------------------------------
   var overblik = null;
   var dbDage = 30;
+  var dbTragt = 'dag', dbTragtTal = null;   // tragtens periode og tal — se tegnTragt()
   var SVG = 'http://www.w3.org/2000/svg';
   var MDR_KORT = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
   var DAGE_NAVN = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
@@ -3581,18 +3592,10 @@
         var c = lav('div'); c.appendChild(lav('div','t', r[0])); c.appendChild(lav('div','n', r[1])); bt.appendChild(c);
       });
 
-      var tg = $('db-tragt'); tøm(tg);
-      var top = tr.salgsside || 0;
-      [['Salgssiden', tr.salgsside || 0], ['Betalingen', tr.betaling || 0], ['Tak for købet', tr.tak || 0]].forEach(function(r, i){
-        var rk = lav('div','db-prod');
-        rk.appendChild(lav('span', null, r[0]));
-        var v = lav('span','v', tusind(r[1]) + (i ? ' · ' : ''));
-        if(i){ var p = lav('span','pct', String(pct(r[1], top)).replace('.', ',') + ' %'); v.appendChild(p); }
-        rk.appendChild(v);
-        var bar = lav('div','bar'), fyld = document.createElement('i');
-        fyld.style.width = (top ? Math.max(r[1] ? 2 : 0, r[1] / top * 100) : 0) + '%';
-        bar.appendChild(fyld); rk.appendChild(bar); tg.appendChild(rk);
-      });
+      // Sidste række i pr_dag er i dag (dansk tid) — se overblik_besoeg().
+      var prDag = bs.pr_dag || [];
+      dbTragtTal = { '30': tr, dag: prDag.length ? prDag[prDag.length - 1] : {} };
+      tegnTragt();
 
       var kl = $('db-kilder'); tøm(kl);
       var kilder = bs.kilder_30d || [];
@@ -3748,6 +3751,32 @@
       dbDage = parseInt(b.getAttribute('data-dage'), 10);
       document.querySelectorAll('.db-vaelg button[data-dage]').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
       tegnGrafer();
+    });
+  });
+  /* Tragten: i dag eller 30 dage. Tallene ligger klar fra seneste hentning,
+     så skiftet tegner kun tragten igen. */
+  function tegnTragt(){
+    var tg = $('db-tragt'); tøm(tg);
+    if(!dbTragtTal) return;
+    var tr = dbTragtTal[dbTragt] || {};
+    var pct = function(a, b){ return b ? Math.round(a / b * 1000) / 10 : 0; };
+    var top = tr.salgsside || 0;
+    [['Salgssiden', tr.salgsside || 0], ['Betalingen', tr.betaling || 0], ['Tak for købet', tr.tak || 0]].forEach(function(r, i){
+      var rk = lav('div','db-prod');
+      rk.appendChild(lav('span', null, r[0]));
+      var v = lav('span','v', tusind(r[1]) + (i ? ' · ' : ''));
+      if(i){ var p = lav('span','pct', String(pct(r[1], top)).replace('.', ',') + ' %'); v.appendChild(p); }
+      rk.appendChild(v);
+      var bar = lav('div','bar'), fyld = document.createElement('i');
+      fyld.style.width = (top ? Math.max(r[1] ? 2 : 0, r[1] / top * 100) : 0) + '%';
+      bar.appendChild(fyld); rk.appendChild(bar); tg.appendChild(rk);
+    });
+  }
+  document.querySelectorAll('.db-vaelg button[data-tragt]').forEach(function(b){
+    b.addEventListener('click', function(){
+      dbTragt = b.getAttribute('data-tragt');
+      document.querySelectorAll('.db-vaelg button[data-tragt]').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      tegnTragt();
     });
   });
   $('db-opdater').addEventListener('click', hentOverblik);
