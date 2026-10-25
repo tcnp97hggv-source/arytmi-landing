@@ -3734,12 +3734,23 @@
      gælder ikke besøgene. Test (localhost, Metas pixel-test, prøveklik)
      er sorteret fra i databasen. */
   var sb = null, sbNr = 0;
+  /* Rækkevidden pr. annonce (meta-raekkevidde): Meta regner den for præcis
+     perioden - personer kan ikke lægges sammen over dage. Kommer for sig og
+     tegner tabellen igen. */
+  var sbRaek = null;
   var KILDE_NAVN = { facebook:'Facebook', instagram:'Instagram', messenger:'Messenger',
     meta_partner:'Metas partnerapps', google:'Google', ukendt:'Ukendt kilde' };
   function pctTekst(a, b){ return (b ? String(Math.round(a / b * 1000) / 10).replace('.', ',') : '0') + ' %'; }
 
   function hentBesoeg(p){
     var nr = ++sbNr;
+    sbRaek = null;
+    json('/functions/v1/meta-raekkevidde', { method:'POST', body:{ fra:p.fra, til:p.til } }).then(function(d){
+      if(nr !== sbNr) return;
+      sbRaek = {};
+      (d && d.annoncer || []).forEach(function(a){ sbRaek[(a.utm_campaign || '') + '|' + (a.utm_content || '')] = a; });
+      if(sb) tegnBesoeg();
+    }).catch(function(){ /* uden rækkevidde står resten, som det er */ });
     rpc('salg_besoeg', { p_fra: p.fra, p_til: p.til }).then(function(d){
       if(nr !== sbNr) return;
       sb = d; tegnBesoeg();
@@ -3796,7 +3807,7 @@
     var t = d.tal || {};
 
     // --- Hvilken annonce virker ---
-    $('sb-annoncer-under').textContent = 'Visninger, afspilninger og klik fra Meta (hentes hver nat, til og med i går). Besøg fra vores tæller. Salg fra ClickFunnels.';
+    $('sb-annoncer-under').textContent = 'Visninger, rækkevidde, afspilninger og klik fra Meta for perioden. Besøg fra vores tæller. Salg fra ClickFunnels.';
     var al = $('sb-annoncer'); tøm(al);
     // Kendte videoer først (databasens rækkefølge: salg, så besøg); ukendt video sidst.
     var ann = (d.annoncer || []).filter(function(a){ return a.indhold || a.navn; })
@@ -3813,19 +3824,25 @@
       var tb = lav('tbody');
       ann.forEach(function(a){
         var r = lav('tr'), navn = lav('td');
-        if(a.navn || a.indhold){
-          navn.appendChild(lav('b', null, a.navn || a.indhold));
+        var rk = sbRaek && sbRaek[(a.kampagne || '') + '|' + (a.indhold || '')];
+        var titel = (rk && rk.navn) || a.navn || a.indhold;
+        if(titel){
+          navn.appendChild(lav('b', null, titel));
         } else {
           navn.appendChild(lav('b', 'tom', 'Ukendt video'));
           navn.appendChild(lav('span', 'sb-lille', 'før 25/10 blev videoen ikke gemt'));
         }
         var meta = [];
-        if(a.visninger !== null && a.visninger !== undefined){
-          meta.push('afspillet ' + tusind(a.afspilninger || 0));
-          meta.push('set færdig ' + tusind(a.set_til_ende || 0));
-          meta.push(tusind(a.klik || 0) + ' klik');
-          meta.push('brugt ' + kr(a.forbrug_oere || 0));
-          if(a.ordrer) meta.push(kr(Math.round((a.forbrug_oere || 0) / a.ordrer)) + ' pr. salg');
+        /* Live fra Meta for præcis perioden, når det er kommet; ellers natjobbets
+           tal (til og med i går). Begge har de samme felter. */
+        var m = rk || (a.visninger !== null && a.visninger !== undefined ? a : null);
+        if(rk) meta.push('nået ' + (rk.annoncer > 1 ? 'op til ' : '') + tusind(rk.raekkevidde) + (rk.raekkevidde === 1 ? ' person' : ' personer'));
+        if(m){
+          meta.push('afspillet ' + tusind(m.afspilninger || 0));
+          meta.push('set færdig ' + tusind(m.set_til_ende || 0));
+          meta.push(tusind(m.klik || 0) + ' klik');
+          meta.push('brugt ' + kr(m.forbrug_oere || 0));
+          if(a.ordrer) meta.push(kr(Math.round((m.forbrug_oere || 0) / a.ordrer)) + ' pr. salg');
         }
         if(meta.length) navn.appendChild(lav('span', 'sb-lille', meta.join(' · ')));
         var hvor = [];
@@ -3833,10 +3850,10 @@
         if(a.instagram) hvor.push('Instagram ' + a.instagram);
         var andre = a.besoeg - a.facebook - a.instagram;
         if(andre > 0) hvor.push('andre ' + andre);
-        navn.appendChild(lav('span', 'sb-lille', (a.navn && a.indhold ? a.indhold + ' · ' : '') + (a.kampagne || 'uden kampagne') +
+        navn.appendChild(lav('span', 'sb-lille', (titel && a.indhold && titel !== a.indhold ? a.indhold + ' · ' : '') + (a.kampagne || 'uden kampagne') +
           (hvor.length ? ' · besøg fra ' + hvor.join(', ') : '')));
         r.appendChild(navn);
-        r.appendChild(lav('td', 'sb-tal', a.visninger === null || a.visninger === undefined ? '—' : tusind(a.visninger)));
+        r.appendChild(lav('td', 'sb-tal', m ? tusind(m.visninger || 0) : '—'));
         r.appendChild(lav('td', 'sb-tal', tusind(a.besoeg)));
         var salg = lav('td', 'sb-tal', String(a.ordrer || 0));
         if(a.ordrer) salg.appendChild(lav('span', 'sb-lille', kr(a.oms_oere)));
