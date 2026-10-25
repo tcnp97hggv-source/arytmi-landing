@@ -3796,36 +3796,51 @@
     var t = d.tal || {};
 
     // --- Hvilken annonce virker ---
-    $('sb-annoncer-under').textContent = 'Én linje pr. annoncelink. Salg er ordrer i ClickFunnels fra samme link.';
+    $('sb-annoncer-under').textContent = 'Visninger, afspilninger og klik fra Meta (hentes hver nat, til og med i går). Besøg fra vores tæller. Salg fra ClickFunnels.';
     var al = $('sb-annoncer'); tøm(al);
     // Kendte videoer først (databasens rækkefølge: salg, så besøg); ukendt video sidst.
-    var ann = (d.annoncer || []).filter(function(a){ return a.indhold; })
-      .concat((d.annoncer || []).filter(function(a){ return !a.indhold; }));
+    var ann = (d.annoncer || []).filter(function(a){ return a.indhold || a.navn; })
+      .concat((d.annoncer || []).filter(function(a){ return !a.indhold && !a.navn; }));
     if(!ann.length){
       al.appendChild(lav('p', 'hint', 'Ingen besøg fra annoncelinks i perioden.'));
     } else {
+      /* Metas tal (0077) står i kolonnen Visninger og i den lille linje:
+         afspilninger, set til ende, linkklik og forbrug. Rækkevidden hentes
+         ikke - den kan ikke lægges sammen over dage. */
       var tab = lav('table', 'sb-tabel'), hd = lav('tr');
-      ['Annonce', 'Besøg', 'Salg', 'Omsætning'].forEach(function(n){ hd.appendChild(lav('th', null, n)); });
+      ['Annonce', 'Visninger', 'Besøg', 'Salg'].forEach(function(n){ hd.appendChild(lav('th', null, n)); });
       var th = lav('thead'); th.appendChild(hd); tab.appendChild(th);
       var tb = lav('tbody');
       ann.forEach(function(a){
         var r = lav('tr'), navn = lav('td');
-        if(a.indhold){
-          navn.appendChild(lav('b', null, a.indhold));
+        if(a.navn || a.indhold){
+          navn.appendChild(lav('b', null, a.navn || a.indhold));
         } else {
           navn.appendChild(lav('b', 'tom', 'Ukendt video'));
           navn.appendChild(lav('span', 'sb-lille', 'før 25/10 blev videoen ikke gemt'));
         }
+        var meta = [];
+        if(a.visninger !== null && a.visninger !== undefined){
+          meta.push('afspillet ' + tusind(a.afspilninger || 0));
+          meta.push('set færdig ' + tusind(a.set_til_ende || 0));
+          meta.push(tusind(a.klik || 0) + ' klik');
+          meta.push('brugt ' + kr(a.forbrug_oere || 0));
+          if(a.ordrer) meta.push(kr(Math.round((a.forbrug_oere || 0) / a.ordrer)) + ' pr. salg');
+        }
+        if(meta.length) navn.appendChild(lav('span', 'sb-lille', meta.join(' · ')));
         var hvor = [];
         if(a.facebook) hvor.push('Facebook ' + a.facebook);
         if(a.instagram) hvor.push('Instagram ' + a.instagram);
         var andre = a.besoeg - a.facebook - a.instagram;
         if(andre > 0) hvor.push('andre ' + andre);
-        navn.appendChild(lav('span', 'sb-lille', (a.kampagne || 'uden kampagne') + (hvor.length ? ' · ' + hvor.join(' · ') : '')));
+        navn.appendChild(lav('span', 'sb-lille', (a.navn && a.indhold ? a.indhold + ' · ' : '') + (a.kampagne || 'uden kampagne') +
+          (hvor.length ? ' · besøg fra ' + hvor.join(', ') : '')));
         r.appendChild(navn);
+        r.appendChild(lav('td', 'sb-tal', a.visninger === null || a.visninger === undefined ? '—' : tusind(a.visninger)));
         r.appendChild(lav('td', 'sb-tal', tusind(a.besoeg)));
-        r.appendChild(lav('td', 'sb-tal', a.ordrer ? a.ordrer + (a.besoeg ? ' · ' + pctTekst(a.ordrer, a.besoeg) : '') : '0'));
-        r.appendChild(lav('td', 'sb-tal', kr(a.oms_oere)));
+        var salg = lav('td', 'sb-tal', String(a.ordrer || 0));
+        if(a.ordrer) salg.appendChild(lav('span', 'sb-lille', kr(a.oms_oere)));
+        r.appendChild(salg);
         tb.appendChild(r);
       });
       tab.appendChild(tb);
