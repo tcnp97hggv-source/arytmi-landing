@@ -652,6 +652,7 @@
   .db-tre{ grid-template-columns:repeat(3,1fr); margin-bottom:12px; }
   .db-indre{ margin-top:16px; }
   .db-h4{ margin-bottom:10px; }
+  #db-kilder + .db-h4{ margin-top:18px; }
 
   /* Brede skærme: kortene i to kolonner, der selv holder sig lige lange.
      `display:contents` lader de to kort i hvert par indgå i samme strøm. */
@@ -1403,6 +1404,10 @@
             <div>
               <h4 class="db-h4">Hvor de kommer fra, 30 dage</h4>
               <div id="db-kilder"></div>
+              <!-- Pr. annonce (0075, K 25/10): kampagne + utm_content, så to
+                   videoer i samme kampagne står hver for sig. -->
+              <h4 class="db-h4">Annoncerne, 30 dage</h4>
+              <div id="db-annoncer"></div>
             </div>
           </div>
         </div>
@@ -3613,6 +3618,23 @@
         });
         var en = bs.enheder_30d || {}, iAlt = (en.mobil || 0) + (en.computer || 0) + (en.ukendt || 0);
         if(iAlt) kl.appendChild(lav('p','hint', pct(en.mobil || 0, iAlt).toString().replace('.', ',') + ' % på mobil.'));
+      }
+
+      // Pr. annonce: kampagne · video (utm_content). Visninger af salgssiden.
+      var al = $('db-annoncer'); tøm(al);
+      var annoncer = bs.annoncer_30d || [];
+      if(!annoncer.length){
+        al.appendChild(lav('p','hint','Ingen besøg fra et link med utm_campaign de seneste 30 dage.'));
+      } else {
+        var maksA = annoncer[0].antal || 1;
+        annoncer.forEach(function(a){
+          var ra = lav('div','db-prod');
+          ra.appendChild(lav('span', null, a.kampagne + ' · ' + (a.indhold || '(uden video)')));
+          ra.appendChild(lav('span','v', tusind(a.antal) + (a.i_dag ? ' (' + tusind(a.i_dag) + ' i dag)' : '')));
+          var barA = lav('div','bar'), fyldA = document.createElement('i');
+          fyldA.style.width = Math.max(2, a.antal / maksA * 100) + '%';
+          barA.appendChild(fyldA); ra.appendChild(barA); al.appendChild(ra);
+        });
       }
     }
 
