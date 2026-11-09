@@ -277,8 +277,11 @@
             ? valgt.map(function(id){ return ['◉ ' + esc(produktNavn(id) || 'Produkt'), 'a-forhaand-valg']; })
             : [['Tilføj produkterne i højre panel: <b>Produkter i formularen → Tilføj produkt</b>.', 'a-forhaand-hint']];
           if(valgt.length) linjer.push(['Bilmodel ▾', 'a-forhaand-felt']);
-          if(a['data-a-tilvalg']) linjer.push(['☐ Ja tak, tilføj ' + esc(produktNavn(a['data-a-tilvalg']) || 'tilvalget'), 'a-forhaand-tilvalg']);
-          linjer.push(['Mail · Navn · Adresse · Rabatkode · Kort/MobilePay', 'a-forhaand-felt']);
+          ['data-a-tilvalg', 'data-a-tilvalg-2', 'data-a-tilvalg-3'].forEach(function(n){
+            if(a[n]) linjer.push(['☐ Ja tak, tilføj ' + esc(produktNavn(a[n]) || 'tilvalget'), 'a-forhaand-tilvalg']);
+          });
+          linjer.push([['Mail', 'Navn', a['data-a-firma'] ? 'Firma' : '', 'Adresse', a['data-a-telefon'] === 'nej' ? '' : 'Telefon',
+            a['data-a-rabatkode'] === 'nej' ? '' : 'Rabatkode', 'Kort/MobilePay'].filter(Boolean).join(' · '), 'a-forhaand-felt']);
           linjer.push([esc(a['data-a-knaptekst'] || 'Gennemfør købet'), 'a-forhaand-knap']);
           linjer.push([a['data-a-tilstand'] === 'live' ? 'LIVE: rigtige penge' : 'TEST: Stripes sandkasse - ingen rigtige penge', a['data-a-tilstand'] === 'live' ? 'a-forhaand-live' : 'a-forhaand-test']);
           this.el.innerHTML = forhaand('Ordreformular', linjer);
@@ -296,7 +299,18 @@
       },
       model: { defaults: { name:'Ordreformular', droppable:false, editable:false, components:'', attributes:{ 'data-a-ordreformular':'', 'data-a-tilstand':'test' }, traits:[
         { type:'produktliste', name:'data-a-produkter', label:'Produkter i formularen' },
-        { type:'select', name:'data-a-tilvalg', label:'Tilvalg (fx mørklægning)', options:produktValg('— intet —') },
+        { type:'select', name:'data-a-tilvalg', label:'Tilvalg 1 (order bump, fx mørklægning)', options:produktValg('— intet —') },
+        { type:'select', name:'data-a-tilvalg-2', label:'Tilvalg 2', options:produktValg('— intet —') },
+        { type:'select', name:'data-a-tilvalg-3', label:'Tilvalg 3', options:produktValg('— intet —') },
+        { type:'text', name:'data-a-lande', label:'Lande kunden kan vælge (fx DK eller DK, SE, NO; tom = DK)' },
+        { type:'select', name:'data-a-telefon', label:'Telefon', options:[{ id:'', name:'Valgfri' }, { id:'krav', name:'Skal udfyldes' }, { id:'nej', name:'Vises ikke' }] },
+        { type:'select', name:'data-a-firma', label:'Firmanavn', options:[{ id:'', name:'Vises ikke' }, { id:'valgfri', name:'Valgfri' }, { id:'krav', name:'Skal udfyldes' }] },
+        { type:'select', name:'data-a-faktura', label:'Faktureringsadresse', options:[{ id:'', name:'Samme som levering' }, { id:'ja', name:'Kunden kan skrive en anden' }] },
+        { type:'select', name:'data-a-rabatkode', label:'Rabatkodefelt', options:[{ id:'', name:'Vises' }, { id:'nej', name:'Vises ikke' }] },
+        { type:'select', name:'data-a-antal', label:'Antal', options:[{ id:'', name:'Altid 1' }, { id:'ja', name:'Kunden vælger antal' }] },
+        { type:'select', name:'data-a-oversigt', label:'Ordreoversigt', options:[{ id:'', name:'Foldet sammen' }, { id:'aaben', name:'Foldet ud' }, { id:'nej', name:'Vises ikke' }] },
+        { type:'select', name:'data-a-vilkaar', label:'Betingelser (afkrydsning)', options:[{ id:'', name:'Skal krydses af' }, { id:'nej', name:'Vises ikke' }] },
+        { type:'select', name:'data-a-trin', label:'Opdeling', options:[{ id:'', name:'Ét trin' }, { id:'2', name:'To trin (adresse først, så betaling)' }] },
         { type:'text', name:'data-a-knaptekst', label:'Tekst på knappen (tom = "Gennemfør købet")' },
         { type:'text', name:'data-a-efter', label:'Efter betaling: gå til (tom = næste trin)', adresse:'link' },
         { type:'select', name:'data-a-tilstand', label:'Betaling', options:[{ id:'test', name:'Test (Stripes sandkasse)' }, { id:'live', name:'Live (rigtige penge)' }] }

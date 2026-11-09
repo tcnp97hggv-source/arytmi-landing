@@ -124,3 +124,7 @@
 .a-editor [data-a-ordreformular] *{ pointer-events:none; }
 
 .ao-foer{ opacity:.6; font-weight:400; }
+
+.ao-antal-linje{ display:flex; align-items:center; gap:10px; margin:8px 0 4px; }
+.ao-antal-linje input{ width:80px; }
+.ao-videre{ margin-top:12px; }

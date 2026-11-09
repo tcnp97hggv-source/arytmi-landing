@@ -2036,7 +2036,7 @@
   /* De simple blokke herunder findes nu som rigtige elementer (sider-elementer.js).
      De bliver i BLOKKE, fordi skabelonerne bygges af dem, men vises ikke to gange. */
   var SKJULTE_BLOKKE = ['a-knap', 'a-billede', 'a-tekst', 'a-mellemrum', 'a-linje', 'a-to-kolonner', 'a-tre-kolonner'];
-  var RUNTIME_V = '20261109i';
+  var RUNTIME_V = '20261110a';
   var SYNLIG_CSS = '@media (max-width:768px){.a-kun-computer{display:none!important}}@media (min-width:769px){.a-kun-mobil{display:none!important}}';
 
   /* Pladsholderbilledet ligger i siden selv (data:). Et billede fra en
