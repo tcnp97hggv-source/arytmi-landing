@@ -325,8 +325,10 @@
       var valg2 = opsætning ? { mode:'setup', currency:'dkk' }
                             : { mode: abonnement ? 'subscription' : 'payment', amount: b.total_oere, currency:'dkk' };
       if(abonnement && !opsætning) valg2.setupFutureUsage = 'off_session';
+      /* Skal matche fakturaens payment_method_types (checkout: BETALINGSMETODER). */
+      valg2.paymentMethodTypes = b.betalingsmetoder || ['card'];
       if(!stripe){
-        if(!betalBoks.firstChild) betalBoks.appendChild(el('p', { klasse:'ao-status', tekst:'Her viser Stripe kortfelterne (kort, MobilePay, Klarna) på den udgivne side.' }));
+        if(!betalBoks.firstChild) betalBoks.appendChild(el('p', { klasse:'ao-status', tekst:'Her viser Stripe kortfelterne på den udgivne side.' }));
         return;
       }
       if(!elements){
