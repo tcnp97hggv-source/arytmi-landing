@@ -53,7 +53,8 @@
   function kr(oere){ oere = oere || 0; var neg = oere < 0; oere = Math.abs(oere); var h = Math.floor(oere / 100), r = oere % 100; return (neg ? '−' : '') + String(h).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (r ? ',' + String(r).padStart(2, '0') : '') + ' kr.'; }
   function tilOere(tekst){ var t = String(tekst || '').trim().replace(/\./g, '').replace(',', '.').replace(/\s*kr\.?$/i, ''); var n = Math.round(parseFloat(t) * 100); return isFinite(n) ? n : NaN; }
   function navn(o){ return ((o.fornavn || '') + ' ' + (o.efternavn || '')).trim(); }
-  function fysisk(o){ return (o.linjer || []).some(function(l){ return l.fysisk; }); }
+  /* Linjerne gemmer ikke "fysisk"; checkout beder kun om adresse og fragt, når noget skal sendes. */
+  function fysisk(o){ return !!(o.adresse || o.fragtsats_id) || (o.linjer || []).some(function(l){ return l.fysisk; }); }
   function liste(v){ return String(v || '').split(/[,\n]/).map(function(x){ return x.trim(); }).filter(Boolean); }
   function netto(o){ return ['betalt', 'delvist_refunderet', 'refunderet'].indexOf(o.status) >= 0 ? o.total_oere - (o.refunderet_oere || 0) : 0; }
   function pris(l){
