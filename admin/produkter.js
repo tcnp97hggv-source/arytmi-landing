@@ -439,8 +439,10 @@
     arkiv.addEventListener('change', function(){ visning.arkiv = arkiv.checked; tegnListe(); });
     top.appendChild(søg);
     top.appendChild(el('span', { klasse:'afkryds' }, [arkiv, el('label', { for:'pr-vis-arkiv', tekst:'Vis arkiverede' })]));
-    top.appendChild(knap('Opret produkt', 'knap lille', opretProdukt));
+    top.appendChild(knap('Opret produkt', 'knap lille', function(){ opretProdukt(nyPlads); }));
     rod.appendChild(top);
+    var nyPlads = el('div');
+    rod.appendChild(nyPlads);
     var tabel = el('table', { klasse:'pr-tabel' });
     tabel.appendChild(el('thead', {}, [el('tr', {}, ['', 'Produkt', 'Varianter', 'Pris', 'Stripe', ''].map(function(t){ return el('th', { tekst:t }); }))]));
     var tb = el('tbody');
@@ -479,13 +481,37 @@
     tegnListe();
   }
 
-  function opretProdukt(){
-    var navn = window.prompt('Produktets navn');
-    if(!navn || !navn.trim()) return;
-    gemRække('produkt', null, { navn: navn.trim() }).then(function(p){
-      visning.produkt = p.id;
-      return hent();
-    }).catch(function(f){ status(fejltekst(f), 'fejl'); });
+  /* Et navnefelt i siden (i stedet for browserens prompt(), der er grim og
+     ikke virker overalt). ok(navn, besked) skal give et løfte. */
+  function navnFelt(plads, etiket, knaptekst, ok){
+    tøm(plads);
+    var id = 'pr-navn-' + Math.random().toString(36).slice(2, 8);
+    var felt = el('input', { type:'text', id:id, maxlength:'200', autocomplete:'off' });
+    var besked = el('div', { klasse:'besked', hidden:true, role:'alert' });
+    var gem = knap(knaptekst, 'knap lille', function(){
+      var navn = felt.value.trim();
+      if(!navn){ vis(besked, 'Skriv et navn.', 'fejl'); felt.focus(); return; }
+      gem.disabled = true;
+      vis(besked, 'Gemmer …');
+      ok(navn, besked).then(function(){ tøm(plads); })
+        .catch(function(f){ gem.disabled = false; vis(besked, fejltekst(f), 'fejl'); });
+    });
+    felt.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); gem.click(); } else if(e.key === 'Escape') tøm(plads); });
+    plads.appendChild(el('div', { klasse:'brud-form' }, [
+      el('div', { klasse:'pr-felt' }, [el('label', { for:id, tekst:etiket }), felt]),
+      el('div', { klasse:'bb-linje' }, [gem, knap('Fortryd', 'knap rolig lille', function(){ tøm(plads); })]),
+      besked
+    ]));
+    felt.focus();
+  }
+
+  function opretProdukt(plads){
+    navnFelt(plads, 'Produktets navn', 'Opret produktet', function(navn){
+      return gemRække('produkt', null, { navn: navn }).then(function(p){
+        visning.produkt = p.id;
+        return hent();
+      });
+    });
   }
 
   /* ---------- Produktkortet ---------- */
@@ -551,14 +577,15 @@
         ? 'Én variant pr. ' + p.egenskaber.join(' / ').toLowerCase() + ', hver med egne priser. Standardvarianten er produktet selv.'
         : 'Et produkt uden egenskaber har kun standardvarianten. Tilføj en egenskab (fx Bilmodel) for at lave varianter.' })]);
     vs.forEach(function(v){ vkort.appendChild(variantBoks(p, v)); });
+    var variantPlads = el('div');
     if((p.egenskaber || []).length) vkort.appendChild(el('div', { klasse:'bb-linje' }, [knap('Tilføj variant', 'knap rolig lille', function(){
-      var navn = window.prompt('Variantens navn (fx Model Y Juniper)');
-      if(!navn || !navn.trim()) return;
-      var værdier = {}; værdier[p.egenskaber[0]] = navn.trim();
-      gemRække('produkt_variant', null, { produkt_id:p.id, navn:navn.trim(), vaerdier:værdier, raekkefoelge: vs.length,
-        fragtprofil_id: (data.profiler.filter(function(x){ return x.standard; })[0] || {}).id || null }).then(hent)
-        .catch(function(f){ status(fejltekst(f), 'fejl'); });
+      navnFelt(variantPlads, 'Variantens navn (fx Model Y Juniper)', 'Tilføj varianten', function(navn){
+        var værdier = {}; værdier[p.egenskaber[0]] = navn;
+        return gemRække('produkt_variant', null, { produkt_id:p.id, navn:navn, vaerdier:værdier, raekkefoelge: vs.length,
+          fragtprofil_id: (data.profiler.filter(function(x){ return x.standard; })[0] || {}).id || null }).then(hent);
+      });
     })]));
+    vkort.appendChild(variantPlads);
     rod.appendChild(vkort);
   }
 
@@ -768,6 +795,7 @@
   }
 
   /* ---------- Fælles liste + formular (samlinger, rabatter, tags) ---------- */
+  var venterBesked = null;
   function listeMedForm(rod, o){
     var top = el('div', { klasse:'pr-top' }, [el('p', { klasse:'hint', tekst:o.hint }), knap(o.ny, 'knap lille', function(){ åbn(null); })]);
     var formPlads = el('div');
@@ -776,6 +804,7 @@
     tabel.appendChild(el('thead', {}, [el('tr', {}, o.kolonner.map(function(k){ return el('th', { tekst:k[0] }); }).concat([el('th')]))]));
     var tb = el('tbody'); tabel.appendChild(tb);
     rod.appendChild(top); rod.appendChild(formPlads); rod.appendChild(besked); rod.appendChild(el('div', { klasse:'rulle' }, [tabel]));
+    if(venterBesked){ vis(besked, venterBesked, 'god'); venterBesked = null; }
     if(!o.rækker.length) tb.appendChild(el('tr', {}, [el('td', { colspan:String(o.kolonner.length + 1), klasse:'tomt', tekst:o.tom })]));
     o.rækker.forEach(function(r){
       tb.appendChild(el('tr', { klasse: o.arkiv && o.arkiv(r) ? 'pr-arkiv' : null },
@@ -788,17 +817,21 @@
       var fb = el('div', { klasse:'besked', hidden:true, role:'alert' });
       var boks = el('div', { klasse:'brud-form' }, [el('h4', { tekst: r ? 'Ret' : o.ny }), form.el]);
       if(o.advarsel && r) { var a = o.advarsel(r); if(a) boks.appendChild(el('p', { klasse:'hint', tekst:a })); }
-      var greb = el('div', { klasse:'bb-linje' }, [knap('Gem', 'knap lille', function(){
+      var gemKnap = knap('Gem', 'knap lille', function(){
         var l = form.læs();
         if(l.fejl){ vis(fb, l.fejl, 'fejl'); if(l.felt && l.felt.focus) l.felt.focus(); return; }
         var krop = o.krop ? o.krop(l.værdier, r) : l.værdier;
         if(typeof krop === 'string') return vis(fb, krop, 'fejl');
+        gemKnap.disabled = true;
+        vis(fb, 'Gemmer …');
         gemRække(o.tabel, r ? r.id : null, krop).then(function(gemt){
           tøm(formPlads);
-          vis(besked, (r ? 'Gemt.' : 'Oprettet.') + (o.efterGem ? ' ' + o.efterGem : ''), 'god');
+          /* hent() tegner fanen forfra; beskeden vises i den nye tegning. */
+          venterBesked = (r ? 'Gemt.' : 'Oprettet.') + (o.efterGem ? ' ' + o.efterGem : '');
           return hent();
-        }).catch(function(f){ vis(fb, fejltekst(f), 'fejl'); });
-      }), knap('Fortryd', 'knap rolig lille', function(){ tøm(formPlads); })]);
+        }).catch(function(f){ gemKnap.disabled = false; vis(fb, fejltekst(f), 'fejl'); });
+      });
+      var greb = el('div', { klasse:'bb-linje' }, [gemKnap, knap('Fortryd', 'knap rolig lille', function(){ tøm(formPlads); })]);
       if(r && o.stripe) greb.appendChild(stripeKnap(o.stripe, r.id, fb));
       if(r && (!o.kanSlette || o.kanSlette(r))) greb.appendChild(knap('Slet', 'knap fare lille', function(){
         if(!window.confirm('Slette den?')) return;
