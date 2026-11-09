@@ -1,0 +1,29 @@
+/* =============================================================
+   ORDRER (0090, 9/11) — bygger på kontakternes klasser (kt-*).
+   ============================================================= */
+#fane-ordrer .or-top{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:0 0 12px; }
+#fane-ordrer .or-top input[type="search"]{ flex:1 1 280px; max-width:420px; }
+#fane-ordrer .or-top select{ max-width:220px; }
+.or-filterknapper, .or-gem{ display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.or-gem[hidden]{ display:none; }
+.or-dato{ display:inline-flex; gap:6px; align-items:center; font-size:14px; }
+.or-sum{ margin:0; font-weight:600; flex:1 1 auto; }
+.or-mærke{ display:inline-block; font-size:12px; font-weight:600; padding:1px 8px; margin:0 4px 2px 0; border-radius:999px; background:var(--flade-2); }
+.or-betalt{ background:#dcebdc; color:#1e4d27; }
+.or-afventer{ background:#fbecd2; color:#6b4a12; }
+.or-fejlet, .or-annulleret{ background:#f6dcd6; color:#7a2a1c; }
+.or-refunderet, .or-delvist_refunderet{ background:#e3e1f2; color:#3b3474; }
+.or-skal{ border-color:#de854a; color:#8f4333; }
+.or-to{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:0 18px; }
+.or-stripe{ display:flex; flex-wrap:wrap; gap:6px 14px; }
+.or-linjer{ width:100%; border-collapse:collapse; }
+.or-linjer td{ padding:4px 6px; border-bottom:1px solid var(--kant); vertical-align:top; }
+.or-linjer td:first-child{ width:48px; color:var(--tekst-2); }
+.or-tal{ text-align:right; white-space:nowrap; }
+.or-fed td{ font-weight:700; }
+.or-handlinger{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:0 18px; }
+.or-handlinger select{ width:100%; }
+.kt-post.or-h-refusion::before{ background:#3b3474; }
+.kt-post.or-h-annullering::before{ background:#7a2a1c; }
+.kt-post.or-h-forsendelse::before{ background:#de854a; }
+.kt-post.or-h-status::before{ background:#2f6b3a; }

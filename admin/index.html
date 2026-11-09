@@ -124,6 +124,9 @@
 <!-- Kontakter (0089, 9/11): formularer -> kontakter, tidslinje, samtykke - se kontakter.js. -->
 <link rel="stylesheet" href="kontakter.css?v=20261109a">
 <script src="kontakter.js?v=20261109a"></script>
+<!-- Ordrer (0090, 9/11): egen checkouts ordrer, filtre, refusion, annullering - se ordrer.js. -->
+<link rel="stylesheet" href="ordrer.css?v=20261109a">
+<script src="ordrer.js?v=20261109a"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1267,6 +1270,10 @@
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8" opacity=".6"/></svg>
         <span class="n-lang">Produkter</span>
       </button>
+      <button type="button" data-fane="ordrer" class="kun-stor">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5" opacity=".6"/></svg>
+        <span class="n-lang">Ordrer</span>
+      </button>
       <button type="button" data-fane="kontakter" class="kun-stor">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" opacity=".6"/></svg>
         <span class="n-lang">Kontakter</span>
@@ -1693,6 +1700,19 @@
       </div>
       <span class="status" id="pr-status" role="status"></span>
       <div id="pr-indhold"></div>
+    </section>
+
+    <!-- ---------- ORDRER (0090, 9/11) ----------
+         Ordrer fra den egne checkout. Logikken ligger i ordrer.js; knapperne
+         (refundér, annullér, skift pris …) går gennem funktionen ordre-handling. -->
+    <section id="fane-ordrer" hidden>
+      <h2>Ordrer</h2>
+      <p class="under">
+        Alle køb gennem jeres egen ordreformular. Søg, filtrér og gem filtre; åbn en ordre for at
+        refundere, annullere, skifte pris på abonnementet, sende den eller gensende kvitteringen.
+      </p>
+      <span class="status" id="or-status" role="status"></span>
+      <div id="or-indhold"></div>
     </section>
 
     <!-- ---------- KONTAKTER (0089, 9/11) ----------
@@ -2519,7 +2539,7 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', ordrer:'fane-ordrer', drift:'fane-sikkerhed' };
   var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
   var valgtUnder = 'tekster';
 
@@ -2602,6 +2622,9 @@
     }
     if(navn === 'produkter' && window.ArytmiProdukter){
       window.ArytmiProdukter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
+    }
+    if(navn === 'ordrer' && window.ArytmiOrdrer){
+      window.ArytmiOrdrer.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
     }
   }
 
