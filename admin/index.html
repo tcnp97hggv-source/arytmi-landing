@@ -114,8 +114,8 @@
 <script src="nummerplader.js?v=20260924"></script>
 <!-- Sider & funnels (9/11): Arytmis egen sidebygger. GrapesJS (1,1 MB)
      hentes først, når en side åbnes - se sider.js. -->
-<link rel="stylesheet" href="sider.css?v=20261109">
-<script src="sider.js?v=20261109"></script>
+<link rel="stylesheet" href="sider.css?v=20261109b">
+<script src="sider.js?v=20261109b"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1656,11 +1656,7 @@
         Byg salgssider og funnels. Kladden kan rettes frit. Kunden ser først noget,
         når siden er udgivet, og udgivelsen til afsted.arytmi.com er slået til.
       </p>
-      <div class="værktøjslinje">
-        <button type="button" class="knap" id="sider-ny-funnel">+ Ny funnel</button>
-        <button type="button" class="knap rolig" id="sider-ny-side">+ Løs side</button>
-        <span class="status" id="sider-status" role="status"></span>
-      </div>
+      <span class="status" id="sider-status" role="status"></span>
       <div id="sider-liste"></div>
     </section>
 
@@ -1800,39 +1796,59 @@
 <!-- SIDEEDITOREN (9/11) - fylder hele vinduet, mens en side redigeres.
      GrapesJS tegner sig selv i #sf-laerred og panelerne til højre. -->
 <div id="sider-editor" hidden>
+  <!-- Toppen: tilbage, hvilken funnel og side, skærmstørrelse, gem og udgiv. -->
   <div class="sf-top">
-    <button type="button" class="knap rolig lille" id="sf-luk">← Sider</button>
+    <button type="button" class="sf-topknap" id="sf-luk" aria-label="Tilbage til funnelen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
     <div class="sf-hvad"><b id="sf-titel"></b><span id="sf-adresse"></span></div>
-    <div class="sf-gruppe" id="sf-enheder" role="group" aria-label="Skærmstørrelse">
-      <button type="button" class="knap rolig lille" data-enhed="computer">Computer</button>
-      <button type="button" class="knap rolig lille" data-enhed="tablet">Tablet</button>
-      <button type="button" class="knap rolig lille" data-enhed="mobil">Mobil</button>
+    <div class="sf-midt" id="sf-enheder" role="group" aria-label="Skærmstørrelse">
+      <button type="button" class="sf-topknap" data-enhed="computer" title="Computer" aria-label="Computer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v11H3z"/><path d="M8 20h8M12 16v4"/></svg></button>
+      <button type="button" class="sf-topknap" data-enhed="tablet" title="Tablet" aria-label="Tablet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"/><path d="M11 18h2"/></svg></button>
+      <button type="button" class="sf-topknap" data-enhed="mobil" title="Mobil" aria-label="Mobil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v18H8z"/><path d="M11 18h2"/></svg></button>
     </div>
-    <div class="sf-gruppe">
-      <button type="button" class="knap rolig lille" id="sf-fortryd" aria-label="Fortryd">↶</button>
-      <button type="button" class="knap rolig lille" id="sf-gentag" aria-label="Gentag">↷</button>
+    <div class="sf-højre-top">
+      <button type="button" class="sf-topknap" id="sf-fortryd" title="Fortryd" aria-label="Fortryd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+      <button type="button" class="sf-topknap" id="sf-gentag" title="Gentag" aria-label="Gentag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3"/></svg></button>
+      <button type="button" class="sf-topknap" id="sf-vis" title="Forhåndsvis i nyt vindue" aria-label="Forhåndsvis"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button>
+      <span class="sf-tilstand" id="sf-tilstand" role="status"></span>
+      <button type="button" class="sf-gemknap" id="sf-gem">Gem</button>
+      <button type="button" class="sf-udgivknap" id="sf-udgiv">Udgiv</button>
     </div>
-    <button type="button" class="knap rolig lille" id="sf-indstillinger">Indstillinger</button>
-    <button type="button" class="knap rolig lille" id="sf-versioner">Versioner</button>
-    <button type="button" class="knap rolig lille" id="sf-vis">Forhåndsvis</button>
-    <span class="sf-tilstand" id="sf-tilstand" role="status"></span>
-    <button type="button" class="knap rolig lille" id="sf-gem">Gem kladde</button>
-    <button type="button" class="knap lille" id="sf-udgiv">Udgiv</button>
   </div>
   <div class="sf-krop">
-    <div id="sf-laerred"></div>
-    <div class="sf-side">
-      <div id="sf-paneler" role="group" aria-label="Paneler">
-        <button type="button" data-panel="blokke">Blokke</button>
-        <button type="button" data-panel="stil">Stil</button>
-        <button type="button" data-panel="egenskaber">Egenskaber</button>
-        <button type="button" data-panel="lag">Lag</button>
+    <!-- Venstre: funnelens trin, blokke at tilføje, og lagene. -->
+    <aside class="sf-venstre">
+      <div class="sf-vfaner" id="sf-venstre-faner" role="tablist">
+        <button type="button" role="tab" data-v="trin">Trin</button>
+        <button type="button" role="tab" data-v="tilføj">+ Tilføj</button>
+        <button type="button" role="tab" data-v="lag">Lag</button>
       </div>
-      <div class="sf-panel" id="sf-blokke"></div>
-      <div class="sf-panel" id="sf-stil" hidden></div>
-      <div class="sf-panel" id="sf-egenskaber" hidden></div>
-      <div class="sf-panel" id="sf-lag" hidden></div>
+      <div class="sf-vpanel" id="sf-v-trin"><div id="sf-trinliste"></div></div>
+      <div class="sf-vpanel" id="sf-v-tilføj" hidden>
+        <p class="sf-hint">Træk en blok ind på siden.</p>
+        <div id="sf-blokke"></div>
+      </div>
+      <div class="sf-vpanel" id="sf-v-lag" hidden><div id="sf-lag"></div></div>
+    </aside>
+    <div class="sf-midte">
+      <div id="sf-laerred"></div>
+      <!-- Hvor i siden er det valgte? Klik for at vælge det udenom. -->
+      <nav class="sf-sti" id="sf-sti" aria-label="Placering i siden"></nav>
     </div>
+    <!-- Højre: det valgte, på dansk. Det tekniske under Avanceret. -->
+    <aside class="sf-højre">
+      <div class="sf-valgt" id="sf-valgt">Siden</div>
+      <div class="sf-hfaner" id="sf-højre-faner" role="tablist">
+        <button type="button" role="tab" data-h="indstillinger">Indstillinger</button>
+        <button type="button" role="tab" data-h="avanceret">Avanceret</button>
+      </div>
+      <div class="sf-hpanel" id="sf-h-indstillinger"></div>
+      <div class="sf-hpanel sf-avanceret" id="sf-h-avanceret" hidden>
+        <div id="sf-avanceret-egenskaber"></div>
+        <div id="sf-avanceret-stil"></div>
+      </div>
+    </aside>
   </div>
 </div>
 
