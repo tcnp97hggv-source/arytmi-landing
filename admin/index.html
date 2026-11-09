@@ -117,6 +117,10 @@
 <link rel="stylesheet" href="sider.css?v=20261109g">
 <script src="sider-elementer.js?v=20261109f"></script>
 <script src="sider.js?v=20261109g"></script>
+<!-- Produkter (0085, 9/11): produkter, varianter, priser, samlinger, rabatter,
+     fragt og tags til Arytmis egen ordreformular - se produkter.js. -->
+<link rel="stylesheet" href="produkter.css?v=20261109a">
+<script src="produkter.js?v=20261109a"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1256,6 +1260,10 @@
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9h16M9 9v11" opacity=".6"/></svg>
         <span class="n-lang">Sider &amp; funnels</span>
       </button>
+      <button type="button" data-fane="produkter" class="kun-stor">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8" opacity=".6"/></svg>
+        <span class="n-lang">Produkter</span>
+      </button>
       <button type="button" data-fane="drift">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
         <span class="n-lang">Drift &amp; sikkerhed</span><span class="n-kort">Drift</span>
@@ -1659,6 +1667,25 @@
       </p>
       <span class="status" id="sider-status" role="status"></span>
       <div id="sider-liste"></div>
+    </section>
+
+    <!-- ---------- PRODUKTER (0085, 9/11) ----------
+         Det, ordreformularen sælger. Logikken ligger i produkter.js. -->
+    <section id="fane-produkter" hidden>
+      <h2>Produkter</h2>
+      <p class="under">
+        Produkter med varianter og priser, samlinger, rabatter og fragt — det, jeres egen
+        ordreformular sælger. Beløb er med moms. "Send til Stripe" gør prisen klar til betaling.
+      </p>
+      <div class="underfaner" id="pr-faner" role="tablist">
+        <button type="button" role="tab" data-pf="produkter" aria-selected="true">Produkter</button>
+        <button type="button" role="tab" data-pf="samlinger" aria-selected="false">Samlinger</button>
+        <button type="button" role="tab" data-pf="rabatter" aria-selected="false">Rabatter</button>
+        <button type="button" role="tab" data-pf="fragt" aria-selected="false">Fragt</button>
+        <button type="button" role="tab" data-pf="tags" aria-selected="false">Tags</button>
+      </div>
+      <span class="status" id="pr-status" role="status"></span>
+      <div id="pr-indhold"></div>
     </section>
 
     <!-- ---------- KUNDER ---------- -->
@@ -2469,7 +2496,7 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', drift:'fane-sikkerhed' };
   var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
   var valgtUnder = 'tekster';
 
@@ -2546,6 +2573,9 @@
        Intet af det lægges på window. */
     if(navn === 'sider' && window.ArytmiSider){
       window.ArytmiSider.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
+    }
+    if(navn === 'produkter' && window.ArytmiProdukter){
+      window.ArytmiProdukter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
     }
   }
 

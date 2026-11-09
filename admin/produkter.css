@@ -1,0 +1,50 @@
+/* =============================================================
+   PRODUKTER (0085, 9/11) — kun det, bagrummets egne klasser ikke dækker.
+   Farver og flader kommer fra bagrummets variabler (index.html).
+   ============================================================= */
+#fane-produkter .pr-top{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:0 0 16px; }
+#fane-produkter .pr-top h3{ margin:0; font-size:20px; }
+#fane-produkter .pr-top .hint{ flex:1 1 320px; margin:0; }
+#fane-produkter .pr-top input[type="search"]{ flex:1 1 220px; max-width:340px; }
+
+.pr-tabel td{ vertical-align:middle; }
+.pr-tabel .pr-greb{ text-align:right; white-space:nowrap; }
+.pr-tabel tr.pr-arkiv td, .pr-pris.pr-arkiv{ color:var(--tekst-2); }
+.pr-thumb{ width:56px; }
+.pr-thumb img, .pr-thumb .pr-ingen{ display:block; width:44px; height:44px; border-radius:8px; object-fit:cover; background:var(--flade-2); border:1px solid var(--kant); }
+.pr-navn strong{ display:block; }
+.pr-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.pr-tag{ display:inline-block; font-size:12px; padding:1px 8px; border-radius:999px;
+         border:1px solid var(--tagfarve, var(--kant)); color:var(--tagfarve, var(--tekst-2)); }
+.pr-god{ color:var(--tekst-2); }
+.pr-advar{ color:var(--fejl); }
+
+.pr-kort{ padding:16px 18px 18px; margin:0 0 18px; }
+.pr-kort > h4{ margin:0 0 10px; font-size:17px; }
+.pr-handlinger{ margin-top:16px; flex-wrap:wrap; gap:8px; }
+
+.pr-form{ display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:12px 16px; margin:8px 0; }
+.pr-form .pr-felt.bred, .pr-form .afkryds, .pr-form .pr-del{ grid-column:1 / -1; }
+.pr-form .pr-felt label{ display:block; font-weight:600; font-size:14px; margin-bottom:4px; }
+.pr-form .pr-felt input, .pr-form .pr-felt select, .pr-form .pr-felt textarea{ width:100%; }
+.pr-form .pr-felt .hint{ margin:4px 0 0; }
+.pr-form .pr-del{ margin:12px 0 0; padding-top:12px; border-top:1px solid var(--kant); font-size:15px; }
+.pr-form [hidden]{ display:none !important; }
+.pr-flervalg{ display:flex; flex-wrap:wrap; gap:6px 16px; padding:8px 10px; border:1px solid var(--kant); border-radius:10px; max-height:180px; overflow:auto; }
+
+.pr-medier{ display:flex; flex-direction:column; gap:8px; }
+.pr-medieliste{ display:flex; flex-direction:column; gap:6px; }
+.pr-medie{ display:flex; align-items:center; gap:10px; }
+.pr-medie img{ width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid var(--kant); }
+.pr-medienavn{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; color:var(--tekst-2); }
+.pr-skjult{ display:none; }
+
+.pr-variant{ border:1px solid var(--kant); border-radius:12px; padding:10px 14px; margin:10px 0; background:var(--flade); }
+.pr-variant > summary{ cursor:pointer; padding:4px 0; }
+.pr-variant[open] > summary{ margin-bottom:8px; }
+.pr-priser{ margin-top:16px; padding-top:12px; border-top:1px solid var(--kant); }
+.pr-priser h5, .pr-zone h5{ margin:0 0 8px; font-size:15px; }
+.pr-pris{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; padding:8px 0; border-bottom:1px solid var(--kant); }
+.pr-prisnavn{ font-weight:600; min-width:140px; }
+.pr-prisform{ margin:10px 0; }
+.pr-zone{ margin-top:14px; padding:10px 14px; border:1px solid var(--kant); border-radius:12px; }
