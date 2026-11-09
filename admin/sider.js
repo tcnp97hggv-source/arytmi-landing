@@ -819,9 +819,14 @@
   /* Nyt vindue via en blob: samme html og css som Udgiv tager. noopener,
      så vinduet ikke kan røre bagrummet. */
   function åbnVindue(html, css, titel){
+    var her = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
+    html = String(html || '').replace(/^<body[^>]*>|<\/body>$/g, '')
+      .replace(/<div data-a-sektion="([^"]*)"[^>]*><\/div>/g, function(_, id){ var x = sektioner.filter(function(y){ return y.id === id; })[0]; return x ? x.html + (x.css ? '<style>' + x.css + '</style>' : '') : ''; });
     var doc = '<!doctype html><html lang="da"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
-      String(titel || 'Forhåndsvisning').replace(/[<&]/g, '') + '</title><style>' + css + '</style></head><body>' + html + '</body></html>';
+      String(titel || 'Forhåndsvisning').replace(/[<&]/g, '') + '</title>' +
+      '<link rel="stylesheet" href="' + her + 'side-runtime.css?v=' + RUNTIME_V + '"><style>' + css + '</style></head><body>' + html +
+      '<script src="' + her + 'side-runtime.js?v=' + RUNTIME_V + '"><\/script></body></html>';
     var url = URL.createObjectURL(new Blob([doc], { type:'text/html' }));
     window.open(url, '_blank', 'noopener');
     setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
@@ -849,7 +854,7 @@
     var skift = editor && ændret ? gem() : Promise.resolve();
     status('Åbner editoren …');
     skift.then(function(){
-      return Promise.all([ hentGrapes(), api.json('/rest/v1/side?select=*&id=eq.' + encodeURIComponent(id)) ]);
+      return Promise.all([ hentGrapes(), api.json('/rest/v1/side?select=*&id=eq.' + encodeURIComponent(id)), hentSektioner() ]);
     }).then(function(r){
       var s = r[1] && r[1][0];
       if(!s) throw new Error('Siden findes ikke længere.');
@@ -859,16 +864,94 @@
     }).catch(function(f){ if(editor) editorStatus(api.forklar(f), 'fejl'); else fejl(f); });
   }
 
+  /* ---------- Gemte og universelle sektioner (0082) ---------- */
+  var sektioner = [];
+  function hentSektioner(){
+    return api.json('/rest/v1/sektion?select=id,navn,universel,html,css,opdateret&order=navn.asc')
+      .then(function(r){ sektioner = r || []; }).catch(function(){ sektioner = []; });
+  }
+  function sektionBlokke(){
+    if(!editor) return;
+    var bm = editor.Blocks;
+    bm.getAll().filter(function(b){ return /^gemt-/.test(b.id); }).forEach(function(b){ bm.remove(b.id); });
+    sektioner.forEach(function(x){
+      bm.add('gemt-' + x.id, {
+        label: x.navn + (x.universel ? ' (universel)' : ''), category: 'Gemte sektioner',
+        media: '<svg viewBox="0 0 120 80" class="sf-skitse"><rect width="120" height="80" rx="6" fill="' + (x.universel ? '#eef3ec' : '#FAF6EF') + '" stroke="' + (x.universel ? '#4f6b4a' : '#D9CFC2') + '"/><text x="60" y="46" text-anchor="middle" font-size="12" fill="#4A2417" font-family="Arial">' + (x.universel ? '↻ universel' : 'gemt') + '</text></svg>',
+        content: x.universel ? { type:'a-universel', attributes:{ 'data-a-sektion':x.id } } : x.html + (x.css ? '<style>' + x.css + '</style>' : '')
+      });
+    });
+    tegnSektionsliste();
+  }
+  function tegnSektionsliste(){
+    var l = $('sf-sektionsliste'); if(!l) return;
+    tøm(l);
+    if(!sektioner.length){ l.appendChild(el('p', { klasse:'sf-hint', tekst:'Ingen gemte sektioner endnu. Vælg en sektion på siden og tryk "Gem som sektion".' })); return; }
+    sektioner.forEach(function(x){
+      l.appendChild(el('div', { klasse:'sf-sektion-række' }, [
+        el('span', {}, [ el('b', { tekst:x.navn }), el('small', { tekst: x.universel ? 'Universel · rettes ét sted' : 'Gemt · indsættes som kopi' }) ]),
+        el('button', { type:'button', klasse:'knap rolig lille', tekst:'Rediger', klik:function(){ åbnSektion(x.id); } }),
+        el('button', { type:'button', klasse:'knap rolig lille sf-farlig', tekst:'Slet', 'aria-label':'Slet ' + x.navn, klik:function(){ sletSektion(x); } })
+      ]));
+    });
+  }
+  function gemSomSektion(k){
+    modal('Gem som sektion', [
+      { navn:'navn', label:'Navn', hjælp:'Fx "Sidefod", "Anmeldelser" eller "Garanti".' },
+      { navn:'universel', label:'Universel: ret ét sted, opdatér overalt', type:'afkryds', værdi:false,
+        hjælp:'Til fx sidefod og garanti, der skal være ens på alle sider. Ellers indsættes den som en kopi, der kan rettes for sig.' }
+    ], 'Gem sektion').then(function(v){
+      if(!v || !v.navn.trim()) return;
+      var css = ''; try { css = editor.getCss({ component:k }); } catch(e){}
+      return api.json('/rest/v1/sektion', { method:'POST', headers:{ Prefer:'return=representation' },
+        body:{ navn:v.navn.trim(), universel:!!v.universel, html:k.toHTML(), css:css } }).then(function(r){
+        var ny = r[0];
+        sektioner.push(ny); sektionBlokke();
+        if(ny.universel){
+          var p = k.parent(), i = k.index();
+          k.remove();
+          var u = p.components().add({ type:'a-universel', attributes:{ 'data-a-sektion':ny.id } }, { at:i });
+          editor.select(u);
+        }
+        editorStatus('Sektionen er gemt', 'god');
+      });
+    }).catch(function(e){ editorStatus(api.forklar(e), 'fejl'); });
+  }
+  function sletSektion(x){
+    if(!confirm('Slet "' + x.navn + '"?' + (x.universel ? '\n\nSider, der bruger den, viser "findes ikke længere", til den fjernes fra dem.' : ''))) return;
+    api.json('/rest/v1/sektion?id=eq.' + encodeURIComponent(x.id), { method:'DELETE', headers:{ Prefer:'return=minimal' } })
+      .then(function(){ sektioner = sektioner.filter(function(y){ return y.id !== x.id; }); sektionBlokke(); })
+      .catch(function(e){ editorStatus(api.forklar(e), 'fejl'); });
+  }
+  /* En sektion redigeres i den samme editor. "Gem" gemmer den i tabellen
+     sektion; "Udgiv" findes ikke for en sektion. */
+  function åbnSektion(id){
+    var skift = editor && ændret ? gem() : Promise.resolve();
+    skift.then(function(){ return api.json('/rest/v1/sektion?select=*&id=eq.' + encodeURIComponent(id)); }).then(function(r){
+      var x = r[0]; if(!x) return;
+      tilbageTil = åbenSide && !åbenSide.erSektion ? åbenSide.id : tilbageTil;
+      åbenSide = { erSektion:true, id:x.id, navn:x.navn, sti:'(sektion)', funnel_id:null, kladde:x.kladde, kladde_html:x.html, kladde_css:x.css, universel:x.universel, custom_css:'' };
+      visEditor(åbenSide);
+    }).catch(function(e){ editorStatus(api.forklar(e), 'fejl'); });
+  }
+  var tilbageTil = null;
+
   function visEditor(s){
     $('sider-editor').hidden = false;
     document.body.classList.add('sf-redigerer');
     var f = funnels.filter(function(x){ return x.id === s.funnel_id; })[0];
-    $('sf-titel').textContent = f ? f.navn : 'Løs side';
-    $('sf-adresse').textContent = s.navn + ' · ' + s.sti;
+    $('sf-titel').textContent = s.erSektion ? (s.universel ? 'Universel sektion' : 'Gemt sektion') : f ? f.navn : 'Løs side';
+    $('sf-adresse').textContent = s.erSektion ? s.navn : s.navn + ' · ' + s.sti;
+    $('sf-udgiv').hidden = !!s.erSektion;
+    $('sider-editor').classList.toggle('sf-sektionstilstand', !!s.erSektion);
     tegnTrinListe(s);
 
+    /* Runtime-scriptet og dets CSS indlæses i lærredet, så popup, video,
+       nedtælling m.m. ser ud som på den udgivne side. */
+    var her = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
     if(editor){ editor.destroy(); editor = null; }
     editor = window.grapesjs.init({
+      canvas: { styles:[ her + 'side-runtime.css?v=' + RUNTIME_V ], scripts:[ her + 'side-runtime.js?v=' + RUNTIME_V ] },
       container: '#sf-laerred',
       height: '100%', width: 'auto',
       fromElement: false,
@@ -881,7 +964,7 @@
         { id:'mobil', name:'Mobil', width:'375px', widthMedia:'480px' }
       ] },
       assetManager: { upload:false, uploadFile:uploadBilleder, assets:[] },
-      blockManager: { appendTo:'#sf-blokke', blocks: BLOKKE },
+      blockManager: { appendTo:'#sf-blokke', blocks: [] },
       styleManager: { appendTo:'#sf-avanceret-stil' },
       layerManager: { appendTo:'#sf-lag' },
       traitManager: { appendTo:'#sf-avanceret-egenskaber' },
@@ -890,11 +973,20 @@
       i18n: { locale:'da', detectLocale:false, messagesAdd:{ da:DANSK } }
     });
 
+    /* Elementerne (sider-elementer.js) først, så de færdige sektioner og
+       de gemte. Rækkefølgen bestemmer kategoriernes rækkefølge. */
+    window.ArytmiElementer.registrer(editor, { plads:PLADS, sektion:function(id){ return sektioner.filter(function(x){ return x.id === id; })[0]; } });
+    BLOKKE.forEach(function(b){ if(SKJULTE_BLOKKE.indexOf(b.id) < 0) editor.Blocks.add(b.id, { label:b.label, category:'Færdige sektioner', media:b.media, content:b.content }); });
+    sektionBlokke();
+
     if(s.kladde && s.kladde.pages) editor.loadProjectData(s.kladde);
     else if(s.kladde_html){ editor.setComponents(s.kladde_html); editor.setStyle(s.kladde_css || BASIS_CSS); }
     else editor.setStyle(BASIS_CSS);
     editor.Css.addRules(SYNLIG_CSS);
     editor.on('load', lærredsStil);
+    /* Stiplede omrids om alle bokse, så tomme kolonner og rækker kan ses og
+       rammes, når man trækker noget ind. Vises ikke på den udgivne side. */
+    editor.on('load', function(){ editor.runCommand('core:component-outline'); });
     lærredsStil();
 
     ændret = false;
@@ -909,6 +1001,12 @@
     editor.on('component:selected component:deselected component:update:attributes', function(){ tegnPanel(); });
     editor.on('component:styleUpdate', function(){ tegnPanel(true); });
     editor.on('canvas:drop', function(){ visVenstre('trin'); });
+    /* Nye nedtællinger m.m. skal startes af runtime-scriptet i lærredet. */
+    var genstartVent = null;
+    editor.on('component:add', function(){
+      clearTimeout(genstartVent);
+      genstartVent = setTimeout(function(){ var w = editor && editor.Canvas.getWindow(); if(w && w.ArytmiRuntime) w.ArytmiRuntime.genstart(); }, 150);
+    });
     hentBilleder();
     visVenstre(s.kladde_html || (s.kladde && s.kladde.pages) ? 'trin' : 'tilføj');
     visHøjre('indstillinger');
@@ -918,6 +1016,7 @@
 
   function tegnTrinListe(aktiv){
     var liste = $('sf-trinliste'); tøm(liste);
+    if(aktiv.erSektion){ liste.appendChild(el('p', { klasse:'sf-hint', tekst:'Du retter en ' + (aktiv.universel ? 'universel' : 'gemt') + ' sektion. Tryk ← for at gå tilbage til siden.' })); return; }
     var trin = sider.filter(function(x){ return x.funnel_id === aktiv.funnel_id; });
     trin.forEach(function(s){
       liste.appendChild(el('button', { type:'button', klasse:'sf-tl' + (s.id === aktiv.id ? ' aktiv' : ''), 'aria-current': s.id === aktiv.id ? 'page' : null,
@@ -948,6 +1047,7 @@
 
   function sideIndstillingerIEditor(){
     if(!åbenSide) return;
+    if(åbenSide.erSektion){ editorStatus('En sektion har ingen sideindstillinger.', 'advar'); return; }
     sideIndstillinger(åbenSide, function(){
       $('sf-adresse').textContent = åbenSide.navn + ' · ' + åbenSide.sti;
       lærredsStil();
@@ -967,6 +1067,11 @@
 
   function lukEditor(){
     clearTimeout(autogem);
+    if(åbenSide && åbenSide.erSektion){
+      var tilbage = tilbageTil; tilbageTil = null;
+      (ændret ? gem() : Promise.resolve()).then(function(){ if(tilbage){ ændret = false; åbn(tilbage); } else { ændret = false; lukEditor(); } }).catch(function(){});
+      if(tilbage) return;
+    }
     if(ændret && !confirm('Du har ændringer, der ikke er gemt. Luk alligevel?')) return;
     if(editor){ editor.destroy(); editor = null; }
     åbenSide = null; ændret = false;
@@ -984,6 +1089,15 @@
   function gem(){
     if(!editor || !åbenSide) return Promise.resolve();
     editorStatus('Gemmer …', 'svag');
+    if(åbenSide.erSektion){
+      var sid = åbenSide.id, sk = { kladde: editor.getProjectData(), html: editor.getHtml().replace(/^<body[^>]*>|<\/body>$/g, ''), css: editor.getCss() };
+      return api.json('/rest/v1/sektion?id=eq.' + encodeURIComponent(sid), { method:'PATCH', body:sk, headers:{ Prefer:'return=minimal' } })
+        .then(function(){
+          ændret = false;
+          sektioner.forEach(function(x){ if(x.id === sid){ x.html = sk.html; x.css = sk.css; } });
+          editorStatus(åbenSide.universel ? 'Gemt - slår igennem ved næste udgivelse af siderne' : 'Gemt', 'god');
+        }).catch(function(f){ editorStatus(api.forklar(f), 'fejl'); throw f; });
+    }
     var krop = { kladde: editor.getProjectData(), kladde_html: editor.getHtml(), kladde_css: editor.getCss() };
     var id = åbenSide.id;
     return api.json('/rest/v1/side?id=eq.' + encodeURIComponent(id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } })
@@ -1021,7 +1135,7 @@
 
   /* ---------- Venstre: trin og "Tilføj" ---------- */
   function visVenstre(hvad){
-    ['trin', 'tilføj', 'lag'].forEach(function(p){
+    ['trin', 'tilføj', 'lag', 'gemte'].forEach(function(p){
       $('sf-v-' + p).hidden = p !== hvad;
       var k = document.querySelector('#sf-venstre-faner [data-v="' + p + '"]');
       if(k) k.setAttribute('aria-selected', String(p === hvad));
@@ -1085,78 +1199,143 @@
   /* =============================================================
      HØJRE PANEL: DET VALGTE, PÅ DANSK
      =============================================================
-     Kun det, de fleste skal bruge: tekst, link, billede, farver, afstand,
-     justering og hvor det vises. Alt andet ligger under "Avanceret"
-     (GrapesJS' eget stilpanel). Rettelserne lægges på elementet selv. */
+     Grupperne følger elementkataloget i paritetslisten (afsnit E):
+     egenskaber, tekst/skrift, knap, billede, baggrund, ramme, afstand,
+     animation, vis på og element. Det tekniske ligger under "Avanceret".
+
+     SKÆRMSTØRRELSE: står editoren på Tablet eller Mobil, gælder
+     rettelserne KUN den skærmstørrelse (som en @media-regel). Det står
+     øverst i panelet, så det aldrig sker ved et uheld. */
+  var TYPE_NAVNE = {
+    'a-sektion':'Sektion', 'a-raekke':'Række', 'a-kolonne':'Kolonne', 'a-flexboks':'Flex-boks', 'a-popup':'Popup',
+    'a-overskrift':'Overskrift', 'a-knap':'Knap', 'a-video':'Video', 'a-videopopup':'Video-popup', 'a-lyd':'Lyd',
+    'a-formular':'Formular', 'a-felt':'Formularfelt', 'a-afkrydsning':'Afkrydsning', 'a-ikonliste':'Liste',
+    'a-nedtaelling':'Nedtælling', 'a-ikon':'Ikon', 'a-bjaelke':'Fremskridtsbjælke', 'a-egen-html':'Egen HTML',
+    'a-universel':'Universel sektion', image:'Billede', link:'Link', text:'Tekst', wrapper:'Side'
+  };
   function slags(k){
     if(!k) return '';
-    var tag = (k.get('tagName') || '').toLowerCase();
-    var kl = k.getClasses ? k.getClasses() : [];
-    if(k.is('image') || tag === 'img') return 'billede';
-    if(tag === 'a' || tag === 'button' || kl.indexOf('a-knap') >= 0) return 'knap';
-    if(/^h[1-6]$/.test(tag)) return 'overskrift';
-    if(k.is('text') || tag === 'p' || tag === 'span' || tag === 'li' || tag === 'summary' || tag === 'cite') return 'tekst';
-    if(tag === 'form') return 'formular';
-    if(tag === 'input' || tag === 'textarea' || tag === 'label') return 'felt';
-    if(tag === 'section' || tag === 'footer' || tag === 'header') return 'sektion';
+    var t = k.get('type'), tag = (k.get('tagName') || '').toLowerCase();
+    if(t === 'image' || tag === 'img') return 'billede';
+    if(t === 'a-knap' || t === 'link' || tag === 'button') return 'knap';
+    if(t === 'a-overskrift' || /^h[1-6]$/.test(tag)) return 'overskrift';
+    if(t === 'text' || tag === 'p' || tag === 'span' || tag === 'li' || tag === 'summary' || tag === 'cite' || tag === 'blockquote') return 'tekst';
+    if(t === 'a-sektion' || t === 'a-popup' || tag === 'section' || tag === 'footer' || tag === 'header') return 'sektion';
     return 'boks';
   }
-  var NAVNE = { billede:'Billede', knap:'Knap / link', overskrift:'Overskrift', tekst:'Tekst', formular:'Formular', felt:'Formularfelt', sektion:'Sektion', boks:'Boks' };
   function navnPå(k){
-    var t = (k.get('tagName') || '').toLowerCase();
-    if(k.get('type') === 'wrapper') return 'Side';
-    var s = slags(k);
-    if(s === 'boks'){
-      if(t === 'details') return 'Spørgsmål';
-      if(t === 'blockquote') return 'Citat';
-      if(t === 'ul' || t === 'ol') return 'Liste';
-      if((k.getClasses() || []).indexOf('a-wrap') >= 0) return 'Indhold';
-    }
-    return NAVNE[s] || 'Element';
+    if(!k) return 'Siden';
+    var t = k.get('type');
+    if(TYPE_NAVNE[t]) return TYPE_NAVNE[t];
+    var tag = (k.get('tagName') || '').toLowerCase();
+    if(tag === 'details') return 'Spørgsmål';
+    if(tag === 'ul' || tag === 'ol') return 'Liste';
+    if(tag === 'nav') return 'Menu';
+    if((k.getClasses() || []).indexOf('a-wrap') >= 0) return 'Indhold';
+    return { billede:'Billede', knap:'Knap / link', overskrift:'Overskrift', tekst:'Tekst', sektion:'Sektion', boks:'Boks' }[slags(k)] || 'Element';
   }
 
+  /* ---------- Stil pr. skærmstørrelse ---------- */
+  function enhed(){ var d = editor.Devices.getSelected(); return d ? d.id : 'computer'; }
+  function mediaFor(){ var d = editor.Devices.getSelected(); var w = d && d.get('widthMedia'); return w ? '(max-width: ' + w + ')' : ''; }
+  function regel(k, tilstand){
+    var id = k.getId();
+    if(!k.getAttributes().id) k.addAttributes({ id:id });
+    var m = mediaFor(), sel = '#' + id + (tilstand ? ':' + tilstand : '');
+    return { sel:sel, m:m };
+  }
+  function stilAf(k, tilstand){
+    var r = regel(k, tilstand);
+    if(!r.m && !tilstand) return k.getStyle();
+    var rule = editor.Css.getRule(r.sel, r.m ? { atRuleType:'media', atRuleParams:r.m } : {});
+    return rule ? rule.getStyle() : {};
+  }
+  function sætStil(k, o, tilstand){
+    var r = regel(k, tilstand);
+    if(!r.m && !tilstand){ k.addStyle(o); return; }
+    var nu = stilAf(k, tilstand), ny = {};
+    for(var x in nu) ny[x] = nu[x];
+    for(var y in o){ if(o[y] === '' || o[y] === null) delete ny[y]; else ny[y] = o[y]; }
+    editor.Css.setRule(r.sel, ny, r.m ? { atRuleType:'media', atRuleParams:r.m } : {});
+    ændret = true; editor.trigger('update');
+  }
+  function fjernStil(k, prop, tilstand){ var o = {}; [].concat(prop).forEach(function(p){ o[p] = ''; });
+    if(!mediaFor() && !tilstand) [].concat(prop).forEach(function(p){ k.removeStyle(p); }); else sætStil(k, o, tilstand); }
+
+  /* Panelet kan få et element til at skifte attributter (fx få et id), og
+     det udløser en ny tegning midt i den første. Den indre springes over. */
+  var tegner = false;
   function tegnPanel(kunVærdier){
+    if(tegner) return;
+    tegner = true;
+    try { tegnPanelNu(kunVærdier); } finally { tegner = false; }
+  }
+  function tegnPanelNu(kunVærdier){
     var boks = $('sf-h-indstillinger');
     if(!editor) return;
     var k = editor.getSelected();
     tegnSti(k);
     if(kunVærdier && boks.getAttribute('data-for') === (k && k.getId())) return;
     tøm(boks);
-    $('sf-valgt').textContent = k ? navnPå(k) : 'Siden';
+    $('sf-valgt').textContent = navnPå(k);
     boks.setAttribute('data-for', k ? k.getId() : '');
     if(!k){
       boks.appendChild(el('div', { klasse:'sf-tip' }, [
         el('b', { tekst:'Klik på noget i siden for at rette det.' }),
-        el('p', { tekst:'Tekst rettes ved at dobbeltklikke direkte i siden. Nye sektioner hentes under "Tilføj" til venstre og trækkes ind på siden.' })
+        el('p', { tekst:'Tekst skrives ved at dobbeltklikke i siden. Markér ord for fed, kursiv, link, farve og fremhævning. Byggeklodser hentes under "+ Tilføj".' })
       ]));
       gruppe(boks, 'Siden', [
-        knapRække([ ['Sidens indstillinger', sideIndstillingerIEditor] ]),
-        knapRække([ ['Tidligere versioner', versioner] ])
+        knapRække([ ['Sidens indstillinger', sideIndstillingerIEditor], ['Stilguide', stilIEditor] ]),
+        knapRække([ ['Tidligere versioner', versioner], ['Indsæt fra udklip', function(){ indsæt(null); }] ])
       ]);
       return;
     }
-    var s = slags(k);
-    var st = k.getStyle();
+    var s = slags(k), t = k.get('type');
+    var st = stilAf(k);
+    if(enhed() !== 'computer'){
+      boks.appendChild(el('p', { klasse:'sf-enhedsbesked', tekst:'Du retter for ' + (enhed() === 'mobil' ? 'MOBIL' : 'TABLET') + '. Ændringerne gælder kun den skærmstørrelse.' }));
+    }
 
-    if(s === 'tekst' || s === 'overskrift'){
-      gruppe(boks, 'Tekst', [
-        el('p', { klasse:'sf-hint', tekst:'Dobbeltklik på teksten i siden for at skrive. Markér ord for fed, kursiv og link.' }),
-        farve('Tekstfarve', 'color', k, st),
-        talFelt('Skriftstørrelse', 'font-size', k, st, 'px', 10, 96),
-        valg('Justering', 'text-align', k, st, [['left','Venstre'],['center','Midt'],['right','Højre']])
+    /* Elementets egne egenskaber (traits), tegnet på dansk */
+    var traits = k.getTraits().filter(function(tr){ return tr.get('name') !== 'id' || t.indexOf('a-') === 0; });
+    if(t === 'a-egen-html'){
+      gruppe(boks, 'Kode', [
+        el('p', { klasse:'sf-hint', tekst:'HTML, CSS og JavaScript. Køres ikke i editoren - kun i forhåndsvisningen og på den udgivne side.' }),
+        knapRække([ ['Rediger koden', function(){
+          modal('Egen HTML', [ { navn:'kode', label:'Kode', type:'kode', rader:16, værdi:k.get('kode') || '' } ], 'Brug koden', null, true)
+            .then(function(v){ if(v){ k.set('kode', v.kode); k.view.render(); ændret = true; editor.trigger('update'); } });
+        }] ])
+      ]);
+    } else if(traits.length && (t.indexOf('a-') === 0)){
+      gruppe(boks, 'Egenskaber', traits.map(traitFelt));
+    }
+
+    if(s === 'tekst' || s === 'overskrift' || s === 'knap' || t === 'a-ikonliste' || t === 'a-felt'){
+      gruppe(boks, 'Skrift', [
+        s === 'knap' ? null : el('p', { klasse:'sf-hint', tekst:'Dobbeltklik i siden for at skrive.' }),
+        vælgFelt('Skrifttype', 'font-family', k, st, SKRIFTER),
+        farve('Farve', 'color', k, st),
+        talFelt('Størrelse', 'font-size', k, st, 'px', 10, 120),
+        vælgFelt('Tykkelse', 'font-weight', k, st, [['', 'Standard'], ['300', 'Tynd'], ['400', 'Normal'], ['500', 'Medium'], ['600', 'Halvfed'], ['700', 'Fed'], ['800', 'Ekstra fed'], ['900', 'Sort']]),
+        talFelt('Linjehøjde (%)', 'line-height', k, st, '%', 80, 250),
+        talFelt('Bogstavafstand', 'letter-spacing', k, st, 'px', -3, 12),
+        valg('Store bogstaver', 'text-transform', k, st, [['none', 'Nej'], ['uppercase', 'STORE'], ['capitalize', 'Hvert Ord']]),
+        valg('Justering', 'text-align', k, st, [['left', 'Venstre'], ['center', 'Midt'], ['right', 'Højre']])
       ]);
     }
     if(s === 'knap'){
-      var simpel = k.components().length <= 1 && !k.find('img').length;
+      var hover = stilAf(k, 'hover');
       gruppe(boks, 'Knap', [
-        simpel ? tekstFelt('Tekst på knappen', k.getInnerHTML ? stripTags(k.getInnerHTML()) : '', function(v){ k.components(v); }) : null,
-        tekstFelt('Link', k.getAttributes().href || '', function(v){ k.addAttributes({ href:v }); }, 'https://… eller #sektion'),
-        afkryds('Åbn i nyt vindue', k.getAttributes().target === '_blank', function(ja){
-          if(ja) k.addAttributes({ target:'_blank', rel:'noopener' }); else k.removeAttributes(['target', 'rel']);
-        }),
+        k.components().length <= 2 && !k.find('img').length
+          ? tekstFelt('Tekst på knappen', stripTags((k.components().filter(function(c){ return c.get('type') === 'textnode'; })[0] || { get:function(){ return ''; } }).get('content')),
+              function(v){ var tn = k.components().filter(function(c){ return c.get('type') === 'textnode'; })[0]; if(tn) tn.set('content', v); else k.components(v); })
+          : null,
+        t === 'a-knap' ? null : tekstFelt('Link', k.getAttributes().href || '', function(v){ k.addAttributes({ href:v }); }, 'https://… eller #sektion'),
         farve('Baggrund', 'background-color', k, st),
-        farve('Tekstfarve', 'color', k, st),
-        talFelt('Rund kant', 'border-radius', k, st, 'px', 0, 999)
+        farve('Baggrund, når musen er over', 'background-color', k, hover, 'hover'),
+        farve('Tekst, når musen er over', 'color', k, hover, 'hover'),
+        talFelt('Indre luft (op/ned)', ['padding-top', 'padding-bottom'], k, st, 'px', 0, 60),
+        talFelt('Indre luft (sider)', ['padding-left', 'padding-right'], k, st, 'px', 0, 120)
       ]);
     }
     if(s === 'billede'){
@@ -1164,34 +1343,53 @@
         el('div', { klasse:'sf-billede-vis' }, [ el('img', { src:k.get('src'), alt:'' }) ]),
         knapRække([ ['Skift billede', function(){ vælgBillede(k); }] ]),
         tekstFelt('Beskrivelse (alt-tekst)', k.getAttributes().alt || '', function(v){ k.addAttributes({ alt:v }); }, 'Hvad viser billedet? Læses op for blinde.'),
-        talFelt('Rund kant', 'border-radius', k, st, 'px', 0, 400),
-        talFelt('Største bredde', 'max-width', k, st, 'px', 40, 2000)
+        talFelt('Bredde (%)', 'width', k, st, '%', 5, 100),
+        talFelt('Største bredde', 'max-width', k, st, 'px', 40, 2000),
+        talFelt('Fast højde', 'height', k, st, 'px', 40, 1200),
+        vælgFelt('Beskæring', 'object-fit', k, st, [['', 'Standard'], ['cover', 'Fyld (beskær)'], ['contain', 'Hele billedet'], ['fill', 'Stræk']]),
+        valg('Placering', 'margin', k, st, [['0 auto 0 0', 'Venstre'], ['0 auto', 'Midt'], ['0 0 0 auto', 'Højre']])
       ]);
     }
-    if(s === 'sektion' || s === 'boks' || s === 'formular'){
+    if(s === 'sektion' || s === 'boks' || t === 'a-kolonne' || t === 'a-raekke'){
       gruppe(boks, 'Baggrund', [
         farve('Baggrundsfarve', 'background-color', k, st),
+        vælgFelt('Gradient', 'background-image', k, st, GRADIENTER),
         knapRække([ ['Baggrundsbillede', function(){
-          editor.AssetManager.open({ select:function(a){ k.addStyle({ 'background-image':'url("' + a.getSrc() + '")', 'background-size':'cover', 'background-position':'center' }); editor.AssetManager.close(); } });
-        }], ['Fjern billede', function(){ k.removeStyle('background-image'); }] ]),
-        farve('Tekstfarve', 'color', k, st)
+          editor.AssetManager.open({ select:function(a){ sætStil(k, { 'background-image':'url("' + a.getSrc() + '")', 'background-size':'cover', 'background-position':'center' }); editor.AssetManager.close(); tegnPanel(); } });
+        }], ['Fjern', function(){ fjernStil(k, ['background-image', 'background-size', 'background-position']); tegnPanel(); }] ]),
+        farve('Tekstfarve indeni', 'color', k, st)
       ]);
     }
-    gruppe(boks, 'Afstand', [
-      talFelt('Luft over', 'padding-top', k, st, 'px', 0, 400),
-      talFelt('Luft under', 'padding-bottom', k, st, 'px', 0, 400),
-      talFelt('Luft i siderne', ['padding-left', 'padding-right'], k, st, 'px', 0, 200),
-      talFelt('Afstand over', 'margin-top', k, st, 'px', 0, 400),
-      talFelt('Afstand under', 'margin-bottom', k, st, 'px', 0, 400)
+    gruppe(boks, 'Ramme og skygge', [
+      talFelt('Kantens tykkelse', 'border-width', k, st, 'px', 0, 20),
+      farve('Kantens farve', 'border-color', k, st),
+      vælgFelt('Kantens stil', 'border-style', k, st, [['', 'Ingen'], ['solid', 'Hel'], ['dashed', 'Stiplet'], ['dotted', 'Prikket']]),
+      talFelt('Rund kant', 'border-radius', k, st, 'px', 0, 999),
+      vælgFelt('Skygge', 'box-shadow', k, st, [['', 'Ingen'], ['0 1px 3px rgba(74,36,23,.12)', 'Lille'], ['0 8px 24px rgba(74,36,23,.14)', 'Mellem'], ['0 24px 60px rgba(74,36,23,.22)', 'Stor']]),
+      talFelt('Gennemsigtighed (%)', 'opacity', k, st, '', 0, 100, function(v){ return v === '' ? '' : String(v / 100); }, function(v){ return v === undefined || v === '' ? '' : Math.round(parseFloat(v) * 100); })
     ]);
+    gruppe(boks, 'Afstand', [
+      talFelt('Luft over (indeni)', 'padding-top', k, st, 'px', 0, 400),
+      talFelt('Luft under (indeni)', 'padding-bottom', k, st, 'px', 0, 400),
+      talFelt('Luft i siderne (indeni)', ['padding-left', 'padding-right'], k, st, 'px', 0, 200),
+      talFelt('Afstand over', 'margin-top', k, st, 'px', -200, 400),
+      talFelt('Afstand under', 'margin-bottom', k, st, 'px', -200, 400),
+      talFelt('Største bredde', 'max-width', k, st, 'px', 100, 2000)
+    ]);
+    gruppe(boks, 'Animation', [ animationFelter(k) ]);
     gruppe(boks, 'Vis på', [ synlighed(k) ]);
-    gruppe(boks, 'Element', [ knapRække([
-      ['Vælg det udenom', function(){ var p = k.parent(); if(p && p.get('type') !== 'wrapper') editor.select(p); }],
-      ['Duplikér', function(){ var c = k.clone(); k.parent().components().add(c, { at: k.index() + 1 }); editor.select(c); }]
-    ]), knapRække([
-      ['Flyt op', function(){ flytKomp(k, -1); }], ['Flyt ned', function(){ flytKomp(k, 1); }],
-      ['Slet', function(){ k.remove(); editor.select(null); }, 'sf-farlig']
-    ]) ]);
+    gruppe(boks, 'Element', [
+      knapRække([
+        ['Vælg det udenom', function(){ var p = k.parent(); if(p && p.get('type') !== 'wrapper') editor.select(p); }],
+        ['Duplikér', function(){ var c = k.clone(); k.parent().components().add(c, { at: k.index() + 1 }); editor.select(c); }]
+      ]),
+      knapRække([ ['Kopiér', function(){ kopiér(k); }], ['Indsæt efter', function(){ indsæt(k); }] ]),
+      s === 'sektion' && t !== 'a-popup' ? knapRække([ ['Gem som sektion', function(){ gemSomSektion(k); }] ]) : null,
+      knapRække([
+        ['Flyt op', function(){ flytKomp(k, -1); }], ['Flyt ned', function(){ flytKomp(k, 1); }],
+        ['Slet', function(){ k.remove(); editor.select(null); }, 'sf-farlig']
+      ])
+    ]);
   }
   function stripTags(h){
     return String(h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim(); }
@@ -1204,6 +1402,87 @@
     editor.select(k);
   }
 
+  var GRADIENTER = [
+    ['', 'Ingen'],
+    ['linear-gradient(135deg,#4A2417 0%,#8F4333 100%)', 'Bark → kobber'],
+    ['linear-gradient(180deg,#FAF6EF 0%,#efe5d8 100%)', 'Creme'],
+    ['linear-gradient(135deg,#1f2a3a 0%,#3d5a73 100%)', 'Nat'],
+    ['linear-gradient(135deg,#DE854A 0%,#f2b56b 100%)', 'Solnedgang'],
+    ['linear-gradient(135deg,#2f4a3a 0%,#6f8f6a 100%)', 'Skov'],
+    ['linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.55) 100%)', 'Mørkt nedad (over billede)']
+  ];
+
+  /* ---------- Udklip: kopiér mellem sider ----------
+     Gemmes på enheden (localStorage), så det kan sættes ind på en anden
+     side eller i en anden funnel. Kun html og css - ingen persondata. */
+  var UDKLIP = 'arytmi-udklip';
+  function kopiér(k){
+    var css = '';
+    try { css = editor.getCss({ component:k }); } catch(e){ css = ''; }
+    try { localStorage.setItem(UDKLIP, JSON.stringify({ html:k.toHTML(), css:css })); editorStatus('Kopieret', 'god'); }
+    catch(e){ editorStatus('Kunne ikke kopiere på denne enhed.', 'fejl'); }
+  }
+  function indsæt(efter){
+    var u = null;
+    try { u = JSON.parse(localStorage.getItem(UDKLIP) || 'null'); } catch(e){}
+    if(!u){ editorStatus('Udklipsholderen er tom. Vælg et element og tryk Kopiér.', 'advar'); return; }
+    var nye = efter ? efter.parent().components().add(u.html, { at: efter.index() + 1 }) : editor.addComponents(u.html);
+    if(u.css) editor.Css.addRules(u.css);
+    var første = [].concat(nye)[0]; if(første) editor.select(første);
+  }
+
+  /* ---------- Egenskaber (traits) som danske felter ---------- */
+  function traitFelt(tr){
+    var type = tr.get('type'), label = tr.get('label') || tr.get('name'), v = tr.getValue();
+    var sæt = function(x){ tr.setValue(x); ændret = true; };
+    if(type === 'checkbox'){
+      return afkryds(label, !!v && v !== 'false', function(ja){ sæt(ja); });
+    }
+    if(type === 'select'){
+      var s = el('select', { klasse:'sf-vælg' });
+      (tr.get('options') || []).forEach(function(o){
+        var id = o.id !== undefined ? o.id : o.value;
+        var opt = el('option', { value:id, tekst:o.name || o.label || id }); if(String(v) === String(id)) opt.selected = true; s.appendChild(opt);
+      });
+      s.addEventListener('change', function(){ sæt(s.value); });
+      return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), s ]);
+    }
+    var i = el('input', { type: type === 'number' ? 'number' : type === 'color' ? 'color' : 'text' });
+    i.value = v === undefined || v === null ? '' : v;
+    i.addEventListener('change', function(){ sæt(i.value); });
+    return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), i ]);
+  }
+
+  /* ---------- Animation ----------
+     Attributter, som side-runtime.js læser. Respekterer "reducer
+     bevægelse" i kundens styresystem. */
+  var ANIMATIONER = [['', 'Ingen'], ['fade', 'Ton frem'], ['glid', 'Glid op'], ['glid-venstre', 'Glid ind fra venstre'], ['glid-hoejre', 'Glid ind fra højre'],
+    ['voks', 'Voks'], ['hop', 'Hop'], ['fold', 'Fold ud'], ['pust', 'Pust (sløret)'], ['drej', 'Drej'], ['afslor', 'Afslør'], ['vend', 'Vend'], ['svaev', 'Svæv ned']];
+  function animationFelter(k){
+    var a = k.getAttributes();
+    var boks = el('div', { klasse:'sf-anim' });
+    var type = el('select', { klasse:'sf-vælg' });
+    ANIMATIONER.forEach(function(m){ var o = el('option', { value:m[0], tekst:m[1] }); if((a['data-a-anim'] || '') === m[0]) o.selected = true; type.appendChild(o); });
+    type.addEventListener('change', function(){
+      if(type.value) k.addAttributes({ 'data-a-anim':type.value }); else k.removeAttributes(['data-a-anim', 'data-a-anim-ved', 'data-a-anim-tid', 'data-a-anim-forsinkelse']);
+      tegnPanel();
+    });
+    boks.appendChild(el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:'Type' }), type ]));
+    if(a['data-a-anim']){
+      var ved = el('select', { klasse:'sf-vælg' });
+      [['', 'Når den rulles frem'], ['indlaes', 'Når siden åbnes']].forEach(function(m){ var o = el('option', { value:m[0], tekst:m[1] }); if((a['data-a-anim-ved'] || '') === m[0]) o.selected = true; ved.appendChild(o); });
+      ved.addEventListener('change', function(){ if(ved.value) k.addAttributes({ 'data-a-anim-ved':ved.value }); else k.removeAttributes('data-a-anim-ved'); });
+      boks.appendChild(el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:'Starter' }), ved ]));
+      [['data-a-anim-tid', 'Varighed (ms)', 100, 2000, 600], ['data-a-anim-forsinkelse', 'Forsinkelse (ms)', 0, 2000, 0]].forEach(function(f){
+        var n = el('input', { type:'number', min:f[2], max:f[3], step:50, klasse:'sf-tal', placeholder:String(f[4]) }); n.value = a[f[0]] || '';
+        n.addEventListener('change', function(){ if(n.value) k.addAttributes(JSON.parse('{"' + f[0] + '":"' + Math.max(f[2], Math.min(f[3], +n.value)) + '"}')); else k.removeAttributes(f[0]); });
+        boks.appendChild(el('div', { klasse:'sf-r' }, [ el('span', { tekst:f[1] }), n ]));
+      });
+      boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Animationer vises i forhåndsvisningen og på den udgivne side, ikke i editoren.' }));
+    }
+    return boks;
+  }
+
   /* Felterne i panelet */
   function gruppe(boks, titel, børn){ boks.appendChild(el('fieldset', { klasse:'sf-gruppe-felt' }, [ el('legend', { tekst:titel }) ].concat(børn))); }
   function knapRække(knapper){
@@ -1211,7 +1490,6 @@
       return el('button', { type:'button', klasse:'knap rolig lille' + (k[2] ? ' ' + k[2] : ''), tekst:k[0], klik:k[1] });
     }));
   }
-  function række(label, felt){ return el('label', { klasse:'sf-r' }, [ el('span', { tekst:label }), felt ]); }
   function tekstFelt(label, værdi, sæt, ph){
     var i = el('input', { type:'text', placeholder:ph || '' }); i.value = værdi;
     i.addEventListener('change', function(){ sæt(i.value.trim()); });
@@ -1222,24 +1500,28 @@
     i.addEventListener('change', function(){ sæt(i.checked); });
     return el('label', { klasse:'sf-r sf-afkryds' }, [ i, el('span', { tekst:label }) ]);
   }
-  function farve(label, prop, k, st){
+  function farve(label, prop, k, st, tilstand){
     var v = st[prop] || '';
     var i = el('input', { type:'color' }); i.value = /^#[0-9a-f]{6}$/i.test(v) ? v : '#ffffff';
     var nul = el('button', { type:'button', klasse:'sf-nul', title:'Fjern', 'aria-label':'Fjern ' + label.toLowerCase(), tekst:'×' });
-    i.addEventListener('input', function(){ var o = {}; o[prop] = i.value; k.addStyle(o); });
-    nul.addEventListener('click', function(){ k.removeStyle(prop); i.value = '#ffffff'; });
-    return el('div', { klasse:'sf-r' }, [ el('span', { tekst:label + (v ? '' : ' (som standard)') }), el('span', { klasse:'sf-farve' }, [ i, nul ]) ]);
+    i.addEventListener('input', function(){ var o = {}; o[prop] = i.value; sætStil(k, o, tilstand); });
+    nul.addEventListener('click', function(){ fjernStil(k, prop, tilstand); i.value = '#ffffff'; });
+    return el('div', { klasse:'sf-r' }, [ el('span', { tekst:label + (v ? '' : ' (standard)') }), el('span', { klasse:'sf-farve' }, [ i, nul ]) ]);
   }
-  function talFelt(label, prop, k, st, enhed, min, max){
+  /* ind/ud omregner værdien (fx gennemsigtighed 0-100 % ↔ 0-1). */
+  function talFelt(label, prop, k, st, enhed, min, max, ud, ind){
     var props = [].concat(prop);
-    var v = parseFloat(st[props[0]]);
+    var rå = st[props[0]];
+    var v = ind ? ind(rå) : parseFloat(rå);
+    if(v === '' || v === undefined) v = NaN;
     var sl = el('input', { type:'range', min:min, max:max, step:1 });
     var n = el('input', { type:'number', min:min, max:max, klasse:'sf-tal' });
     sl.value = isNaN(v) ? min : v; n.value = isNaN(v) ? '' : v; n.placeholder = 'auto';
     function sæt(x){
-      var o = {};
-      props.forEach(function(p){ o[p] = x === '' ? '' : x + enhed; });
-      if(x === '') props.forEach(function(p){ k.removeStyle(p); }); else k.addStyle(o);
+      if(x === ''){ fjernStil(k, props); return; }
+      var o = {}, værdi = ud ? ud(x) : x + enhed;
+      props.forEach(function(p){ o[p] = værdi; });
+      sætStil(k, o);
     }
     sl.addEventListener('input', function(){ n.value = sl.value; sæt(sl.value); });
     n.addEventListener('change', function(){ if(n.value !== '') sl.value = n.value; sæt(n.value); });
@@ -1249,13 +1531,21 @@
     var g = el('div', { klasse:'sf-seg', role:'group', 'aria-label':label });
     valgmuligheder.forEach(function(m){
       var b = el('button', { type:'button', 'aria-pressed':String(st[prop] === m[0]), tekst:m[1] });
-      b.addEventListener('click', function(){ var o = {}; o[prop] = m[0]; k.addStyle(o); tegnPanel(); });
+      b.addEventListener('click', function(){ var o = {}; o[prop] = m[0]; sætStil(k, o); tegnPanel(); });
       g.appendChild(b);
     });
-    return el('div', { klasse:'sf-r' }, [ el('span', { tekst:label }), g ]);
+    return el('div', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), g ]);
   }
-  /* Synlighed med to klasser, defineret i SYNLIG_CSS. Ingen JavaScript på
-     den udgivne side - kun CSS. */
+  function vælgFelt(label, prop, k, st, muligheder){
+    var s = el('select', { klasse:'sf-vælg' });
+    var nu = st[prop] || '';
+    var fundet = false;
+    muligheder.forEach(function(m){ var o = el('option', { value:m[0], tekst:m[1] }); if(m[0] === nu){ o.selected = true; fundet = true; } s.appendChild(o); });
+    if(!fundet && nu){ var o = el('option', { value:nu, tekst:'Egen: ' + nu.slice(0, 30) }); o.selected = true; s.appendChild(o); }
+    s.addEventListener('change', function(){ if(s.value) { var o = {}; o[prop] = s.value; sætStil(k, o); } else fjernStil(k, prop); });
+    return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), s ]);
+  }
+  /* Synlighed med to klasser fra side-runtime.css. Ingen JavaScript. */
   function synlighed(k){
     var kl = k.getClasses();
     var nu = kl.indexOf('a-kun-computer') >= 0 ? 'computer' : kl.indexOf('a-kun-mobil') >= 0 ? 'mobil' : 'alle';
@@ -1300,6 +1590,10 @@
     '.a-wrap{max-width:1080px;margin:0 auto;padding:0 20px}' +
     '.a-knap{display:inline-block;background:#DE854A;color:#fff;text-decoration:none;font-weight:700;padding:16px 28px;border-radius:999px;border:0;font-size:17px;cursor:pointer}' +
     '.a-knap:hover{background:#c9733b}';
+  /* De simple blokke herunder findes nu som rigtige elementer (sider-elementer.js).
+     De bliver i BLOKKE, fordi skabelonerne bygges af dem, men vises ikke to gange. */
+  var SKJULTE_BLOKKE = ['a-knap', 'a-billede', 'a-tekst', 'a-mellemrum', 'a-linje', 'a-to-kolonner', 'a-tre-kolonner'];
+  var RUNTIME_V = '20261109e';
   var SYNLIG_CSS = '@media (max-width:768px){.a-kun-computer{display:none!important}}@media (min-width:769px){.a-kun-mobil{display:none!important}}';
 
   /* Pladsholderbilledet ligger i siden selv (data:). Et billede fra en

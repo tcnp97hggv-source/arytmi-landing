@@ -114,8 +114,9 @@
 <script src="nummerplader.js?v=20260924"></script>
 <!-- Sider & funnels (9/11): Arytmis egen sidebygger. GrapesJS (1,1 MB)
      hentes først, når en side åbnes - se sider.js. -->
-<link rel="stylesheet" href="sider.css?v=20261109c">
-<script src="sider.js?v=20261109c"></script>
+<link rel="stylesheet" href="sider.css?v=20261109e">
+<script src="sider-elementer.js?v=20261109e"></script>
+<script src="sider.js?v=20261109e"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1824,12 +1825,17 @@
       <div class="sf-vfaner" id="sf-venstre-faner" role="tablist">
         <button type="button" role="tab" data-v="trin">Trin</button>
         <button type="button" role="tab" data-v="tilføj">+ Tilføj</button>
+        <button type="button" role="tab" data-v="gemte">Gemte</button>
         <button type="button" role="tab" data-v="lag">Lag</button>
       </div>
       <div class="sf-vpanel" id="sf-v-trin"><div id="sf-trinliste"></div></div>
       <div class="sf-vpanel" id="sf-v-tilføj" hidden>
         <p class="sf-hint">Træk en blok ind på siden.</p>
         <div id="sf-blokke"></div>
+      </div>
+      <div class="sf-vpanel" id="sf-v-gemte" hidden>
+        <p class="sf-hint">Gemte sektioner indsættes som kopi. Universelle rettes ét sted og opdateres overalt. Træk dem ind fra "+ Tilføj".</p>
+        <div id="sf-sektionsliste"></div>
       </div>
       <div class="sf-vpanel" id="sf-v-lag" hidden><div id="sf-lag"></div></div>
     </aside>

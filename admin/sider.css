@@ -253,3 +253,17 @@ body.sf-redigerer{ overflow:hidden; }
 .sf-i-felt input[type=checkbox][role=switch]:checked{ background:#4f6b4a; }
 .sf-i-felt input[type=checkbox][role=switch]:checked::after{ left:21px; }
 .sf-i-felt input[type=checkbox][role=switch]:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ---------- Punkt 2: elementer, panelet, gemte sektioner ---------- */
+.sf-enhedsbesked{ margin:10px 0 0; padding:8px 10px; border-radius:8px; background:#fbf1e2; color:#7a5310; font-size:12px; font-weight:600; }
+.sf-vælg{ font:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--kant-felt); border-radius:8px; background:#fff; width:100%; }
+.sf-r.lodret input[type=number], .sf-r.lodret input[type=color]{ font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--kant-felt); border-radius:8px; background:#fff; }
+.sf-r.lodret .sf-seg{ align-self:flex-start; flex-wrap:wrap; }
+.sf-anim{ display:flex; flex-direction:column; gap:10px; }
+#sf-sektionsliste{ padding:6px 10px 12px; display:flex; flex-direction:column; gap:6px; }
+.sf-sektion-række{ display:flex; gap:6px; align-items:center; padding:8px; border:1px solid var(--kant); border-radius:10px; background:#fff; }
+.sf-sektion-række span{ display:flex; flex-direction:column; flex:1; min-width:0; }
+.sf-sektion-række b{ font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sf-sektion-række small{ font-size:11px; color:var(--tekst-2); }
+#sider-editor.sf-sektionstilstand .sf-top{ background:#2f4a3a; }
+#sf-venstre-faner button{ font-size:12px; padding:11px 2px; }
