@@ -1134,23 +1134,43 @@
   function forhåndsvisSide(s){
     if(!s) return;
     lukMenuer();
-    var f = funnels.filter(function(x){ return x.id === s.funnel_id; })[0];
-    åbnVindue(s.kladde_html || s.udgivet_html || '', (s.kladde_css || s.udgivet_css || '') + SYNLIG_CSS + stilCss(f && f.stil) + (s.custom_css || ''), s.seo_titel || s.navn);
+    åbnUrl(kædeUrl(s));
   }
+  /* "Næste trin"-knapperne skal virke i forhåndsvisningen som på den
+     udgivne side. Derfor bygges også de efterfølgende trin, bagfra, og hvert
+     trin får det næstes adresse - det samme, udgivelsen gør med
+     <meta name="arytmi-naeste">. `forside` erstatter trinets egen kladde,
+     når editoren har nyere, ugemte ændringer. */
+  function kædeUrl(s, forside){
+    var f = funnels.filter(function(x){ return x.id === s.funnel_id; })[0];
+    var trin = f ? trinI(f) : [s], i = trin.indexOf(s), url = null;
+    if(i < 0){ trin = [s]; i = 0; }
+    for(var j = trin.length - 1; j >= i; j--){
+      var t = trin[j], egen = j === i && forside;
+      url = vindueUrl(egen ? forside.html : (t.kladde_html || t.udgivet_html || ''),
+        egen ? forside.css : (t.kladde_css || t.udgivet_css || '') + SYNLIG_CSS + stilCss(f && f.stil) + (t.custom_css || ''),
+        t.seo_titel || t.navn, url);
+    }
+    return url;
+  }
+  function åbnVindue(html, css, titel){ åbnUrl(vindueUrl(html, css, titel)); }
+  function åbnUrl(url){ window.open(url, '_blank', 'noopener'); }
   /* Nyt vindue via en blob: samme html og css som Udgiv tager. noopener,
-     så vinduet ikke kan røre bagrummet. */
-  function åbnVindue(html, css, titel){
+     så vinduet ikke kan røre bagrummet. Adressen lever en halv time, så
+     man kan nå at klikke sig gennem funnelen. */
+  function vindueUrl(html, css, titel, naeste){
     var her = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
     html = String(html || '').replace(/^<body[^>]*>|<\/body>$/g, '')
       .replace(/<div data-a-sektion="([^"]*)"[^>]*><\/div>/g, function(_, id){ var x = sektioner.filter(function(y){ return y.id === id; })[0]; return x ? x.html + (x.css ? '<style>' + x.css + '</style>' : '') : ''; });
     var doc = '<!doctype html><html lang="da"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
       String(titel || 'Forhåndsvisning').replace(/[<&]/g, '') + '</title>' +
+      (naeste ? '<meta name="arytmi-naeste" content="' + naeste + '">' : '') +
       '<link rel="stylesheet" href="' + her + 'skrifter/skrifter.css"><link rel="stylesheet" href="' + her + 'side-runtime.css?v=' + RUNTIME_V + '"><style>' + css + '</style></head><body>' + html +
       '<script src="' + her + 'side-runtime.js?v=' + RUNTIME_V + '"><\/script></body></html>';
     var url = URL.createObjectURL(new Blob([doc], { type:'text/html' }));
-    window.open(url, '_blank', 'noopener');
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 30 * 60000);
+    return url;
   }
 
   /* =============================================================
@@ -2194,7 +2214,11 @@
     $('sf-luk').addEventListener('click', lukEditor);
     $('sf-gem').addEventListener('click', function(){ gem().catch(function(){}); });
     $('sf-udgiv').addEventListener('click', udgiv);
-    $('sf-vis').addEventListener('click', function(){ if(editor) åbnVindue(editor.getHtml(), editor.getCss() + ekstraCss(), åbenSide && (åbenSide.seo_titel || åbenSide.navn)); });
+    $('sf-vis').addEventListener('click', function(){ if(!editor) return;
+      var her = { html:editor.getHtml(), css:editor.getCss() + ekstraCss() };
+      var s = åbenSide && sider.filter(function(x){ return x.id === åbenSide.id; })[0];
+      if(s && !åbenSide.erSektion) åbnUrl(kædeUrl(s, her));
+      else åbnVindue(her.html, her.css, åbenSide && (åbenSide.seo_titel || åbenSide.navn)); });
     $('sf-sideindstillinger').addEventListener('click', sideIndstillingerIEditor);
     $('sf-stil').addEventListener('click', stilIEditor);
     $('sf-fortryd').addEventListener('click', function(){ if(editor) editor.UndoManager.undo(); });
