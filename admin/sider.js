@@ -1735,6 +1735,33 @@
     if(type === 'checkbox'){
       return afkryds(label, !!v && v !== 'false', function(ja){ sæt(ja); });
     }
+    if(type === 'produktliste'){
+      /* Ordreformularens produkter (egen checkout): en liste i rækkefølge,
+         gemt som id'er adskilt med komma. Navnene fra bagrummets Produkter. */
+      var alle = window.ArytmiProduktValg || [];
+      var navn = function(id){ var p = alle.filter(function(x){ return x[0] === id; })[0]; return p ? p[1] : 'Ukendt produkt'; };
+      var liste = String(v || '').split(',').filter(Boolean);
+      var boks = el('div', { klasse:'sf-produktliste' }, [ el('span', { klasse:'sf-produktliste-titel', tekst:label }) ]);
+      var gem = function(){ sæt(liste.join(',')); tegnPanel(); };
+      liste.forEach(function(id, i){
+        boks.appendChild(el('div', { klasse:'sf-produkt' }, [
+          el('span', { tekst:(i + 1) + '. ' + navn(id) }),
+          i ? el('button', { type:'button', klasse:'knap rolig lille', tekst:'↑', 'aria-label':'Flyt op', klik:function(){ liste.splice(i - 1, 0, liste.splice(i, 1)[0]); gem(); } }) : null,
+          el('button', { type:'button', klasse:'knap rolig lille', tekst:'Fjern', klik:function(){ liste.splice(i, 1); gem(); } })
+        ]));
+      });
+      var ledige = alle.filter(function(p){ return liste.indexOf(p[0]) < 0; });
+      if(ledige.length){
+        var tilføj = el('select', { klasse:'sf-vælg', 'aria-label':'Tilføj produkt' });
+        tilføj.appendChild(el('option', { value:'', tekst: liste.length ? '+ Tilføj et produkt mere' : '+ Tilføj produkt' }));
+        ledige.forEach(function(p){ tilføj.appendChild(el('option', { value:p[0], tekst:p[1] })); });
+        tilføj.addEventListener('change', function(){ if(tilføj.value){ liste.push(tilføj.value); gem(); } });
+        boks.appendChild(tilføj);
+      }
+      if(!alle.length) boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Ingen produkter endnu. Opret dem under fanen Produkter.' }));
+      else boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Kunden vælger mellem dem i den rækkefølge. Bilmodel og pris hentes fra produktet.' }));
+      return boks;
+    }
     if(type === 'select'){
       var s = el('select', { klasse:'sf-vælg' });
       (tr.get('options') || []).forEach(function(o){

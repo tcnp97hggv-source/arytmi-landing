@@ -173,7 +173,7 @@
   /* Ordreformularen (egen checkout) hentes kun på sider, der har en - fra
      samme sted som dette script (/_a/ på de udgivne sider). */
   function startOrdreformular(){
-    if(iEditor || !d.querySelector('[data-a-ordreformular]') || window.__aoHentet) return;
+    if(iEditor || !d.querySelector('[data-a-ordreformular],[data-a-kvittering]') || window.__aoHentet) return;
     window.__aoHentet = true;
     var mig = alle('script[src*="side-runtime.js"]')[0];
     var src = mig ? mig.getAttribute('src') : '/_a/side-runtime.js';

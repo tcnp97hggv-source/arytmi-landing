@@ -87,7 +87,8 @@
 
   function start(rod){
     var tilstand = rod.getAttribute('data-a-tilstand') === 'live' ? 'live' : 'test';
-    var hoved = ['1', '2', '3'].map(function(n){ return rod.getAttribute('data-a-produkt-' + n); }).filter(Boolean);
+    var hoved = (rod.getAttribute('data-a-produkter') || '').split(',').filter(Boolean)
+      .concat(['1', '2', '3'].map(function(n){ return rod.getAttribute('data-a-produkt-' + n); }).filter(Boolean));
     var tilvalgId = rod.getAttribute('data-a-tilvalg') || '';
     var knapTekst = rod.getAttribute('data-a-knaptekst') || 'Gennemfør købet';
     var efter = rod.getAttribute('data-a-efter') || meta('arytmi-naeste') || '';
@@ -310,9 +311,83 @@
     beregn();
   }
 
+  /* ---------- Kvitteringen (takkesiden, trin 5) ----------
+     Stripe sender kunden hertil med ?ordre=A-xxxx&payment_intent=pi_...
+     Kun med begge viser checkout_kvittering (0088) ordren. Står den som
+     "afventer", venter vi lidt på Stripes besked (checkout-haendelser).
+     Meta: KUN hvis kunden har sagt ja til cookies (arytmi-samtykke), og kun
+     én gang pr. ordre - meta-koeb sender købet med det rigtige beløb (0072). */
+  function startKvittering(rod){
+    var q = new URLSearchParams(location.search);
+    var nummer = q.get('ordre') || '', betaling = q.get('payment_intent') || q.get('setup_intent') || '';
+    var tom = rod.getAttribute('data-a-tom') || 'Tak for din ordre. Du får en bekræftelse på mail.';
+    while(rod.firstChild) rod.removeChild(rod.firstChild);
+    rod.classList.add('ao', 'ao-kvittering');
+    var status = el('p', { klasse:'ao-status', role:'status', tekst:'Henter din ordre …' });
+    rod.appendChild(status);
+    if(!nummer || !betaling){ status.textContent = tom; return; }
+    var forsøg = 0;
+    (function hent(){
+      rpc('checkout_kvittering', { p_nummer:nummer, p_betaling:betaling }).then(function(o){
+        if(!o){ status.textContent = tom; return; }
+        if(o.status === 'afventer' && forsøg++ < 15){ status.textContent = 'Vi venter på bekræftelsen fra banken …'; setTimeout(hent, 2000); return; }
+        tegnKvittering(rod, status, o);
+        if(o.status === 'betalt') meldMeta(o.id);
+      }).catch(function(){ status.textContent = tom; });
+    })();
+  }
+  function tegnKvittering(rod, status, o){
+    rod.removeChild(status);
+    rod.appendChild(el('h2', { klasse:'ao-tak', tekst:'Tak, ' + o.fornavn + '!' }));
+    rod.appendChild(el('p', { tekst: o.status === 'betalt'
+      ? 'Din ordre ' + o.nummer + ' er betalt. Du får en ordrebekræftelse på mail om et øjeblik.'
+      : 'Vi har modtaget din ordre ' + o.nummer + '. Du får en mail, så snart betalingen er bekræftet.' }));
+    var sum = el('div', { klasse:'ao-sum' });
+    function række(t, b, k){ sum.appendChild(el('div', { klasse:'ao-raekke' + (k ? ' ' + k : '') }, [el('span', { tekst:t }), el('span', { tekst:b })])); }
+    (o.linjer || []).forEach(function(l){ række(l.produkt + (l.variant ? ' · ' + l.variant : '') + (l.antal > 1 ? ' × ' + l.antal : ''), kr(l.nu_oere)); });
+    if(o.rabat_oere) række('Rabat' + (o.rabatkode ? ' (' + o.rabatkode + ')' : ''), '− ' + kr(o.rabat_oere), 'ao-rabatlinje');
+    række('Levering', o.fragt_oere ? kr(o.fragt_oere) : 'Gratis');
+    række('Betalt i alt', kr(o.total_oere), 'ao-total');
+    var abon = (o.linjer || []).filter(function(l){ return l.slags !== 'engang'; })[0];
+    if(abon && abon.interval){
+      var tekst = 'Derefter ' + kr(abon.loebende_oere) + ' pr. ' + iv(abon.interval_antal, abon.interval);
+      if(abon.proeve_antal && o.betalt_kl){
+        var slut = new Date(o.betalt_kl), n = abon.proeve_antal, i = abon.proeve_interval;
+        if(i === 'dag') slut.setDate(slut.getDate() + n);
+        else if(i === 'uge') slut.setDate(slut.getDate() + 7 * n);
+        else if(i === 'maaned') slut.setMonth(slut.getMonth() + n);
+        else if(i === 'kvartal') slut.setMonth(slut.getMonth() + 3 * n);
+        else slut.setFullYear(slut.getFullYear() + n);
+        tekst += ' fra ' + dato(slut.toISOString());
+      }
+      sum.appendChild(el('p', { klasse:'ao-abon', tekst: tekst + '. Kan opsiges når som helst.' }));
+    }
+    rod.appendChild(sum);
+    if(o.giver_app_adgang) rod.appendChild(el('p', { klasse:'ao-lille', tekst:'Din adgang til Arytmi-appen er klar. Se mailen "Velkommen til Arytmi" for at komme i gang.' }));
+  }
+  function samtykkeJa(){
+    try { var v = JSON.parse(localStorage.getItem('arytmi-samtykke')); return !!(v && v.valg === 'ja'); } catch(e){ return false; }
+  }
+  function cookie(n){ var m = d.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; }
+  function meldMeta(ordreId){
+    if(!samtykkeJa() || !navigator.sendBeacon) return;
+    try { if(sessionStorage.getItem('arytmi-meta-koeb-' + ordreId)) return; } catch(e){}
+    var forsøg = 0;
+    (function vent(){
+      if(!cookie('_fbp') && forsøg++ < 25){ setTimeout(vent, 200); return; }
+      var id = 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      var data = JSON.stringify({ besoeg: ordreId, fbp: cookie('_fbp'), fbc: cookie('_fbc'), event_id: id });
+      navigator.sendBeacon(SUPABASE + '/functions/v1/meta-koeb', new Blob([data], { type:'text/plain' }));
+      try { sessionStorage.setItem('arytmi-meta-koeb-' + ordreId, '1'); } catch(e){}
+    })();
+  }
+
   function startAlle(){
     Array.prototype.forEach.call(d.querySelectorAll('[data-a-ordreformular]'), function(r){
       if(!r.__ao){ r.__ao = true; start(r); }
+    });
+    Array.prototype.forEach.call(d.querySelectorAll('[data-a-kvittering]'), function(r){
+      if(!r.__ao){ r.__ao = true; startKvittering(r); }
     });
   }
   if(d.readyState === 'loading') d.addEventListener('DOMContentLoaded', startAlle); else startAlle();

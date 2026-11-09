@@ -40,5 +40,5 @@
 .ao-skjult{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 .ao-status{ text-align:center; color:#6b5a4e; }
 @media (max-width:480px){ .ao-felter{ grid-template-columns:1fr; } }
-/* I editoren: en stille pladsholder. */
-.a-editor [data-a-ordreformular]{ border:2px dashed #D9CFC2; border-radius:14px; padding:24px; text-align:center; color:#6b5a4e; }
+.ao-kvittering{ text-align:left; }
+.ao-tak{ font-size:28px; margin:0 0 6px; }

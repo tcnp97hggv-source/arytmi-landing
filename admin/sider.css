@@ -305,3 +305,9 @@ body.sf-redigerer{ overflow:hidden; }
 .sf-split-tal{ font-variant-numeric:tabular-nums; font-weight:600; }
 .sf-split-bund{ padding:10px 14px 14px; }
 .sf-split-var .sf-mini-knap{ width:100%; }
+
+/* Ordreformularens produktliste i højre panel (egen checkout, 9/11). */
+.sf-produktliste{ display:flex; flex-direction:column; gap:6px; margin:6px 0 10px; }
+.sf-produktliste-titel{ font-weight:600; font-size:13px; }
+.sf-produkt{ display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--kant, #D9CFC2); border-radius:8px; font-size:13px; }
+.sf-produkt span{ flex:1; min-width:0; overflow-wrap:anywhere; }

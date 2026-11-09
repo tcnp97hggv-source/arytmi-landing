@@ -143,3 +143,18 @@ html:not(.a-editor) [data-a-anim]:not(.a-vist){opacity:0}
 @keyframes a-vend{from{opacity:0;transform:perspective(800px) rotateY(80deg)}to{opacity:1;transform:none}}
 @keyframes a-svaev{from{opacity:0;transform:translateY(-24px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){[data-a-anim]{animation:none!important;opacity:1!important}}
+
+/* Ordreformular og kvittering i EDITOREN (egen checkout, 9/11): en forhåndsvisning,
+   der ikke gemmes i siden. Den rigtige formular tegnes af ordreformular.js. */
+.a-forhaand{ max-width:560px; margin:24px auto; padding:20px; border:2px dashed #D9CFC2; border-radius:16px; background:#fff;
+  font-family:system-ui,sans-serif; color:#4a2417; cursor:pointer; user-select:none; }
+.a-forhaand *{ pointer-events:none; }
+.a-forhaand-titel{ font-weight:700; font-size:18px; margin-bottom:12px; }
+.a-forhaand-linje{ padding:10px 12px; border:1.5px solid #D9CFC2; border-radius:12px; margin-bottom:8px; font-size:15px; }
+.a-forhaand-valg{ border-color:#8e4333; }
+.a-forhaand-tilvalg{ border-style:dashed; border-color:#DE854A; background:#fff8f1; }
+.a-forhaand-felt{ color:#6b5a4e; }
+.a-forhaand-hint{ border:0; background:#faf6ef; color:#6b5a4e; }
+.a-forhaand-knap{ background:#DE854A; border-color:#DE854A; color:#fff; text-align:center; font-weight:700; border-radius:999px; }
+.a-forhaand-test{ border:0; text-align:center; font-size:13px; color:#6b5a4e; }
+.a-forhaand-live{ border:0; text-align:center; font-size:13px; color:#a3332a; font-weight:700; }

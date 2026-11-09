@@ -213,16 +213,57 @@
     var produktValg = function(tom){
       return [{ id:'', name:tom }].concat((window.ArytmiProduktValg || []).map(function(p){ return { id:p[0], name:p[1] }; }));
     };
+    /* Forhåndsvisningen i editoren tegnes af view'et og gemmes ALDRIG i siden:
+       komponenten har intet indhold, og ordreformular.js tegner den rigtige
+       formular på den udgivne side. Et klik hvor som helst vælger hele formularen. */
+    function produktNavn(id){
+      var p = (window.ArytmiProduktValg || []).filter(function(x){ return x[0] === id; })[0];
+      return p ? p[1] : '';
+    }
+    function forhaand(titel, linjer){
+      return '<div class="a-forhaand" contenteditable="false"><div class="a-forhaand-titel">' + titel + '</div>' +
+        linjer.map(function(l){ return '<div class="a-forhaand-linje' + (l[1] ? ' ' + l[1] : '') + '">' + l[0] + '</div>'; }).join('') + '</div>';
+    }
+    function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
     DC.addType('a-ordreformular', {
       isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-ordreformular'); },
-      model: { defaults: { name:'Ordreformular', droppable:false, attributes:{ 'data-a-ordreformular':'', 'data-a-tilstand':'test' }, traits:[
-        { type:'select', name:'data-a-produkt-1', label:'Produkt 1', options:produktValg('— vælg —') },
-        { type:'select', name:'data-a-produkt-2', label:'Produkt 2 (valgfrit)', options:produktValg('— intet —') },
-        { type:'select', name:'data-a-produkt-3', label:'Produkt 3 (valgfrit)', options:produktValg('— intet —') },
+      view: {
+        init: function(){ this.listenTo(this.model, 'change:attributes', this.render); },
+        onRender: function(){
+          var a = this.model.getAttributes();
+          var valgt = (a['data-a-produkter'] || '').split(',').filter(Boolean)
+            .concat(['1', '2', '3'].map(function(n){ return a['data-a-produkt-' + n]; }).filter(Boolean));
+          var linjer = valgt.length
+            ? valgt.map(function(id){ return ['◉ ' + esc(produktNavn(id) || 'Produkt'), 'a-forhaand-valg']; })
+            : [['Tilføj produkterne i højre panel: <b>Produkter i formularen → Tilføj produkt</b>.', 'a-forhaand-hint']];
+          if(valgt.length) linjer.push(['Bilmodel ▾', 'a-forhaand-felt']);
+          if(a['data-a-tilvalg']) linjer.push(['☐ Ja tak, tilføj ' + esc(produktNavn(a['data-a-tilvalg']) || 'tilvalget'), 'a-forhaand-tilvalg']);
+          linjer.push(['Mail · Navn · Adresse · Rabatkode · Kort/MobilePay', 'a-forhaand-felt']);
+          linjer.push([esc(a['data-a-knaptekst'] || 'Gennemfør købet'), 'a-forhaand-knap']);
+          linjer.push([a['data-a-tilstand'] === 'live' ? 'LIVE: rigtige penge' : 'TEST: Stripes sandkasse - ingen rigtige penge', a['data-a-tilstand'] === 'live' ? 'a-forhaand-live' : 'a-forhaand-test']);
+          this.el.innerHTML = forhaand('Ordreformular', linjer);
+        }
+      },
+      model: { defaults: { name:'Ordreformular', droppable:false, editable:false, components:'', attributes:{ 'data-a-ordreformular':'', 'data-a-tilstand':'test' }, traits:[
+        { type:'produktliste', name:'data-a-produkter', label:'Produkter i formularen' },
         { type:'select', name:'data-a-tilvalg', label:'Tilvalg (fx mørklægning)', options:produktValg('— intet —') },
         { type:'text', name:'data-a-knaptekst', label:'Tekst på knappen (tom = "Gennemfør købet")' },
         { type:'text', name:'data-a-efter', label:'Efter betaling: gå til (tom = næste trin)' },
         { type:'select', name:'data-a-tilstand', label:'Betaling', options:[{ id:'test', name:'Test (Stripes sandkasse)' }, { id:'live', name:'Live (rigtige penge)' }] }
+      ] } }
+    });
+
+    DC.addType('a-kvittering', {
+      isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-kvittering'); },
+      view: {
+        onRender: function(){
+          this.el.innerHTML = forhaand('Ordrekvittering', [['Tak, Ane!', 'a-forhaand-valg'],
+            ['Din ordre A-2001 er betalt. Varer, beløb og hvornår appen fornyes vises her.', 'a-forhaand-hint'],
+            ['Kundens rigtige ordre vises på takkesiden efter betalingen.', 'a-forhaand-test']]);
+        }
+      },
+      model: { defaults: { name:'Ordrekvittering', droppable:false, editable:false, components:'', attributes:{ 'data-a-kvittering':'' }, traits:[
+        { type:'text', name:'data-a-tom', label:'Tekst, hvis siden åbnes uden en ordre' }
       ] } }
     });
 
@@ -443,7 +484,9 @@
     blok('e-knap-naeste', 'Knap: næste trin', 'Knapper og formular', skitse(K(30, 35, 60) + '<path d="M84 39h6M88 37l2 2-2 2" stroke="#fff" stroke-width="1.5" fill="none"/>'),
       '<a class="a-knap" href="#" data-a-handling="naeste">Videre<small>Det tager kun et minut</small></a>');
     blok('e-ordreformular', 'Ordreformular', 'Betaling', skitse('<rect x="26" y="8" width="68" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(34, 16, 52, 10, '#efe5d8') + B(34, 30, 52, 8) + B(34, 42, 52, 8) + K(34, 56, 52)),
-      '<div data-a-ordreformular data-a-tilstand="test"><p>Ordreformular: vælg produkterne i Indstillinger. Den vises med priser og betaling på den udgivne side.</p></div>');
+      '<div data-a-ordreformular data-a-tilstand="test"></div>');
+    blok('e-kvittering', 'Ordrekvittering (takkeside)', 'Betaling', skitse('<rect x="26" y="8" width="68" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + T(34, 18, 40) + L(34, 30, 52) + L(34, 38, 52) + L(34, 50, 30, 5, '#4A2417')),
+      '<div data-a-kvittering></div>');
     blok('e-formular', 'Formular', 'Knapper og formular', skitse('<rect x="30" y="8" width="60" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(38, 18, 44, 8) + B(38, 30, 44, 8) + K(45, 50)),
       '<form class="a-form-kort" data-arytmi-formular="tilmelding" style="max-width:460px;margin:0 auto">' +
       '<label class="a-felt">Mail<input type="email" name="email" required autocomplete="email" placeholder="din@mail.dk"></label>' +
