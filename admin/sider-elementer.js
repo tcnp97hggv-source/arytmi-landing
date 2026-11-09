@@ -58,6 +58,23 @@
     var DC = editor.DomComponents;
     var PLADS = valg.plads;
 
+    /* Søger i komponent-træet (modellen). GrapesJS' egen find() søger i den
+       tegnede side og giver tomt i init(), før elementet er vist - så blev
+       felternes indstillinger døde (fundet ved gennemprøvningen 10/11).
+       Vælgere: 'tag,tag', '.klasse' eller '[attribut]'. */
+    function søg(komp, vælger){
+      var dele = vælger.split(',').map(function(s){ return s.trim(); }), fund = [];
+      function passer(k){
+        return dele.some(function(d){
+          if(d.charAt(0) === '.') return k.getClasses().indexOf(d.slice(1)) >= 0;
+          if(d.charAt(0) === '[') return k.getAttributes()[d.slice(1, -1)] !== undefined;
+          return k.get('tagName') === d;
+        });
+      }
+      (function gå(k){ k.components().forEach(function(b){ if(passer(b)) fund.push(b); gå(b); }); })(komp);
+      return fund;
+    }
+
     /* ---------- Fælles egenskaber ---------- */
     var ANKER = { type:'text', name:'id', label:'Anker-id (til "rul til")', changeProp:false };
 
@@ -173,7 +190,7 @@
           this.on('change:udseende', function(){ this.removeClass('a-knap-2'); this.removeClass('a-knap-3'); if(this.get('udseende') !== '1') this.addClass('a-knap-' + this.get('udseende')); });
           this.on('change:bred', function(){ if(this.get('bred')) this.addClass('a-bred'); else this.removeClass('a-bred'); });
           this.on('change:undertekst', function(){
-            var u = this.get('undertekst'), lille = this.find('small')[0];
+            var u = this.get('undertekst'), lille = søg(this, 'small')[0];
             if(!u){ if(lille) lille.remove(); return; }
             if(lille) lille.components(u); else this.append('<small>' + u.replace(/[<>&]/g, '') + '</small>');
           });
@@ -300,7 +317,9 @@
           { type:'checkbox', name:'paakraevet', label:'Skal udfyldes', changeProp:true }
         ] },
         init: function(){
-          var inp = this.find('input,textarea,select')[0];
+          var self = this, inp = søg(this, 'input,textarea,select')[0];
+          /* Altid det aktuelle felt - kan være skiftet siden init. */
+          function felt(){ return inp = søg(self, 'input,textarea,select')[0]; }
           var lab = this.components().filter(function(c){ return c.get('type') === 'textnode'; })[0];
           var a = inp ? inp.getAttributes() : {};
           var navn = a.name || '';
@@ -309,7 +328,7 @@
                      hint:a.placeholder || '', paakraevet: a.required !== undefined }, { silent:true });
           this.on('change:etiket', function(){ var l = this.components().filter(function(c){ return c.get('type') === 'textnode'; })[0]; if(l) l.set('content', this.get('etiket')); });
           this.on('change:felttype change:noegle', function(){
-            if(!inp) return;
+            if(!felt()) return;
             var t = this.get('felttype');
             var n = t === 'egen' ? (this.get('noegle') || 'felt').toLowerCase().replace(/[^a-z0-9_]+/g, '_') : t;
             var typer = { email:'email', phone:'tel' };
@@ -317,8 +336,8 @@
             inp.addAttributes({ name:n });
             if(inp.get('tagName') === 'input'){ inp.addAttributes({ type:typer[t] || 'text' }); if(auto[t]) inp.addAttributes({ autocomplete:auto[t] }); else inp.removeAttributes('autocomplete'); }
           });
-          this.on('change:hint', function(){ if(inp) inp.addAttributes({ placeholder:this.get('hint') }); });
-          this.on('change:paakraevet', function(){ if(!inp) return; if(this.get('paakraevet')) inp.addAttributes({ required:'' }); else inp.removeAttributes('required'); });
+          this.on('change:hint', function(){ if(felt()) inp.addAttributes({ placeholder:this.get('hint') }); });
+          this.on('change:paakraevet', function(){ if(!felt()) return; if(this.get('paakraevet')) inp.addAttributes({ required:'' }); else inp.removeAttributes('required'); });
         }
       }
     });
@@ -328,10 +347,11 @@
         { type:'text', name:'noegle', label:'Gemmes som (fx samtykke_nyheder)', changeProp:true },
         { type:'checkbox', name:'paakraevet', label:'Skal krydses af', changeProp:true }
       ] }, init: function(){
-        var inp = this.find('input')[0], a = inp ? inp.getAttributes() : {};
+        var self = this, inp = søg(this, 'input')[0], a = inp ? inp.getAttributes() : {};
+        function felt(){ return inp = søg(self, 'input')[0]; }
         this.set({ noegle:a.name || '', paakraevet:a.required !== undefined }, { silent:true });
-        this.on('change:noegle', function(){ if(inp) inp.addAttributes({ name:(this.get('noegle') || 'afkrydsning').toLowerCase().replace(/[^a-z0-9_]+/g, '_') }); });
-        this.on('change:paakraevet', function(){ if(!inp) return; if(this.get('paakraevet')) inp.addAttributes({ required:'' }); else inp.removeAttributes('required'); });
+        this.on('change:noegle', function(){ if(felt()) inp.addAttributes({ name:(this.get('noegle') || 'afkrydsning').toLowerCase().replace(/[^a-z0-9_]+/g, '_') }); });
+        this.on('change:paakraevet', function(){ if(!felt()) return; if(this.get('paakraevet')) inp.addAttributes({ required:'' }); else inp.removeAttributes('required'); });
       } }
     });
 
@@ -363,9 +383,9 @@
         { type:'text', name:'data-a-ved-slut', label:'Når den er slut ("skjul" eller en adresse)' },
         { type:'checkbox', name:'vis-dage', label:'Vis dage', changeProp:true }
       ] }, init: function(){
-        this.set({ 'nt-type': this.getAttributes()['data-a-evergreen'] ? 'evergreen' : 'fast', 'vis-dage': !!this.find('[data-a-d]').length }, { silent:true });
+        this.set({ 'nt-type': this.getAttributes()['data-a-evergreen'] ? 'evergreen' : 'fast', 'vis-dage': !!søg(this, '[data-a-d]').length }, { silent:true });
         this.on('change:nt-type', function(){ if(this.get('nt-type') === 'fast') this.removeAttributes('data-a-evergreen'); else this.removeAttributes('data-a-slut'); });
-        this.on('change:vis-dage', function(){ var d = this.find('[data-a-d]')[0]; if(d && !this.get('vis-dage')) d.parent().remove(); });
+        this.on('change:vis-dage', function(){ var d = søg(this, '[data-a-d]')[0]; if(d && !this.get('vis-dage')) d.parent().remove(); });
         this.on('change:attributes', function(){ var w = editor.Canvas.getWindow(); if(w && w.ArytmiRuntime) setTimeout(function(){ w.ArytmiRuntime.genstart(); }, 50); });
       } }
     });
@@ -375,7 +395,15 @@
         { type:'select', name:'ikon', label:'Ikon', changeProp:true, options:Object.keys(IKONER).map(function(k){ return { id:k, name:k.charAt(0).toUpperCase() + k.slice(1) }; }) },
         { type:'text', name:'href', label:'Link (valgfrit)', changeProp:true }
       ] }, init: function(){
+        /* Med et link bliver ikonet et <a> (ellers <span>) - "Link" var et dødt felt indtil 10/11. */
+        var a = this.getAttributes();
+        this.set({ href:a.href || '' }, { silent:true });
         this.on('change:ikon', function(){ this.components(ikonSvg(this.get('ikon'))); });
+        this.on('change:href', function(){
+          var h = String(this.get('href') || '').trim();
+          if(h){ this.set('tagName', 'a'); this.addAttributes({ href:h }); }
+          else { this.set('tagName', 'span'); this.removeAttributes('href'); }
+        });
       } }
     });
     DC.addType('a-bjaelke', {
@@ -384,10 +412,10 @@
         { type:'number', name:'procent', label:'Procent', min:0, max:100, changeProp:true },
         { type:'text', name:'tekst', label:'Tekst på bjælken', changeProp:true }
       ] }, init: function(){
-        var fyld = this.find('.a-bjaelke-fyld')[0];
+        var fyld = søg(this, '.a-bjaelke-fyld')[0];
         this.set({ procent: parseInt((this.getStyle()['--a-fyld'] || '60').replace('%', ''), 10), tekst: fyld ? fyld.getInnerHTML() : '' }, { silent:true });
         this.on('change:procent', function(){ this.addStyle({ '--a-fyld':Math.max(0, Math.min(100, +this.get('procent') || 0)) + '%' }); });
-        this.on('change:tekst', function(){ if(fyld) fyld.components(String(this.get('tekst') || '').replace(/[<>&]/g, '')); });
+        this.on('change:tekst', function(){ fyld = søg(this, '.a-bjaelke-fyld')[0]; if(fyld) fyld.components(String(this.get('tekst') || '').replace(/[<>&]/g, '')); });
       } }
     });
     /* Egen HTML: koden gemmes som den er og vises KUN i forhåndsvisningen og
@@ -397,7 +425,12 @@
       isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-egen-html') ? { type:'a-egen-html', kode:el.innerHTML, components:[] } : false; },
       model: {
         defaults: { name:'Egen HTML', droppable:false, kode:'', attributes:{ 'data-a-egen-html':'' } },
-        toHTML: function(){ return '<div data-a-egen-html="">' + (this.get('kode') || '') + '</div>'; }
+        toHTML: function(){
+          /* id (anker) og title fra indstillingerne kommer med - ellers var de døde felter. */
+          var a = this.getAttributes(), x = '';
+          ['id', 'title'].forEach(function(n){ if(a[n]) x += ' ' + n + '="' + String(a[n]).replace(/[&"<>]/g, function(c){ return { '&':'&amp;', '"':'&quot;', '<':'&lt;', '>':'&gt;' }[c]; }) + '"'; });
+          return '<div data-a-egen-html=""' + x + '>' + (this.get('kode') || '') + '</div>';
+        }
       },
       view: {
         onRender: function(){
