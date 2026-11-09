@@ -127,16 +127,61 @@
   }
 
   /* ---------- Modalen: i stedet for browserens prompt() ---------- */
-  function modal(titel, felter, knaptekst, ekstra){
+  /* Felttyper: text (standard), number, url, textarea, kode, afkryds, valg,
+     billede (adresse + upload), skabelon, overskrift (kun en titel). */
+  function modal(titel, felter, knaptekst, ekstra, bred){
     return new Promise(function(ja){
-      var d = el('dialog', { klasse:'sf-modal' });
+      var d = el('dialog', { klasse:'sf-modal' + (bred ? ' sf-modal-bred' : '') });
       var form = el('form', { method:'dialog' });
       form.appendChild(el('h3', { tekst:titel }));
       var input = {};
       felter.forEach(function(f){
+        if(f.type === 'overskrift'){
+          form.appendChild(el('h4', { klasse:'sf-m-overskrift', tekst:f.label }));
+          if(f.hjælp) form.appendChild(el('p', { klasse:'sf-m-hjælp', tekst:f.hjælp }));
+          return;
+        }
         var id = 'sfm-' + f.navn;
         var felt;
-        if(f.type === 'textarea') felt = el('textarea', { id:id, rows:f.rader || 4, spellcheck:'false' });
+        if(f.type === 'afkryds'){
+          felt = el('input', { id:id, type:'checkbox' }); felt.checked = !!f.værdi;
+          input[f.navn] = felt;
+          form.appendChild(el('div', { klasse:'sf-m-felt sf-m-afkryds' }, [
+            el('label', { for:id }, [ felt, el('span', { tekst:f.label }) ]), f.hjælp ? el('small', { tekst:f.hjælp }) : null ]));
+          return;
+        }
+        if(f.type === 'billede'){
+          felt = el('input', { id:id, type:'url', placeholder:'https://…', autocomplete:'off' });
+          felt.value = f.værdi || '';
+          var fil = el('input', { type:'file', accept:'image/png,image/jpeg,image/webp,image/svg+xml,image/gif', hidden:true });
+          var vis = el('img', { klasse:'sf-m-billede', alt:'' });
+          var opdater = function(){ vis.hidden = !felt.value; if(felt.value) vis.src = felt.value; };
+          fil.addEventListener('change', function(){
+            if(!fil.files[0]) return;
+            uploadFil(fil.files[0]).then(function(u){ felt.value = u; opdater(); }).catch(function(e){ alert(e.message); });
+          });
+          felt.addEventListener('input', opdater);
+          input[f.navn] = felt;
+          form.appendChild(el('div', { klasse:'sf-m-felt' }, [ el('label', { for:id, tekst:f.label }),
+            el('div', { klasse:'sf-m-billedrække' }, [ vis, felt,
+              el('button', { type:'button', klasse:'knap rolig lille', tekst:'Læg op …', klik:function(){ fil.click(); } }), fil ]),
+            f.hjælp ? el('small', { tekst:f.hjælp }) : null ]));
+          opdater();
+          return;
+        }
+        if(f.type === 'valg'){
+          felt = el('select', { id:id });
+          f.muligheder.forEach(function(m){
+            var o = el('option', { value:m[0], tekst:m[1] });
+            if(String(f.værdi) === String(m[0])) o.selected = true;
+            felt.appendChild(o);
+          });
+          input[f.navn] = felt;
+          form.appendChild(el('div', { klasse:'sf-m-felt' }, [ el('label', { for:id, tekst:f.label }), felt, f.hjælp ? el('small', { tekst:f.hjælp }) : null ]));
+          return;
+        }
+        if(f.type === 'kode') felt = el('textarea', { id:id, rows:f.rader || 6, spellcheck:'false', klasse:'sf-kode', wrap:'off' });
+        else if(f.type === 'textarea') felt = el('textarea', { id:id, rows:f.rader || 4, spellcheck:'false' });
         else if(f.type === 'skabelon'){
           felt = el('div', { klasse:'sf-skabeloner', role:'radiogroup' });
           SKABELONER.forEach(function(sk, i){
@@ -172,7 +217,8 @@
           for(var k in input){
             if(input[k].classList && input[k].classList.contains('sf-skabeloner')){
               var r = input[k].querySelector('input:checked'); v[k] = r ? r.value : 'tom';
-            } else v[k] = input[k].value;
+            } else if(input[k].type === 'checkbox') v[k] = input[k].checked;
+            else v[k] = input[k].value;
           }
         }
         d.remove(); ja(v);
@@ -189,7 +235,7 @@
     status('Henter …');
     return Promise.all([
       api.json('/rest/v1/funnel?select=*&order=arkiveret.asc,opdateret.desc'),
-      api.json('/rest/v1/side?select=id,funnel_id,raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,kladde_html,kladde_css,udgivet_version,udgivet_kl,opdateret&order=raekkefoelge.asc,oprettet.asc'),
+      api.json('/rest/v1/side?select=id,funnel_id,raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,custom_css,kladde_html,kladde_css,udgivet_version,udgivet_kl,opdateret&order=raekkefoelge.asc,oprettet.asc'),
       api.rpc('sidernes_tal', { p_dage:30 }).catch(function(){ return []; })
     ]).then(function(r){
       funnels = r[0] || []; sider = r[1] || [];
@@ -204,6 +250,11 @@
 
   function tegn(){
     var rod = $('sider-liste'); tøm(rod);
+    if(visning.hvad === 'indstillinger'){
+      var fi = funnels.filter(function(x){ return x.id === visning.funnel; })[0];
+      if(fi) return rod.appendChild(indstillingsVisning(fi));
+      visning.hvad = 'liste';
+    }
     if(visning.hvad === 'funnel'){
       var f = funnels.filter(function(x){ return x.id === visning.funnel; })[0];
       if(f || visning.funnel === 'løse') return rod.appendChild(funnelVisning(f || null));
@@ -222,7 +273,10 @@
         el('button', { type:'button', role:'tab', 'aria-selected':String(visning.fane === 'alle'), tekst:'Alle', klik:function(){ visning.fane = 'alle'; tegn(); } }),
         el('button', { type:'button', role:'tab', 'aria-selected':String(visning.fane === 'arkiv'), tekst:'Arkiveret', klik:function(){ visning.fane = 'arkiv'; tegn(); } })
       ]),
-      el('button', { type:'button', klasse:'knap', klik:nyFunnel }, [ ikon(IK.plus, 16), ' Opret funnel' ])
+      el('div', { klasse:'sf-knaprække' }, [
+        el('button', { type:'button', klasse:'knap rolig', klik:importér }, [ ikon(IK.kopi, 16), ' Hent funnel fra fil' ]),
+        el('button', { type:'button', klasse:'knap', klik:nyFunnel }, [ ikon(IK.plus, 16), ' Opret funnel' ])
+      ])
     ]);
     boks.appendChild(top);
     var søg = el('input', { type:'search', klasse:'sf-søg', placeholder:'Søg i funnels …', 'aria-label':'Søg i funnels' });
@@ -298,7 +352,8 @@
       el('button', { type:'button', klasse:'knap rolig lille', klik:function(){ visning.hvad = 'liste'; tegn(); } }, [ ikon(IK.tilbage, 14), ' Funnels' ]),
       el('h3', { tekst: f ? f.navn : 'Løse sider' }),
       el('span', { klasse:'sf-maerke' + (erLive(trin) ? ' god' : ''), tekst: erLive(trin) ? 'Live' : 'Kladde' }),
-      f ? el('button', { type:'button', klasse:'knap rolig lille sf-skub', klik:function(){ funnelIndstillinger(f); } }, [ ikon(IK.tandhjul, 14), ' Indstillinger' ]) : null
+      f ? el('span', { klasse:'sf-maerke' + (f.live_betaling ? ' god' : ''), tekst: f.live_betaling ? 'Rigtige betalinger' : 'Testbetalinger' }) : null,
+      f ? funnelFaner(f, 'trin') : null
     ]));
 
     var flow = el('div', { klasse:'sf-flow' });
@@ -387,17 +442,262 @@
   }
 
   function funnelIndstillinger(f){
-    modal('Funnelens indstillinger', [
-      { navn:'navn', label:'Navn', værdi:f.navn },
-      { navn:'domaene', label:'Domæne', værdi:f.domaene, hjælp:'Hvor siderne bor, fx afsted.arytmi.com.' },
-      { navn:'head_kode', label:'Kode i <head> på alle sider', type:'textarea', rader:6, værdi:f.head_kode || '',
-        hjælp:'Til tælleren og samtykkebjælken (docs/funnel-taeller.md, docs/meta-pixel.md). Lad være tom, hvis du er i tvivl.' }
-    ], 'Gem').then(function(v){
-      if(!v) return;
-      return api.json('/rest/v1/funnel?id=eq.' + encodeURIComponent(f.id), { method:'PATCH',
-        body:{ navn:v.navn.trim() || f.navn, domaene:v.domaene.trim().toLowerCase() || f.domaene, head_kode:v.head_kode },
-        headers:{ Prefer:'return=minimal' } }).then(hent);
+    lukMenuer();
+    visning.hvad = 'indstillinger'; visning.funnel = f.id;
+    tegn(); window.scrollTo(0, 0);
+  }
+
+  function funnelFaner(f, aktiv){
+    return el('div', { klasse:'sf-faner sf-skub', role:'tablist' }, [
+      el('button', { type:'button', role:'tab', 'aria-selected':String(aktiv === 'trin'), klik:function(){ visning.hvad = 'funnel'; visning.funnel = f.id; tegn(); } }, [ ikon(IK.tragt, 14), ' Trin' ]),
+      el('button', { type:'button', role:'tab', 'aria-selected':String(aktiv === 'indstillinger'), klik:function(){ funnelIndstillinger(f); } }, [ ikon(IK.tandhjul, 14), ' Indstillinger' ])
+    ]);
+  }
+
+  /* =============================================================
+     FUNNELENS INDSTILLINGER - en hel side, som hos ClickFunnels
+     =============================================================
+     Felterne er kortlagt i REA/clickfunnels-migration/paritet-sidebygger.md
+     (afsnit A). Intet gemmes, før der trykkes "Gem funnel"; "Fortryd
+     ændringer" tegner siden forfra fra databasen. */
+  function indstillingsVisning(f){
+    var boks = el('div', { klasse:'sf-fv' });
+    var trin = trinI(f);
+    boks.appendChild(el('div', { klasse:'sf-fv-top' }, [
+      el('button', { type:'button', klasse:'knap rolig lille', klik:function(){ visning.hvad = 'liste'; tegn(); } }, [ ikon(IK.tilbage, 14), ' Funnels' ]),
+      el('h3', { tekst:f.navn }), funnelFaner(f, 'indstillinger')
+    ]));
+
+    var ny = JSON.parse(JSON.stringify(f));
+    ny.stil = ny.stil || {}; ny.tags = ny.tags || [];
+    var gemKnap = el('button', { type:'button', klasse:'knap', disabled:true, tekst:'Gem funnel' });
+    var fortrydKnap = el('button', { type:'button', klasse:'knap rolig', disabled:true, tekst:'Fortryd ændringer' });
+    var meld = el('span', { klasse:'status', role:'status' });
+    function rørt(){ gemKnap.disabled = false; fortrydKnap.disabled = false; meld.textContent = ''; }
+    function felt(navn, label, input, hjælp){
+      input.addEventListener('input', function(){ ny[navn] = input.type === 'checkbox' ? input.checked : input.value; rørt(); });
+      input.addEventListener('change', function(){ ny[navn] = input.type === 'checkbox' ? input.checked : input.value; rørt(); });
+      return el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:label }), input, hjælp ? el('small', { tekst:hjælp }) : null ]);
+    }
+    function tekst(navn, ph){ var i = el('input', { type:'text', placeholder:ph || '', spellcheck:'false' }); i.value = ny[navn] || ''; return i; }
+    function kode(navn){ var t = el('textarea', { rows:5, spellcheck:'false', wrap:'off', klasse:'sf-kode' }); t.value = ny[navn] || ''; return t; }
+    function kort(titel, om, børn){
+      return el('section', { klasse:'sf-i-kort' }, [
+        el('div', { klasse:'sf-i-om' }, [ el('h4', { tekst:titel }), el('p', { tekst:om }) ]),
+        el('div', { klasse:'sf-i-felter' }, børn)
+      ]);
+    }
+
+    /* Domæne: dem vi kender fra funnelerne + afsted.arytmi.com. Et nyt
+       domæne skal også pege på udgivelsen (Cloudflare), før det virker. */
+    var kendte = ['afsted.arytmi.com'];
+    funnels.forEach(function(x){ if(kendte.indexOf(x.domaene) < 0) kendte.push(x.domaene); });
+    var domæne = el('select');
+    kendte.forEach(function(d){ var o = el('option', { value:d, tekst:d }); if(d === ny.domaene) o.selected = true; domæne.appendChild(o); });
+    domæne.appendChild(el('option', { value:'__nyt', tekst:'+ Tilføj nyt domæne …' }));
+    domæne.addEventListener('change', function(){
+      if(domæne.value !== '__nyt') return;
+      var d = (prompt('Nyt domæne (fx kampagne.arytmi.com):', '') || '').trim().toLowerCase();
+      if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)){ domæne.value = ny.domaene; if(d) alert('Det ligner ikke et domæne.'); return; }
+      var o = el('option', { value:d, tekst:d }); domæne.insertBefore(o, domæne.lastChild); domæne.value = d; ny.domaene = d; rørt();
+    });
+
+    var sti = tekst('sti', '/jul');
+    sti.addEventListener('blur', function(){ if(sti.value) { sti.value = tilSti(sti.value); ny.sti = sti.value; } });
+    var stiRække = el('div', { klasse:'sf-i-sti' }, [ el('span', { tekst:'https://' + ny.domaene }), sti ]);
+    domæne.addEventListener('change', function(){ stiRække.firstChild.textContent = 'https://' + domæne.value; });
+
+    var live = el('input', { type:'checkbox', role:'switch' }); live.checked = !!ny.live_betaling;
+    live.addEventListener('change', function(){
+      if(live.checked && !confirm('Slå RIGTIGE betalinger til?\n\nKunder bliver trukket rigtige penge, og testkort virker ikke længere.')){ live.checked = false; return; }
+    });
+    var gemBetaling = el('div', { klasse:'sf-seg', role:'group' });
+    [['arv','Som standard'],['ja','Ja'],['nej','Nej']].forEach(function(m){
+      var b = el('button', { type:'button', 'aria-pressed':String(ny.gem_betalingsmetode === m[0]), tekst:m[1] });
+      b.addEventListener('click', function(){
+        ny.gem_betalingsmetode = m[0]; rørt();
+        gemBetaling.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      });
+      gemBetaling.appendChild(b);
+    });
+
+    var favicon = el('div', { klasse:'sf-i-billede' });
+    function tegnFavicon(){
+      tøm(favicon);
+      if(ny.favicon_url) favicon.appendChild(el('img', { src:ny.favicon_url, alt:'' }));
+      var fil = el('input', { type:'file', accept:'image/png,image/svg+xml,image/x-icon,image/webp', hidden:true });
+      fil.addEventListener('change', function(){
+        if(fil.files[0]) uploadFil(fil.files[0]).then(function(u){ ny.favicon_url = u; rørt(); tegnFavicon(); }).catch(function(e){ meld.textContent = e.message; });
+      });
+      favicon.appendChild(fil);
+      favicon.appendChild(el('button', { type:'button', klasse:'knap rolig lille', tekst: ny.favicon_url ? 'Skift billede' : 'Vælg billede', klik:function(){ fil.click(); } }));
+      if(ny.favicon_url) favicon.appendChild(el('button', { type:'button', klasse:'knap rolig lille', tekst:'Fjern', klik:function(){ ny.favicon_url = null; rørt(); tegnFavicon(); } }));
+      favicon.appendChild(el('small', { tekst:'PNG eller SVG, gerne 32 × 32 px. Vises på fanebladet i browseren.' }));
+    }
+    tegnFavicon();
+
+    var stilBoks = el('div', { klasse:'sf-i-stil' });
+    function tegnStil(){
+      tøm(stilBoks);
+      var s = ny.stil || {};
+      var prøve = el('div', { klasse:'sf-stilprøve' }, [
+        el('b', { tekst:'Overskrift', style:'font-family:' + (s.skrift_overskrift || '"Bodoni Moda",Georgia,serif') + ';color:' + (s.tekst || '#4A2417') }),
+        el('span', { tekst:'Brødtekst', style:'font-family:' + (s.skrift_broed || 'Manrope,Arial,sans-serif') + ';color:' + (s.tekst || '#4A2417') }),
+        el('span', { klasse:'sf-stilknap', tekst:'Knap', style:'background:' + (s.knap || '#DE854A') + ';color:' + (s.knaptekst || '#fff') + ';border-radius:' + (s.knap_rund != null ? s.knap_rund + 'px' : '999px') })
+      ]);
+      prøve.style.background = s.baggrund || '#FAF6EF';
+      stilBoks.appendChild(prøve);
+      stilBoks.appendChild(el('button', { type:'button', klasse:'knap rolig lille', tekst:'Rediger stilguide', klik:function(){
+        stilguide(ny.stil).then(function(v){ if(v){ ny.stil = v; rørt(); tegnStil(); } });
+      } }));
+      stilBoks.appendChild(el('small', { tekst:'Farver, skrifter og knapper for alle funnelens sider. Rettes ét sted og slår igennem overalt.' }));
+    }
+    tegnStil();
+
+    var tags = el('div', { klasse:'sf-tags' });
+    function tegnTags(){
+      tøm(tags);
+      ny.tags.forEach(function(t, i){
+        tags.appendChild(el('span', { klasse:'sf-tag' }, [ t, el('button', { type:'button', 'aria-label':'Fjern ' + t, tekst:'×', klik:function(){ ny.tags.splice(i, 1); rørt(); tegnTags(); } }) ]));
+      });
+      var i = el('input', { type:'text', placeholder: ny.tags.length ? '' : 'Ingen. Skriv og tryk Enter …' });
+      i.addEventListener('keydown', function(e){
+        if(e.key !== 'Enter' && e.key !== ',') return;
+        e.preventDefault();
+        var t = i.value.trim(); if(!t || ny.tags.indexOf(t) >= 0 || ny.tags.length >= 30) return;
+        ny.tags.push(t.slice(0, 40)); rørt(); tegnTags(); tags.querySelector('input').focus();
+      });
+      tags.appendChild(i);
+    }
+    tegnTags();
+
+    boks.appendChild(kort('Generelt', 'Oplysninger om funnelen.', [
+      felt('navn', 'Navn', tekst('navn')),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Domæne' }), domæne,
+        el('small', { tekst:'Et nyt domæne skal også pege på Arytmis udgivelse, før det virker.' }) ]),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Funnelens adresse' }), stiRække,
+        el('small', { tekst:'Adressen, der fører til første trin' + (trin[0] ? ' (' + trin[0].sti + ')' : '') + '. Lad den være tom, hvis første trins egen adresse er nok.' }) ]),
+      felt('live_betaling', 'Rigtige betalinger', live, 'Slået fra: funnelen tager kun testbetalinger. Virker, når Arytmis egen checkout er bygget.'),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Gem kundens betalingskort ved engangskøb?' }), gemBetaling,
+        el('small', { tekst:'Kortet gemmes normalt, så 1-klik-tilkøb virker. Slås det fra ved engangskøb, kan Stripe vise flere betalingsmåder (fx MobilePay).' }) ]),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Favicon' }), favicon ]),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Stil' }), stilBoks ]),
+      el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Tags' }), tags ])
+    ]));
+    boks.appendChild(kort('Kode', 'Kode på alle funnelens sider. Til tælleren, samtykkebjælken og andre scripts.', [
+      felt('head_kode', 'Kode i <head>', kode('head_kode'), 'Sættes før </head> på alle sider (docs/funnel-taeller.md, docs/meta-pixel.md).'),
+      felt('footer_kode', 'Kode i bunden', kode('footer_kode'), 'Sættes før </body> på alle sider. JavaScript skal stå i <script>-tags.')
+    ]));
+    boks.appendChild(kort('Del funnelen', 'Gem funnelen som en fil, der kan hentes ind igen som en kopi.', [
+      el('div', { klasse:'sf-i-felt' }, [
+        el('button', { type:'button', klasse:'knap rolig', klik:function(){ eksportér(f); } }, [ ikon(IK.kopi, 14), ' Hent som fil' ]),
+        el('small', { tekst:'Filen indeholder sider, indstillinger og stil - ingen kundedata. Hentes ind med "Hent funnel fra fil" på oversigten.' })
+      ])
+    ]));
+
+    gemKnap.addEventListener('click', function(){
+      var krop = {
+        navn: (ny.navn || '').trim() || f.navn, domaene: ny.domaene, sti: ny.sti ? tilSti(ny.sti) : null,
+        live_betaling: !!live.checked, gem_betalingsmetode: ny.gem_betalingsmetode, favicon_url: ny.favicon_url || null,
+        stil: ny.stil || {}, tags: ny.tags, head_kode: ny.head_kode || '', footer_kode: ny.footer_kode || ''
+      };
+      meld.textContent = 'Gemmer …';
+      api.json('/rest/v1/funnel?id=eq.' + encodeURIComponent(f.id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } })
+        .then(hent).then(function(){ var m = document.querySelector('.sf-i-bund .status'); if(m) m.textContent = 'Gemt'; })
+        .catch(function(e){ meld.textContent = e && e.kode === '23505' ? 'Den adresse bruges allerede på domænet.' : api.forklar(e); });
+    });
+    fortrydKnap.addEventListener('click', function(){ tegn(); });
+    boks.appendChild(el('div', { klasse:'sf-i-bund' }, [
+      el('button', { type:'button', klasse:'knap sf-farligknap', tekst: f.arkiveret ? 'Hent frem fra arkivet' : 'Arkivér funnel', klik:function(){ arkivér(f); } }),
+      el('button', { type:'button', klasse:'knap rolig', tekst:'Duplikér funnel', klik:function(){ kopiérFunnel(f); } }),
+      el('span', { klasse:'sf-skub' }), meld, fortrydKnap, gemKnap
+    ]));
+    return boks;
+  }
+
+  /* ---------- Stilguiden ----------
+     Én stil pr. funnel. Den lægges oven på blokkenes egne farver som CSS
+     (stilCss), i editoren, i forhåndsvisningen og på den udgivne side. */
+  var SKRIFTER = [
+    ['', 'Standard'], ['"Bodoni Moda",Georgia,serif', 'Bodoni Moda'], ['Manrope,Arial,sans-serif', 'Manrope'],
+    ['Fraunces,Georgia,serif', 'Fraunces'], ['Inter,Arial,sans-serif', 'Inter'], ['"Playfair Display",Georgia,serif', 'Playfair Display'],
+    ['"DM Serif Display",Georgia,serif', 'DM Serif Display'], ['"Cormorant Garamond",Georgia,serif', 'Cormorant Garamond'],
+    ['Merriweather,Georgia,serif', 'Merriweather'], ['"Libre Baskerville",Georgia,serif', 'Libre Baskerville'],
+    ['Montserrat,Arial,sans-serif', 'Montserrat'], ['Poppins,Arial,sans-serif', 'Poppins'], ['Lato,Arial,sans-serif', 'Lato'],
+    ['"Open Sans",Arial,sans-serif', 'Open Sans'], ['"Work Sans",Arial,sans-serif', 'Work Sans'], ['Nunito,Arial,sans-serif', 'Nunito'],
+    ['Oswald,Arial,sans-serif', 'Oswald'], ['"Bebas Neue",Arial,sans-serif', 'Bebas Neue'], ['Georgia,serif', 'Georgia (system)'], ['Arial,sans-serif', 'Arial (system)']
+  ];
+  function stilguide(s){
+    s = s || {};
+    return modal('Stilguide', [
+      { type:'overskrift', label:'Farver' },
+      { navn:'baggrund', label:'Baggrund', type:'color', værdi:s.baggrund || '#FAF6EF' },
+      { navn:'tekst', label:'Tekst', type:'color', værdi:s.tekst || '#4A2417' },
+      { navn:'accent', label:'Accent (små overskrifter, links)', type:'color', værdi:s.accent || '#8F4333' },
+      { type:'overskrift', label:'Skrifter', hjælp:'Bagrummet kan kun vise Fraunces og Inter; de andre ses i forhåndsvisningen og på den udgivne side.' },
+      { navn:'skrift_overskrift', label:'Overskrifter', type:'valg', muligheder:SKRIFTER, værdi:s.skrift_overskrift || '' },
+      { navn:'skrift_broed', label:'Brødtekst', type:'valg', muligheder:SKRIFTER, værdi:s.skrift_broed || '' },
+      { type:'overskrift', label:'Knapper' },
+      { navn:'knap', label:'Knapfarve', type:'color', værdi:s.knap || '#DE854A' },
+      { navn:'knaptekst', label:'Tekst på knapper', type:'color', værdi:s.knaptekst || '#FFFFFF' },
+      { navn:'knap_rund', label:'Rund kant på knapper (px, 999 = helt rund)', type:'number', værdi:s.knap_rund != null ? String(s.knap_rund) : '999' }
+    ], 'Brug stilen').then(function(v){
+      if(!v) return null;
+      var r = parseInt(v.knap_rund, 10);
+      return { baggrund:v.baggrund, tekst:v.tekst, accent:v.accent, skrift_overskrift:v.skrift_overskrift, skrift_broed:v.skrift_broed,
+               knap:v.knap, knaptekst:v.knaptekst, knap_rund: isNaN(r) ? 999 : Math.max(0, Math.min(999, r)) };
+    });
+  }
+  function stilCss(s){
+    if(!s || !Object.keys(s).length) return '';
+    var c = '';
+    if(s.baggrund || s.tekst || s.skrift_broed) c += 'html body{' + (s.baggrund ? 'background:' + s.baggrund + ';' : '') + (s.tekst ? 'color:' + s.tekst + ';' : '') + (s.skrift_broed ? 'font-family:' + s.skrift_broed + ';' : '') + '}';
+    if(s.skrift_overskrift || s.tekst) c += 'html body h1,html body h2,html body h3{' + (s.skrift_overskrift ? 'font-family:' + s.skrift_overskrift + ';' : '') + '}';
+    if(s.accent) c += 'html body .a-over,html body .a-citat cite{color:' + s.accent + '}';
+    if(s.knap || s.knaptekst || s.knap_rund != null) c += 'html body .a-knap{' + (s.knap ? 'background:' + s.knap + ';' : '') + (s.knaptekst ? 'color:' + s.knaptekst + ';' : '') + (s.knap_rund != null ? 'border-radius:' + s.knap_rund + 'px;' : '') + '}';
+    return c;
+  }
+
+  /* ---------- Del: funnelen som fil ---------- */
+  function eksportér(f){
+    var trin = trinI(f);
+    status('Henter siderne …');
+    Promise.all(trin.map(function(s){
+      return api.json('/rest/v1/side?select=raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,seo_indekser,head_kode,footer_kode,custom_css,beskrivelse,social_billede,bloker_ai_traening,bloker_ai_soegning,bloker_ai_assistent,kladde,kladde_html,kladde_css&id=eq.' + encodeURIComponent(s.id))
+        .then(function(r){ return r[0]; });
+    })).then(function(s){
+      var fil = { format:'arytmi-funnel', version:1, eksporteret:new Date().toISOString(),
+        funnel:{ navn:f.navn, domaene:f.domaene, head_kode:f.head_kode, footer_kode:f.footer_kode, stil:f.stil, tags:f.tags, favicon_url:f.favicon_url },
+        sider:s };
+      var a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(fil, null, 1)], { type:'application/json' })),
+        download: tilSti(f.navn).slice(1) + '.arytmi-funnel.json' });
+      document.body.appendChild(a); a.click(); a.remove();
+      status('');
     }).catch(fejl);
+  }
+  function importér(){
+    var i = el('input', { type:'file', accept:'.json,application/json' });
+    i.addEventListener('change', function(){
+      var fil = i.files[0]; if(!fil) return;
+      fil.text().then(function(t){
+        var d = JSON.parse(t);
+        if(d.format !== 'arytmi-funnel' || !d.funnel || !Array.isArray(d.sider)) throw new Error('Det er ikke en Arytmi-funnelfil.');
+        var ext = Date.now().toString(36).slice(-4);
+        return api.json('/rest/v1/funnel', { method:'POST', headers:{ Prefer:'return=representation' }, body:{
+          navn:String(d.funnel.navn || 'Importeret') + ' (importeret)', domaene:d.funnel.domaene || 'afsted.arytmi.com',
+          head_kode:d.funnel.head_kode || '', footer_kode:d.funnel.footer_kode || '', stil:d.funnel.stil || {}, tags:d.funnel.tags || [],
+          favicon_url:d.funnel.favicon_url || null } }).then(function(r){
+          var nyF = r[0];
+          return Promise.all(d.sider.map(function(s){
+            var krop = {}; ['raekkefoelge','navn','seo_titel','seo_beskrivelse','seo_indekser','head_kode','footer_kode','custom_css','beskrivelse','social_billede','bloker_ai_traening','bloker_ai_soegning','bloker_ai_assistent','kladde','kladde_html','kladde_css']
+              .forEach(function(k){ if(s[k] !== undefined && s[k] !== null) krop[k] = s[k]; });
+            krop.funnel_id = nyF.id; krop.sti = tilSti((s.sti || s.navn) + '-' + ext);
+            return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:krop });
+          })).then(function(){ return hent().then(function(){ visning.hvad = 'funnel'; visning.funnel = nyF.id; tegn(); }); });
+        });
+      }).catch(function(e){ status(e.message || api.forklar(e), 'fejl'); });
+    });
+    i.click();
   }
 
   function arkivér(f){
@@ -410,16 +710,16 @@
   function kopiérFunnel(f){
     var trin = trinI(f);
     status('Kopierer …');
-    api.json('/rest/v1/funnel', { method:'POST', body:{ navn:'Kopi af ' + f.navn, domaene:f.domaene, head_kode:f.head_kode || '' },
+    api.json('/rest/v1/funnel', { method:'POST', body:{ navn:'Kopi af ' + f.navn, domaene:f.domaene, head_kode:f.head_kode || '',
+      footer_kode:f.footer_kode || '', stil:f.stil || {}, tags:f.tags || [], favicon_url:f.favicon_url || null, gem_betalingsmetode:f.gem_betalingsmetode || 'arv' },
       headers:{ Prefer:'return=representation' } }).then(function(r){
       var ny = r[0];
       return Promise.all(trin.map(function(s){
-        return api.json('/rest/v1/side?select=kladde,kladde_html,kladde_css,seo_titel,seo_beskrivelse,head_kode&id=eq.' + encodeURIComponent(s.id)).then(function(fuld){
+        return api.json('/rest/v1/side?select=kladde,kladde_html,kladde_css,seo_titel,seo_beskrivelse,seo_indekser,head_kode,footer_kode,custom_css,beskrivelse,social_billede,bloker_ai_traening,bloker_ai_soegning,bloker_ai_assistent&id=eq.' + encodeURIComponent(s.id)).then(function(fuld){
           var x = fuld[0];
-          return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:{
-            funnel_id:ny.id, raekkefoelge:s.raekkefoelge, navn:s.navn, sti:tilSti(s.sti + '-kopi-' + Date.now().toString(36).slice(-4)),
-            kladde:x.kladde, kladde_html:x.kladde_html, kladde_css:x.kladde_css,
-            seo_titel:x.seo_titel, seo_beskrivelse:x.seo_beskrivelse, head_kode:x.head_kode } });
+          x.funnel_id = ny.id; x.raekkefoelge = s.raekkefoelge; x.navn = s.navn;
+          x.sti = tilSti(s.sti + '-kopi-' + Date.now().toString(36).slice(-4));
+          return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:x });
         });
       }));
     }).then(hent).catch(fejl);
@@ -456,17 +756,43 @@
     }).catch(fejl);
   }
 
+  /* SIDENS INDSTILLINGER - alle felter fra kortlægningen (afsnit D). Hele
+     rækken hentes først, så intet felt overskrives med en tom værdi. */
+  var SIDE_FELTER = 'id,navn,sti,beskrivelse,seo_titel,seo_beskrivelse,seo_indekser,social_billede,bloker_ai_traening,bloker_ai_soegning,bloker_ai_assistent,head_kode,footer_kode,custom_css';
   function sideIndstillinger(s, efter){
-    modal('Navn, adresse og Google', [
-      { navn:'navn', label:'Navn', værdi:s.navn },
-      { navn:'sti', label:'Adresse', værdi:s.sti, hjælp:'Ændres adressen på en udgivet side, virker gamle links ikke længere.' },
-      { navn:'seo_titel', label:'Titel i Google og på fanebladet', værdi:s.seo_titel || '' },
-      { navn:'seo_beskrivelse', label:'Beskrivelse i Google', type:'textarea', rader:3, værdi:s.seo_beskrivelse || '', hjælp:'Højst 500 tegn. 1-2 sætninger.' }
-    ], 'Gem').then(function(v){
-      if(!v) return;
-      var krop = { navn:v.navn.trim() || s.navn, sti:tilSti(v.sti), seo_titel:v.seo_titel.trim(), seo_beskrivelse:v.seo_beskrivelse.trim().slice(0, 500) };
-      return api.json('/rest/v1/side?id=eq.' + encodeURIComponent(s.id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } })
-        .then(function(){ for(var k in krop) s[k] = krop[k]; if(efter) efter(); else hent(); });
+    lukMenuer();
+    api.json('/rest/v1/side?select=' + SIDE_FELTER + '&id=eq.' + encodeURIComponent(s.id)).then(function(r){
+      var x = r[0];
+      return modal('Sidens indstillinger · ' + x.navn, [
+        { type:'overskrift', label:'Generelt' },
+        { navn:'navn', label:'Navn', værdi:x.navn },
+        { navn:'sti', label:'Adresse', værdi:x.sti, hjælp:'Ændres adressen på en udgivet side, virker gamle links ikke længere.' },
+        { navn:'beskrivelse', label:'Intern note', type:'textarea', rader:2, værdi:x.beskrivelse || '', hjælp:'Kun til jer. Højst 1.000 tegn.' },
+        { type:'overskrift', label:'Google og deling' },
+        { navn:'seo_titel', label:'Titel i Google og på fanebladet', værdi:x.seo_titel || '', hjælp:'Højst ca. 60 tegn ses i Google.' },
+        { navn:'seo_beskrivelse', label:'Beskrivelse i Google', type:'textarea', rader:3, værdi:x.seo_beskrivelse || '', hjælp:'1-2 sætninger, højst ca. 155 tegn ses i Google.' },
+        { navn:'seo_indekser', label:'Må vises i Google', type:'afkryds', værdi:x.seo_indekser, hjælp:'Slået fra: siden beder søgemaskiner om ikke at vise den (fx tak- og betalingssider).' },
+        { navn:'social_billede', label:'Billede ved deling (Facebook, Messenger m.fl.)', type:'billede', værdi:x.social_billede || '', hjælp:'1200 × 630 px er bedst.' },
+        { type:'overskrift', label:'AI-tjenester', hjælp:'Overholdes af de store AI-firmaer via robots.txt. Det er en anmodning, ikke en lås.' },
+        { navn:'bloker_ai_traening', label:'Bloker AI-træning (GPTBot, ClaudeBot, Google-Extended …)', type:'afkryds', værdi:x.bloker_ai_traening },
+        { navn:'bloker_ai_soegning', label:'Bloker AI-søgning (ChatGPT-søgning, Perplexity …)', type:'afkryds', værdi:x.bloker_ai_soegning, hjælp:'Slå kun til, hvis siden ikke må nævnes i AI-svar. Det koster synlighed.' },
+        { navn:'bloker_ai_assistent', label:'Bloker AI-assistenter, der åbner siden for en person', type:'afkryds', værdi:x.bloker_ai_assistent },
+        { type:'overskrift', label:'Kode', hjælp:'Kun for denne side. Funnelens fælles kode ligger under funnelens indstillinger.' },
+        { navn:'head_kode', label:'Kode i <head>', type:'kode', rader:4, værdi:x.head_kode || '' },
+        { navn:'footer_kode', label:'Kode i bunden (før </body>)', type:'kode', rader:4, værdi:x.footer_kode || '' },
+        { navn:'custom_css', label:'Egen CSS', type:'kode', rader:8, værdi:x.custom_css || '', hjælp:'Ses straks i editoren. Uden <style>.' }
+      ], 'Gem', null, true).then(function(v){
+        if(!v) return;
+        var krop = {
+          navn:v.navn.trim() || x.navn, sti:tilSti(v.sti), beskrivelse:v.beskrivelse.slice(0, 1000),
+          seo_titel:v.seo_titel.trim().slice(0, 200), seo_beskrivelse:v.seo_beskrivelse.trim().slice(0, 500), seo_indekser:!!v.seo_indekser,
+          social_billede: /^https:\/\//.test(v.social_billede.trim()) ? v.social_billede.trim() : null,
+          bloker_ai_traening:!!v.bloker_ai_traening, bloker_ai_soegning:!!v.bloker_ai_soegning, bloker_ai_assistent:!!v.bloker_ai_assistent,
+          head_kode:v.head_kode, footer_kode:v.footer_kode, custom_css:v.custom_css
+        };
+        return api.json('/rest/v1/side?id=eq.' + encodeURIComponent(x.id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } })
+          .then(function(){ for(var k in krop) s[k] = krop[k]; if(efter) efter(); else hent(); });
+      });
     }).catch(function(f){ if(efter) editorStatus(f && f.kode === '23505' ? 'Adressen bruges allerede.' : api.forklar(f), 'fejl'); else fejl(f); });
   }
 
@@ -487,7 +813,8 @@
   function forhåndsvisSide(s){
     if(!s) return;
     lukMenuer();
-    åbnVindue(s.kladde_html || s.udgivet_html || '', s.kladde_css || s.udgivet_css || '', s.seo_titel || s.navn);
+    var f = funnels.filter(function(x){ return x.id === s.funnel_id; })[0];
+    åbnVindue(s.kladde_html || s.udgivet_html || '', (s.kladde_css || s.udgivet_css || '') + SYNLIG_CSS + stilCss(f && f.stil) + (s.custom_css || ''), s.seo_titel || s.navn);
   }
   /* Nyt vindue via en blob: samme html og css som Udgiv tager. noopener,
      så vinduet ikke kan røre bagrummet. */
@@ -567,10 +894,18 @@
     else if(s.kladde_html){ editor.setComponents(s.kladde_html); editor.setStyle(s.kladde_css || BASIS_CSS); }
     else editor.setStyle(BASIS_CSS);
     editor.Css.addRules(SYNLIG_CSS);
+    editor.on('load', lærredsStil);
+    lærredsStil();
 
     ændret = false;
     editorStatus(s.udgivet_version ? 'Udgivet v' + s.udgivet_version : 'Ikke udgivet', 'svag');
-    editor.on('update', function(){ ændret = true; editorStatus('Ikke gemt', 'advar'); });
+    /* AUTOMATISK GEM: 3 sekunder efter sidste rettelse. Bedre end at skulle
+       huske det; Gem-knappen og Ctrl+S findes stadig. */
+    editor.on('update', function(){
+      ændret = true; editorStatus('Ikke gemt', 'advar');
+      clearTimeout(autogem);
+      autogem = setTimeout(function(){ if(ændret && editor) gem().catch(function(){}); }, 3000);
+    });
     editor.on('component:selected component:deselected component:update:attributes', function(){ tegnPanel(); });
     editor.on('component:styleUpdate', function(){ tegnPanel(true); });
     editor.on('canvas:drop', function(){ visVenstre('trin'); });
@@ -593,7 +928,45 @@
     });
   }
 
+  /* Funnelens stilguide og sidens egen CSS lægges i lærredet som et
+     separat <style>, så de ses straks, men aldrig blandes ind i kladdens
+     egen CSS. Samme CSS kommer med i forhåndsvisningen og udgivelsen. */
+  var autogem = null;
+  function ekstraCss(){
+    if(!åbenSide) return '';
+    var f = funnels.filter(function(x){ return x.id === åbenSide.funnel_id; })[0];
+    return stilCss(f && f.stil) + (åbenSide.custom_css || '');
+  }
+  function lærredsStil(){
+    if(!editor) return;
+    var doc = editor.Canvas.getDocument();
+    if(!doc || !doc.head) return;
+    var st = doc.getElementById('arytmi-ekstra');
+    if(!st){ st = doc.createElement('style'); st.id = 'arytmi-ekstra'; doc.head.appendChild(st); }
+    st.textContent = ekstraCss();
+  }
+
+  function sideIndstillingerIEditor(){
+    if(!åbenSide) return;
+    sideIndstillinger(åbenSide, function(){
+      $('sf-adresse').textContent = åbenSide.navn + ' · ' + åbenSide.sti;
+      lærredsStil();
+      editorStatus('Indstillinger gemt', 'god');
+    });
+  }
+  /* Stilguiden kan rettes direkte fra editoren og ses med det samme. */
+  function stilIEditor(){
+    var f = åbenSide && funnels.filter(function(x){ return x.id === åbenSide.funnel_id; })[0];
+    if(!f){ editorStatus('Løse sider har ingen funnel-stil.', 'advar'); return; }
+    stilguide(f.stil).then(function(v){
+      if(!v) return;
+      return api.json('/rest/v1/funnel?id=eq.' + encodeURIComponent(f.id), { method:'PATCH', body:{ stil:v }, headers:{ Prefer:'return=minimal' } })
+        .then(function(){ f.stil = v; lærredsStil(); editorStatus('Stilen er gemt for hele funnelen', 'god'); });
+    }).catch(function(e){ editorStatus(api.forklar(e), 'fejl'); });
+  }
+
   function lukEditor(){
+    clearTimeout(autogem);
     if(ændret && !confirm('Du har ændringer, der ikke er gemt. Luk alligevel?')) return;
     if(editor){ editor.destroy(); editor = null; }
     åbenSide = null; ændret = false;
@@ -672,19 +1045,25 @@
         editor.AssetManager.add((liste || []).filter(function(f){ return f.id; }).map(function(f){ return { src:billedURL(f.name), name:f.name }; }));
       }).catch(function(){ /* biblioteket er en bekvemmelighed - upload virker stadig */ });
   }
+  /* Én fil op i spanden. Giver den offentlige adresse. Bruges af editoren,
+     favicon og delingsbilledet. */
+  function uploadFil(fil){
+    var ext = TYPER[fil.type];
+    if(!ext) return Promise.reject(new Error('Kun JPG, PNG, WebP, SVG og GIF.'));
+    if(fil.size > 5 * 1024 * 1024) return Promise.reject(new Error('Billedet er over 5 MB.'));
+    var navn = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    return api.kaldRaa('/storage/v1/object/' + SPAND + '/' + navn, 'POST', fil, fil.type).then(function(r){
+      if(!r.ok) throw new Error('Billedet blev afvist (' + r.status + ').');
+      if(editor) editor.AssetManager.add({ src:billedURL(navn), name:navn });
+      return billedURL(navn);
+    });
+  }
   function uploadBilleder(e){
     var filer = (e.dataTransfer ? e.dataTransfer.files : e.target.files) || [];
     Array.prototype.forEach.call(filer, function(fil){
-      var ext = TYPER[fil.type];
-      if(!ext){ editorStatus('Kun JPG, PNG, WebP, SVG og GIF.', 'fejl'); return; }
-      if(fil.size > 5 * 1024 * 1024){ editorStatus('Billedet er over 5 MB.', 'fejl'); return; }
-      var navn = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
       editorStatus('Lægger billedet op …', 'svag');
-      api.kaldRaa('/storage/v1/object/' + SPAND + '/' + navn, 'POST', fil, fil.type).then(function(r){
-        if(!r.ok) throw new Error('Billedet blev afvist (' + r.status + ').');
-        editor.AssetManager.add({ src:billedURL(navn), name:navn });
-        editorStatus('Billedet er lagt op', 'god');
-      }).catch(function(f){ editorStatus(f.message || api.forklar(f), 'fejl'); });
+      uploadFil(fil).then(function(){ editorStatus('Billedet er lagt op', 'god'); })
+        .catch(function(f){ editorStatus(f.message || api.forklar(f), 'fejl'); });
     });
   }
   function vælgBillede(komp){
@@ -751,7 +1130,7 @@
         el('p', { tekst:'Tekst rettes ved at dobbeltklikke direkte i siden. Nye sektioner hentes under "Tilføj" til venstre og trækkes ind på siden.' })
       ]));
       gruppe(boks, 'Siden', [
-        knapRække([ ['Navn, adresse og Google', function(){ sideIndstillinger(åbenSide, function(){ $('sf-adresse').textContent = åbenSide.navn + ' · ' + åbenSide.sti; editorStatus('Indstillinger gemt', 'god'); }); }] ]),
+        knapRække([ ['Sidens indstillinger', sideIndstillingerIEditor] ]),
         knapRække([ ['Tidligere versioner', versioner] ])
       ]);
       return;
@@ -1097,7 +1476,9 @@
     $('sf-luk').addEventListener('click', lukEditor);
     $('sf-gem').addEventListener('click', function(){ gem().catch(function(){}); });
     $('sf-udgiv').addEventListener('click', udgiv);
-    $('sf-vis').addEventListener('click', function(){ if(editor) åbnVindue(editor.getHtml(), editor.getCss(), åbenSide && (åbenSide.seo_titel || åbenSide.navn)); });
+    $('sf-vis').addEventListener('click', function(){ if(editor) åbnVindue(editor.getHtml(), editor.getCss() + ekstraCss(), åbenSide && (åbenSide.seo_titel || åbenSide.navn)); });
+    $('sf-sideindstillinger').addEventListener('click', sideIndstillingerIEditor);
+    $('sf-stil').addEventListener('click', stilIEditor);
     $('sf-fortryd').addEventListener('click', function(){ if(editor) editor.UndoManager.undo(); });
     $('sf-gentag').addEventListener('click', function(){ if(editor) editor.UndoManager.redo(); });
     $('sf-venstre-faner').addEventListener('click', function(e){ var k = e.target.closest('[data-v]'); if(k) visVenstre(k.getAttribute('data-v')); });

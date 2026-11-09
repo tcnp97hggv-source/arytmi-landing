@@ -204,3 +204,52 @@ body.sf-redigerer{ overflow:hidden; }
 #sider-editor .gjs-mdl-dialog{ background:var(--flade); color:var(--tekst); border-radius:16px; }
 #sider-editor .gjs-mdl-header{ border-color:var(--kant); }
 .gjs-mdl-container .gjs-mdl-dialog{ background:var(--flade); color:var(--tekst); }
+
+/* ---------- Funnelens indstillinger (hel side) ---------- */
+.sf-i-kort{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:24px; padding:24px 0; border-top:1px solid var(--kant); }
+.sf-i-kort:first-of-type{ border-top:0; }
+.sf-i-om h4{ margin:0 0 4px; font-size:16px; }
+.sf-i-om p{ margin:0; color:var(--tekst-2); font-size:14px; }
+.sf-i-felter{ background:var(--flade); border:1px solid var(--kant); border-radius:var(--r, 16px); padding:20px 22px; display:flex; flex-direction:column; gap:18px; }
+.sf-i-felt{ display:flex; flex-direction:column; gap:6px; }
+.sf-i-felt > label{ font-weight:600; font-size:14px; }
+.sf-i-felt small{ color:var(--tekst-2); font-size:12px; }
+.sf-i-felt input[type=text], .sf-i-felt select, .sf-i-felt textarea{ font:inherit; padding:10px 12px; border:1px solid var(--kant-felt); border-radius:10px; background:#fff; width:100%; box-sizing:border-box; }
+.sf-i-felt input[type=checkbox][role=switch]{ width:44px; height:24px; accent-color:#4f6b4a; }
+.sf-i-sti{ display:flex; border:1px solid var(--kant-felt); border-radius:10px; overflow:hidden; background:#fff; }
+.sf-i-sti span{ padding:10px 12px; background:var(--bund); color:var(--tekst-2); font-family:var(--skrift-kode); font-size:13px; white-space:nowrap; border-right:1px solid var(--kant); }
+.sf-i-sti input{ border:0 !important; border-radius:0 !important; }
+.sf-i-billede{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1.5px dashed var(--kant-felt); border-radius:12px; padding:14px; }
+.sf-i-billede img{ width:32px; height:32px; object-fit:contain; }
+.sf-i-billede small{ flex-basis:100%; }
+.sf-i-stil{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.sf-stilprøve{ display:flex; gap:16px; align-items:center; padding:14px 18px; border-radius:12px; border:1px solid var(--kant); width:100%; box-sizing:border-box; }
+.sf-stilprøve b{ font-size:22px; }
+.sf-stilknap{ padding:8px 18px; font-weight:700; font-size:14px; margin-left:auto; }
+.sf-tags{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; border:1px solid var(--kant-felt); border-radius:10px; padding:6px 8px; background:#fff; }
+.sf-tags input{ border:0 !important; padding:4px !important; flex:1; min-width:120px; }
+.sf-tag{ display:inline-flex; align-items:center; gap:4px; background:var(--bund); border-radius:999px; padding:3px 4px 3px 10px; font-size:13px; }
+.sf-tag button{ border:0; background:none; cursor:pointer; color:var(--tekst-2); font-size:15px; line-height:1; }
+.sf-i-bund{ display:flex; align-items:center; gap:8px; padding:20px 0 40px; border-top:1px solid var(--kant); flex-wrap:wrap; }
+.sf-farligknap{ background:var(--fejl) !important; border-color:var(--fejl) !important; color:#fff !important; }
+.sf-kode{ font-family:var(--skrift-kode) !important; font-size:12.5px !important; line-height:1.5; background:#fdfbf7 !important; tab-size:2; }
+@media (max-width:900px){ .sf-i-kort{ grid-template-columns:1fr; } }
+
+/* ---------- Den brede modal (sidens indstillinger, stilguide) ---------- */
+.sf-modal-bred{ width:min(760px, calc(100vw - 32px)); }
+.sf-m-overskrift{ margin:8px 0 -4px; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); border-top:1px solid var(--skille); padding-top:14px; }
+.sf-m-overskrift:first-of-type{ border-top:0; padding-top:0; }
+.sf-m-hjælp{ margin:0; font-size:12px; color:var(--tekst-2); }
+.sf-m-afkryds label{ display:flex; gap:10px; align-items:flex-start; font-weight:500 !important; }
+.sf-m-afkryds input{ margin-top:3px; accent-color:#8F4333; }
+.sf-m-billedrække{ display:flex; gap:8px; align-items:center; }
+.sf-m-billedrække input[type=url]{ flex:1; }
+.sf-m-billede{ width:64px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--kant); }
+.sf-m-felt select{ font:inherit; padding:9px 10px; border:1px solid var(--kant-felt); border-radius:10px; background:#fff; }
+.sf-m-felt input[type=color]{ width:64px; height:34px; padding:0; border:1px solid var(--kant-felt); border-radius:8px; background:#fff; }
+.sf-i-felt .sf-seg{ align-self:flex-start; }
+.sf-i-felt input[type=checkbox][role=switch]{ appearance:none; -webkit-appearance:none; width:42px; height:24px; border-radius:999px; background:var(--kant-felt); position:relative; cursor:pointer; transition:background .15s; margin:0; }
+.sf-i-felt input[type=checkbox][role=switch]::after{ content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:left .15s; }
+.sf-i-felt input[type=checkbox][role=switch]:checked{ background:#4f6b4a; }
+.sf-i-felt input[type=checkbox][role=switch]:checked::after{ left:21px; }
+.sf-i-felt input[type=checkbox][role=switch]:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
