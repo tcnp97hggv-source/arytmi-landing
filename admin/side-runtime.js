@@ -170,7 +170,21 @@
     k.setAttribute('aria-expanded', String(å));
   });
 
+  /* Ordreformularen (egen checkout) hentes kun på sider, der har en - fra
+     samme sted som dette script (/_a/ på de udgivne sider). */
+  function startOrdreformular(){
+    if(iEditor || !d.querySelector('[data-a-ordreformular]') || window.__aoHentet) return;
+    window.__aoHentet = true;
+    var mig = alle('script[src*="side-runtime.js"]')[0];
+    var src = mig ? mig.getAttribute('src') : '/_a/side-runtime.js';
+    var base = src.replace(/side-runtime\.js.*$/, '');
+    var v = (src.match(/\?v=[^&]+/) || [''])[0];
+    var l = d.createElement('link'); l.rel = 'stylesheet'; l.href = base + 'ordreformular.css' + v; d.head.appendChild(l);
+    var s = d.createElement('script'); s.src = base + 'ordreformular.js' + v; s.defer = true; d.body.appendChild(s);
+  }
+
   function start(){
+    startOrdreformular();
     startPopup();
     alle('[data-a-nedtaelling]').forEach(startNedtaelling);
     startAnimationer();

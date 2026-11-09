@@ -206,6 +206,26 @@
       ] } }
     });
 
+    /* ---------- Ordreformular (egen checkout, trin 3) ----------
+       Produkterne vælges blandt bagrummets Produkter (sider.js lægger listen
+       i window.ArytmiProduktValg, før editoren åbner). Selve formularen
+       tegnes og betales af ordreformular.js på den udgivne side. */
+    var produktValg = function(tom){
+      return [{ id:'', name:tom }].concat((window.ArytmiProduktValg || []).map(function(p){ return { id:p[0], name:p[1] }; }));
+    };
+    DC.addType('a-ordreformular', {
+      isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-ordreformular'); },
+      model: { defaults: { name:'Ordreformular', droppable:false, attributes:{ 'data-a-ordreformular':'', 'data-a-tilstand':'test' }, traits:[
+        { type:'select', name:'data-a-produkt-1', label:'Produkt 1', options:produktValg('— vælg —') },
+        { type:'select', name:'data-a-produkt-2', label:'Produkt 2 (valgfrit)', options:produktValg('— intet —') },
+        { type:'select', name:'data-a-produkt-3', label:'Produkt 3 (valgfrit)', options:produktValg('— intet —') },
+        { type:'select', name:'data-a-tilvalg', label:'Tilvalg (fx mørklægning)', options:produktValg('— intet —') },
+        { type:'text', name:'data-a-knaptekst', label:'Tekst på knappen (tom = "Gennemfør købet")' },
+        { type:'text', name:'data-a-efter', label:'Efter betaling: gå til (tom = næste trin)' },
+        { type:'select', name:'data-a-tilstand', label:'Betaling', options:[{ id:'test', name:'Test (Stripes sandkasse)' }, { id:'live', name:'Live (rigtige penge)' }] }
+      ] } }
+    });
+
     /* ---------- Formular ---------- */
     DC.addType('a-formular', {
       isComponent: function(el){ return el.tagName === 'FORM' && el.hasAttribute('data-arytmi-formular'); },
@@ -422,6 +442,8 @@
       '<a class="a-knap" href="#" data-a-handling="rul" data-a-maal="">Se hvordan</a>');
     blok('e-knap-naeste', 'Knap: næste trin', 'Knapper og formular', skitse(K(30, 35, 60) + '<path d="M84 39h6M88 37l2 2-2 2" stroke="#fff" stroke-width="1.5" fill="none"/>'),
       '<a class="a-knap" href="#" data-a-handling="naeste">Videre<small>Det tager kun et minut</small></a>');
+    blok('e-ordreformular', 'Ordreformular (betaling)', 'Knapper og formular', skitse('<rect x="26" y="8" width="68" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(34, 16, 52, 10, '#efe5d8') + B(34, 30, 52, 8) + B(34, 42, 52, 8) + K(34, 56, 52)),
+      '<div data-a-ordreformular data-a-tilstand="test"><p>Ordreformular: vælg produkterne i Indstillinger. Den vises med priser og betaling på den udgivne side.</p></div>');
     blok('e-formular', 'Formular', 'Knapper og formular', skitse('<rect x="30" y="8" width="60" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(38, 18, 44, 8) + B(38, 30, 44, 8) + K(45, 50)),
       '<form class="a-form-kort" data-arytmi-formular="tilmelding" style="max-width:460px;margin:0 auto">' +
       '<label class="a-felt">Mail<input type="email" name="email" required autocomplete="email" placeholder="din@mail.dk"></label>' +

@@ -245,8 +245,11 @@
       api.rpc('sidernes_tal', { p_dage:30 }).catch(function(){ return []; }),
       /* 0084. Mangler migrationen endnu, er listerne bare tomme. */
       api.json('/rest/v1/domaene?select=*&order=navn.asc').catch(function(){ return []; }),
-      api.rpc('split_tal', { p_dage:30 }).catch(function(){ return []; })
+      api.rpc('split_tal', { p_dage:30 }).catch(function(){ return []; }),
+      /* 0085: produkterne til ordreformularens valg (sider-elementer.js). */
+      api.json('/rest/v1/produkt?select=id,navn&arkiveret=eq.false&order=navn.asc').catch(function(){ return []; })
     ]).then(function(r){
+      window.ArytmiProduktValg = (r[5] || []).map(function(p){ return [p.id, p.navn]; });
       funnels = r[0] || []; sider = r[1] || [];
       domæner = r[3] || []; splitTal = r[4] || [];
       tal = {}; (r[2] || []).forEach(function(x){ tal[x.sti] = Number(x.visninger) || 0; });
