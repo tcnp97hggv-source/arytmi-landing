@@ -120,9 +120,13 @@
     var f = el('iframe', { sandbox:'', tabindex:'-1', 'aria-hidden':'true', title:'' });
     f.style.width = '1280px'; f.style.height = Math.round(1280 * .66) + 'px';
     f.style.transform = 'scale(' + skala + ')';
-    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>' + (s.kladde_css || s.udgivet_css || '') +
+    f.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>' + RUNTIME_CSS + (s.kladde_css || s.udgivet_css || '') +
                'body{overflow:hidden}</style></head><body>' + html + '</body></html>';
     boks.appendChild(f);
+    /* Skaleres efter den bredde, miniaturen faktisk får på skærmen. */
+    if(window.ResizeObserver){
+      new ResizeObserver(function(p){ var w = p[0].contentRect.width; if(w > 0) f.style.transform = 'scale(' + (w / 1280) + ')'; }).observe(boks);
+    }
     return boks;
   }
 
@@ -235,7 +239,7 @@
     status('Henter …');
     return Promise.all([
       api.json('/rest/v1/funnel?select=*&order=arkiveret.asc,opdateret.desc'),
-      api.json('/rest/v1/side?select=id,funnel_id,raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,custom_css,kladde_html,kladde_css,udgivet_version,udgivet_kl,opdateret&order=raekkefoelge.asc,oprettet.asc'),
+      api.json('/rest/v1/side?select=id,funnel_id,variant_af,split_vaegt,raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,custom_css,kladde_html,kladde_css,udgivet_version,udgivet_kl,opdateret&order=raekkefoelge.asc,oprettet.asc'),
       api.rpc('sidernes_tal', { p_dage:30 }).catch(function(){ return []; })
     ]).then(function(r){
       funnels = r[0] || []; sider = r[1] || [];
@@ -244,12 +248,15 @@
       tegn();
     }).catch(fejl);
   }
-  function trinI(f){ return sider.filter(function(s){ return f ? s.funnel_id === f.id : !s.funnel_id; }); }
+  /* Et trins B-variant (split-test, 0083) er en side for sig, men ikke et trin i rækken. */
+  function trinI(f){ return sider.filter(function(s){ return !s.variant_af && (f ? s.funnel_id === f.id : !s.funnel_id); }); }
+  function variantAf(s){ return sider.filter(function(x){ return x.variant_af === s.id; })[0] || null; }
   function erLive(trin){ return trin.some(function(s){ return s.udgivet_version > 0; }); }
   function visninger(trin){ return trin.reduce(function(n, s){ return n + (tal[s.sti] || 0); }, 0); }
 
   function tegn(){
     var rod = $('sider-liste'); tøm(rod);
+    if(visning.hvad === 'skabeloner') return rod.appendChild(skabelonVisning());
     if(visning.hvad === 'indstillinger'){
       var fi = funnels.filter(function(x){ return x.id === visning.funnel; })[0];
       if(fi) return rod.appendChild(indstillingsVisning(fi));
@@ -390,6 +397,7 @@
       el('button', { type:'button', klik:function(){ åbn(s.id); } }, [ ikon(IK.blyant, 14), ' Rediger side' ]),
       el('button', { type:'button', klik:function(){ sideIndstillinger(s); } }, [ ikon(IK.tandhjul, 14), ' Navn, adresse og Google' ]),
       el('button', { type:'button', klik:function(){ forhåndsvisSide(s); } }, [ ikon(IK.øje, 14), ' Forhåndsvis' ]),
+      variantAf(s) ? null : el('button', { type:'button', klik:function(){ startSplit(s); } }, [ ikon(IK.kopi, 14), ' Start split-test (A/B)' ]),
       i > 0 ? el('button', { type:'button', klik:function(){ flyt(trin, i, -1); } }, [ ikon(IK.op, 14), ' Flyt op' ]) : null,
       i < trin.length - 1 ? el('button', { type:'button', klik:function(){ flyt(trin, i, 1); } }, [ ikon(IK.ned, 14), ' Flyt ned' ]) : null,
       el('button', { type:'button', klasse:'sf-farlig', klik:function(){ sletSide(s); } }, [ ikon(IK.skrald, 14), ' Slet' ])
@@ -399,6 +407,8 @@
       e.stopPropagation();
       var vis = menu.hidden; lukMenuer(); menu.hidden = !vis; menuKnap.setAttribute('aria-expanded', String(vis));
     });
+    var b = variantAf(s);
+    if(b) return splitKort(f, s, b, menuKnap, menu);
     return el('div', { klasse:'sf-trinkort' }, [
       el('div', { klasse:'sf-tk-top' }, [
         el('button', { type:'button', klasse:'sf-mini-knap', 'aria-label':'Rediger ' + s.navn, klik:function(){ åbn(s.id); } }, [ miniature(s, 120) ]),
@@ -427,16 +437,167 @@
     }).catch(function(){ window.prompt('Kopiér adressen:', t); });
   }
 
+  /* =============================================================
+     SPLIT-TEST (punkt 4, 0083)
+     =============================================================
+     B er en kopi af A, der rettes for sig. Vægten er B's andel af de
+     besøgende. Udgivelsen fordeler og husker valget pr. enhed. */
+  function startSplit(s){
+    lukMenuer();
+    status('Laver variant B …');
+    api.json('/rest/v1/side?select=kladde,kladde_html,kladde_css,custom_css,head_kode,footer_kode,seo_titel,seo_beskrivelse&id=eq.' + encodeURIComponent(s.id)).then(function(r){
+      var x = JSON.parse(JSON.stringify(r[0]));
+      x.funnel_id = s.funnel_id; x.variant_af = s.id; x.split_vaegt = 50; x.raekkefoelge = s.raekkefoelge;
+      x.navn = s.navn; x.sti = tilSti(s.sti + '-b-' + Date.now().toString(36).slice(-4));
+      return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:x });
+    }).then(hent).then(function(){ status('Variant B er lavet som en kopi af A. Ret den, og udgiv begge.', 'god'); }).catch(fejl);
+  }
+  function splitKort(f, a, b, menuKnap, menu){
+    var vægt = el('input', { type:'range', min:0, max:100, step:5, 'aria-label':'Andel til B' }); vægt.value = b.split_vaegt;
+    var tekst = el('span', { klasse:'sf-split-tal', tekst:'A ' + (100 - b.split_vaegt) + ' % · B ' + b.split_vaegt + ' %' });
+    vægt.addEventListener('input', function(){ tekst.textContent = 'A ' + (100 - vægt.value) + ' % · B ' + vægt.value + ' %'; });
+    vægt.addEventListener('change', function(){
+      api.json('/rest/v1/side?id=eq.' + encodeURIComponent(b.id), { method:'PATCH', body:{ split_vaegt:+vægt.value }, headers:{ Prefer:'return=minimal' } })
+        .then(function(){ b.split_vaegt = +vægt.value; }).catch(fejl);
+    });
+    function variant(s, bogstav){
+      return el('div', { klasse:'sf-split-var' }, [
+        el('span', { klasse:'sf-split-bogstav', tekst:bogstav }),
+        el('button', { type:'button', klasse:'sf-mini-knap', 'aria-label':'Rediger variant ' + bogstav, klik:function(){ åbn(s.id); } }, [ miniature(s, 150) ]),
+        el('span', { klasse:'sf-maerke' + (s.udgivet_version ? ' god' : ''), tekst: s.udgivet_version ? 'Udgivet v' + s.udgivet_version : 'Kladde' }),
+        el('div', { klasse:'sf-knaprække' }, [
+          el('button', { type:'button', klasse:'knap rolig lille', tekst:'Rediger', klik:function(){ åbn(s.id); } }),
+          el('button', { type:'button', klasse:'knap rolig lille', tekst:'Vælg som vinder', klik:function(){ vælgVinder(a, bogstav.toLowerCase()); } })
+        ])
+      ]);
+    }
+    return el('div', { klasse:'sf-trinkort sf-split' }, [
+      el('div', { klasse:'sf-tk-top' }, [
+        el('div', { klasse:'sf-tk-navn' }, [
+          el('button', { type:'button', klasse:'sf-link', tekst:a.navn, klik:function(){ åbn(a.id); } }),
+          el('span', { klasse:'sf-sti', tekst:a.sti }),
+          el('span', { klasse:'sf-maerke sf-maerke-split', tekst:'Split-test kører' })
+        ]),
+        menuKnap, menu
+      ]),
+      el('div', { klasse:'sf-split-rækker' }, [ variant(a, 'A'), variant(b, 'B') ]),
+      el('div', { klasse:'sf-split-vægt' }, [ el('label', { tekst:'Fordeling af besøgende' }), vægt, tekst,
+        el('small', { tekst:'Samme kunde ser altid samme variant. Tal pr. variant kommer, når siderne udgives på afsted.arytmi.com.' }) ]),
+      el('div', { klasse:'sf-knaprække sf-split-bund' }, [
+        el('button', { type:'button', klasse:'knap rolig lille', tekst:'Stop testen (behold A)', klik:function(){ vælgVinder(a, 'a'); } })
+      ])
+    ]);
+  }
+  function vælgVinder(a, hvem){
+    var tekst = hvem === 'b'
+      ? 'Vælg B som vinder?\n\nB-variantens indhold bliver trinnets kladde, og variant B slettes. Trinnet beholder sin adresse. Udgiv bagefter, så kunderne ser vinderen.'
+      : 'Behold A og stop testen?\n\nVariant B slettes. Det kan ikke fortrydes.';
+    if(!confirm(tekst)) return;
+    api.rpc('vaelg_split_vinder', { p_trin:a.id, p_vinder:hvem }).then(hent)
+      .then(function(){ status(hvem === 'b' ? 'B er nu trinnets kladde. Husk at udgive.' : 'Testen er stoppet. A er tilbage alene.', 'god'); })
+      .catch(fejl);
+  }
+
+  /* =============================================================
+     SKABELONGALLERIET (punkt 3)
+     =============================================================
+     Arytmis egne funnel-skabeloner - ikke ClickFunnels'. Filtre som i
+     kortlægningen: formål, funnel-type og kategori, plus søgning. */
+  var galleri = { søg:'', formål:[], type:[], kategori:[] };
+  function skabelonVisning(){
+    var boks = el('div', { klasse:'sf-galleri' });
+    boks.appendChild(el('div', { klasse:'sf-fv-top' }, [
+      el('button', { type:'button', klasse:'knap rolig lille', klik:function(){ visning.hvad = 'liste'; tegn(); } }, [ ikon(IK.tilbage, 14), ' Funnels' ]),
+      el('h3', { tekst:'Funnel-skabeloner' }),
+      el('div', { klasse:'sf-knaprække sf-skub' }, [
+        el('button', { type:'button', klasse:'knap rolig', disabled:true, title:'Kommer med MCP-serveren: byg med din egen Claude eller ChatGPT' }, [ ikon(IK.blyant, 14), ' Opret med AI' ]),
+        el('button', { type:'button', klasse:'knap', klik:function(){ nyTomFunnel(null); } }, [ ikon(IK.plus, 14), ' Start fra bunden' ])
+      ])
+    ]));
+    var filtre = el('aside', { klasse:'sf-g-filtre' });
+    var gitter = el('div', { klasse:'sf-g-gitter' });
+    var tæller = el('p', { klasse:'sf-fod' });
+    function gruppeFiltre(titel, nøgle){
+      var alle = []; FUNNEL_SKABELONER.forEach(function(sk){ [].concat(sk[nøgle]).forEach(function(v){ if(alle.indexOf(v) < 0) alle.push(v); }); });
+      return el('fieldset', { klasse:'sf-g-gruppe' }, [ el('legend', { tekst:titel }) ].concat(alle.map(function(v){
+        var i = el('input', { type:'checkbox' }); i.checked = galleri[nøgle].indexOf(v) >= 0;
+        i.addEventListener('change', function(){
+          var l = galleri[nøgle], p = l.indexOf(v);
+          if(i.checked && p < 0) l.push(v);
+          if(!i.checked && p >= 0) l.splice(p, 1);
+          tegnGitter();
+        });
+        return el('label', {}, [ i, el('span', { tekst:v }) ]);
+      })));
+    }
+    filtre.appendChild(gruppeFiltre('Formål', 'formål'));
+    filtre.appendChild(gruppeFiltre('Funnel-type', 'type'));
+    filtre.appendChild(gruppeFiltre('Kategori', 'kategori'));
+    var søg = el('input', { type:'search', klasse:'sf-søg', placeholder:'Søg i skabeloner …', 'aria-label':'Søg i skabeloner' });
+    søg.value = galleri.søg;
+    søg.addEventListener('input', function(){ galleri.søg = søg.value; tegnGitter(); });
+    function passer(sk){
+      var q = galleri.søg.trim().toLowerCase();
+      if(q && (sk.navn + ' ' + sk.om).toLowerCase().indexOf(q) < 0) return false;
+      return ['formål', 'type', 'kategori'].every(function(n){
+        return !galleri[n].length || [].concat(sk[n]).some(function(v){ return galleri[n].indexOf(v) >= 0; });
+      });
+    }
+    function tegnGitter(){
+      tøm(gitter);
+      var vis = FUNNEL_SKABELONER.filter(passer);
+      vis.forEach(function(sk){
+        gitter.appendChild(el('button', { type:'button', klasse:'sf-g-kort', klik:function(){ visSkabelon(sk); } }, [
+          miniature({ kladde_html:sk.trin[0].html, kladde_css:BASIS_CSS + sk.trin[0].css }, 260),
+          el('b', { tekst:sk.navn }), el('span', { klasse:'sf-g-om', tekst:sk.om }),
+          el('span', { klasse:'sf-g-trin' }, [ ikon(IK.lag, 13), ' ' + sk.trin.length + ' trin' ])
+        ]));
+      });
+      if(!vis.length) gitter.appendChild(el('p', { klasse:'tomt', tekst:'Ingen skabeloner passer. Fjern et filter.' }));
+      tæller.textContent = 'Viser ' + vis.length + ' af ' + FUNNEL_SKABELONER.length + ' skabeloner.';
+    }
+    boks.appendChild(el('div', { klasse:'sf-g-krop' }, [ filtre, el('div', { klasse:'sf-g-højre' }, [ søg, gitter, tæller ]) ]));
+    tegnGitter();
+    return boks;
+  }
+  /* Forhåndsvisning af alle trin, før skabelonen tages i brug. */
+  function visSkabelon(sk){
+    var d = el('dialog', { klasse:'sf-modal sf-modal-bred sf-g-vis' });
+    var form = el('form', { method:'dialog' }, [
+      el('h3', { tekst:sk.navn }), el('p', { klasse:'sf-m-hjælp', tekst:sk.om }),
+      el('div', { klasse:'sf-g-vis-trin' }, sk.trin.map(function(t, i){
+        return el('div', {}, [ miniature({ kladde_html:t.html, kladde_css:BASIS_CSS + t.css }, 220), el('small', { tekst:(i + 1) + '. ' + t.navn }),
+          el('button', { type:'button', klasse:'knap rolig lille', tekst:'Se i stort', klik:function(){ åbnVindue(t.html, BASIS_CSS + t.css, t.navn); } }) ]);
+      })),
+      el('div', { klasse:'sf-m-knapper' }, [
+        el('button', { type:'button', klasse:'knap rolig', tekst:'Tilbage', klik:function(){ d.close(); } }),
+        el('button', { type:'button', klasse:'knap', tekst:'Brug skabelonen', klik:function(){ d.close(); nyTomFunnel(sk); } })
+      ])
+    ]);
+    d.appendChild(form); document.body.appendChild(d);
+    d.addEventListener('close', function(){ d.remove(); });
+    d.showModal();
+  }
+
   /* ---------- Funnels ---------- */
-  function nyFunnel(){
-    modal('Opret funnel', [
+  function nyFunnel(){ visning.hvad = 'skabeloner'; tegn(); window.scrollTo(0, 0); }
+  function nyTomFunnel(skabelon){
+    modal(skabelon ? 'Opret funnel fra "' + skabelon.navn + '"' : 'Opret funnel', [
       { navn:'navn', label:'Navn', hjælp:'Kun til jer, fx "Jul 2026" eller "Main efterår/vinter".' },
       { navn:'domaene', label:'Domæne', værdi:'afsted.arytmi.com' }
     ], 'Opret').then(function(v){
       if(!v || !v.navn.trim()) return;
+      status('Opretter …');
       return api.json('/rest/v1/funnel', { method:'POST', body:{ navn:v.navn.trim(), domaene:v.domaene.trim().toLowerCase() || 'afsted.arytmi.com' },
         headers:{ Prefer:'return=representation' } }).then(function(r){
-        return hent().then(function(){ if(r && r[0]){ visning.hvad = 'funnel'; visning.funnel = r[0].id; tegn(); } });
+        var nyF = r[0], endelse = Date.now().toString(36).slice(-3);
+        /* Skabelonens trin oprettes i rækkefølge. Stierne får en kort endelse,
+           så de aldrig rammer en adresse, der allerede er i brug. */
+        return (skabelon ? skabelon.trin : []).reduce(function(p, t, n){
+          return p.then(function(){ return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:{
+            funnel_id:nyF.id, raekkefoelge:n, navn:t.navn, sti:tilSti(t.sti + '-' + endelse), kladde_html:t.html, kladde_css:BASIS_CSS + t.css,
+            seo_indekser: n === 0 } }); });
+        }, Promise.resolve()).then(function(){ return hent(); }).then(function(){ visning.hvad = 'funnel'; visning.funnel = nyF.id; tegn(); });
       });
     }).catch(fejl);
   }
@@ -716,7 +877,7 @@
       var ny = r[0];
       return Promise.all(trin.map(function(s){
         return api.json('/rest/v1/side?select=kladde,kladde_html,kladde_css,seo_titel,seo_beskrivelse,seo_indekser,head_kode,footer_kode,custom_css,beskrivelse,social_billede,bloker_ai_traening,bloker_ai_soegning,bloker_ai_assistent&id=eq.' + encodeURIComponent(s.id)).then(function(fuld){
-          var x = fuld[0];
+          var x = JSON.parse(JSON.stringify(fuld[0]));
           x.funnel_id = ny.id; x.raekkefoelge = s.raekkefoelge; x.navn = s.navn;
           x.sti = tilSti(s.sti + '-kopi-' + Date.now().toString(36).slice(-4));
           return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:x });
@@ -1017,12 +1178,13 @@
   function tegnTrinListe(aktiv){
     var liste = $('sf-trinliste'); tøm(liste);
     if(aktiv.erSektion){ liste.appendChild(el('p', { klasse:'sf-hint', tekst:'Du retter en ' + (aktiv.universel ? 'universel' : 'gemt') + ' sektion. Tryk ← for at gå tilbage til siden.' })); return; }
-    var trin = sider.filter(function(x){ return x.funnel_id === aktiv.funnel_id; });
+    var trin = [];
+    sider.filter(function(x){ return x.funnel_id === aktiv.funnel_id && !x.variant_af; }).forEach(function(x){ trin.push(x); var v = variantAf(x); if(v) trin.push(v); });
     trin.forEach(function(s){
       liste.appendChild(el('button', { type:'button', klasse:'sf-tl' + (s.id === aktiv.id ? ' aktiv' : ''), 'aria-current': s.id === aktiv.id ? 'page' : null,
         klik:function(){ if(s.id !== aktiv.id) åbn(s.id); } }, [
         miniature(s.id === aktiv.id ? aktiv : s, 56),
-        el('span', {}, [ el('b', { tekst:s.navn }), el('small', { tekst:s.sti }) ])
+        el('span', {}, [ el('b', { tekst: s.variant_af ? 'B · ' + s.navn : (variantAf(s) ? 'A · ' : '') + s.navn }), el('small', { tekst: s.variant_af ? 'split-test, ' + s.split_vaegt + ' %' : s.sti }) ])
       ]));
     });
   }
@@ -1593,7 +1755,7 @@
   /* De simple blokke herunder findes nu som rigtige elementer (sider-elementer.js).
      De bliver i BLOKKE, fordi skabelonerne bygges af dem, men vises ikke to gange. */
   var SKJULTE_BLOKKE = ['a-knap', 'a-billede', 'a-tekst', 'a-mellemrum', 'a-linje', 'a-to-kolonner', 'a-tre-kolonner'];
-  var RUNTIME_V = '20261109e';
+  var RUNTIME_V = '20261109f';
   var SYNLIG_CSS = '@media (max-width:768px){.a-kun-computer{display:none!important}}@media (min-width:769px){.a-kun-mobil{display:none!important}}';
 
   /* Pladsholderbilledet ligger i siden selv (data:). Et billede fra en
@@ -1751,6 +1913,81 @@
     sk('tak', 'Tak', 'Tak for købet og hvad der sker nu.', 'tak', ['a-overskrift', 'a-tekst-billede', 'a-sidefod'])
   ];
 
+  /* =============================================================
+     FUNNEL-SKABELONER (punkt 3) - Arytmis egne
+     =============================================================
+     Hvert trin er sat sammen af blokkene ovenfor (id) og de stykker
+     herunder, som bruger elementerne fra sider-elementer.js. Teksterne er
+     pladsholdere, der fortæller, hvad der skal stå. */
+  var STK = {
+    nedtaelling: { html:'<section class="a-sek" style="padding:40px 0;text-align:center"><div class="a-wrap"><h2>Tilbuddet slutter om</h2>' +
+      '<div class="a-nedtaelling" data-a-nedtaelling="" data-a-slut="2026-12-14T23:59"><div class="a-nt-del"><b data-a-d>00</b><span>dage</span></div>' +
+      '<div class="a-nt-del"><b data-a-t>00</b><span>timer</span></div><div class="a-nt-del"><b data-a-m>00</b><span>min</span></div><div class="a-nt-del"><b data-a-s>00</b><span>sek</span></div></div></div></section>', css:'' },
+    tilmelding: { html:'<section class="a-sek" id="tilmeld"><div class="a-wrap"><form class="a-form-kort" data-arytmi-formular="tilmelding" style="max-width:480px;margin:0 auto;background:#fff;border:1.5px solid #D9CFC2;border-radius:18px;padding:28px">' +
+      '<h3 style="text-align:center">Skriv dig op</h3>' +
+      '<label class="a-felt">Fornavn<input type="text" name="first_name" autocomplete="given-name"></label>' +
+      '<label class="a-felt">Mail<input type="email" name="email" required autocomplete="email"></label>' +
+      '<label class="a-felt a-afkryds"><input type="checkbox" name="samtykke_nyheder" value="ja"> Ja tak, send mig nyheder og tilbud fra Arytmi på mail. Jeg kan altid afmelde mig.</label>' +
+      '<a class="a-knap a-bred" href="#" data-a-handling="send">Send mig det</a></form></div></section>', css:'' },
+    pasform: { html:'<section class="a-sek"><div class="a-wrap"><form class="a-form-kort" data-arytmi-formular="pasform" style="max-width:560px;margin:0 auto;background:#fff;border:1.5px solid #D9CFC2;border-radius:18px;padding:28px">' +
+      '<h3>Passer det til jeres bil?</h3><p>Svar på tre ting, så vender vi tilbage inden for et døgn.</p>' +
+      '<label class="a-felt">Bilmodel<select name="bilmodel" required><option value="">Vælg …</option><option>Model Y Juniper</option><option>Model Y (2021–2025)</option><option>Model X</option><option>Anden bil</option></select></label>' +
+      '<label class="a-felt">Fortæl lidt om bilen<textarea name="biloplysninger"></textarea></label>' +
+      '<label class="a-felt">Mail<input type="email" name="email" required autocomplete="email"></label>' +
+      '<a class="a-knap a-bred" href="#" data-a-handling="send">Send spørgsmålet</a></form></div></section>', css:'' },
+    kommer: { html:'<section class="a-sek" style="padding:110px 0;background:#4A2417;color:#FAF6EF;text-align:center"><div class="a-wrap"><p class="a-over" style="color:#FAF6EF">Kommer snart</p>' +
+      '<h1 style="font-size:clamp(36px,5vw,60px)">Noget nyt er på vej</h1><p style="max-width:620px;margin:0 auto 24px">Skriv dig op og vær blandt de første, der får besked.</p>' +
+      '<a class="a-knap" href="#tilmeld" data-a-handling="rul" data-a-maal="tilmeld">Skriv mig op</a></div></section>', css:'' },
+    tak: { html:'<section class="a-sek" style="text-align:center"><div class="a-wrap" style="max-width:720px"><h1>Tak!</h1>' +
+      '<p style="font-size:19px">Skriv kort, hvad der sker nu, og hvornår kunden hører fra jer.</p>' +
+      '<ul class="a-ikonliste" style="text-align:left;display:inline-block;margin-top:16px"><li>Du får en mail med det samme</li><li>Næste skridt …</li><li>Har du spørgsmål, så skriv til kundeservice@arytmi.com</li></ul></div></section>', css:'' },
+    video: { html:'<section class="a-sek"><div class="a-wrap" style="max-width:900px"><div class="a-video" data-a-video="https://www.youtube.com/watch?v=" role="button" aria-label="Afspil video"><span class="a-video-tekst">Tryk for at afspille</span></div>' +
+      '<p style="text-align:center;margin-top:18px">Én sætning om, hvad videoen viser.</p></div></section>', css:'' },
+    popup: { html:'<div class="a-popup" data-a-popup="" data-a-popup-trigger="forlad"><div class="a-popup-boks">' +
+      '<button type="button" class="a-popup-luk" data-a-handling="luk-popup" aria-label="Luk">×</button>' +
+      '<section class="a-sek" style="padding:44px 0;text-align:center"><div class="a-wrap"><h2>Vent lidt!</h2><p>Brug koden <b>EVENTYR10</b> og få 10 % i dag.</p>' +
+      '<a class="a-knap" href="#" data-a-handling="luk-popup">Tag mig tilbage</a></div></section></div></div>', css:'' }
+  };
+  function trin(navn, sti, dele){
+    var html = '', css = '';
+    dele.forEach(function(d){
+      if(typeof d === 'string'){ var x = delt([d]); html += x.html; css += x.css; }
+      else { html += d.html; css += d.css || ''; }
+    });
+    return { navn:navn, sti:sti, html:html, css:css };
+  }
+  function BETALING(){ return trin('Betaling', 'betaling', ['a-overskrift', 'a-pris', 'a-faq', 'a-sidefod']); }
+  function TAK(){ return trin('Tak', 'tak', [STK.tak, 'a-sidefod']); }
+  var FUNNEL_SKABELONER = [
+    { id:'tilmelding', navn:'Tilmelding med gave', om:'Giv noget værdifuldt (fx en tjekliste eller e-bog) for en mail. Tilmelding og tak.',
+      formål:'Få flere kontakter', type:'Tilmeldingsfunnel', kategori:'Alle brancher',
+      trin:[ trin('Tilmelding', 'tilmeld', ['a-hero', STK.tilmelding, 'a-fordele', 'a-sidefod']), TAK() ] },
+    { id:'fysisk', navn:'Sælg et fysisk produkt', om:'Salgsside med fordele, billeder, anmeldelser og spørgsmål, derefter betaling og tak.',
+      formål:'Sælg et fysisk produkt', type:'Produktfunnel', kategori:'Rejse & friluftsliv',
+      trin:[ trin('Salgsside', 'salg', ['a-hero-billede', 'a-fordele', 'a-tekst-billede', 'a-anmeldelser', 'a-faq', 'a-knap', 'a-sidefod']), BETALING(), TAK() ] },
+    { id:'gave', navn:'Gave til en anden', om:'Gavevinkel med nedtælling til sidste købsdag. Gaveside, betaling og tak.',
+      formål:'Sælg et fysisk produkt', type:'Kampagnefunnel', kategori:'Rejse & friluftsliv',
+      trin:[ trin('Gaveside', 'gave', ['a-hero-billede', STK.nedtaelling, 'a-fordele', 'a-anmeldelser', 'a-knap', 'a-sidefod']), BETALING(), TAK() ] },
+    { id:'pasform', navn:'Pasformstjek før køb', om:'Kunden svarer på bilmodel og spørgsmål, I vender tilbage. Godt til dyre køb, hvor tvivl stopper salget.',
+      formål:['Få flere kontakter', 'Hjælp kunden med at vælge'], type:'Spørgeskemafunnel', kategori:'Rejse & friluftsliv',
+      trin:[ trin('Spørgsmål', 'passer-det', ['a-overskrift', STK.pasform, 'a-sidefod']), TAK() ] },
+    { id:'venteliste', navn:'Venteliste til lancering', om:'"Kommer snart" med nedtælling og tilmelding. Byg forventning før lanceringen.',
+      formål:'Få flere kontakter', type:'Lanceringsfunnel', kategori:'Alle brancher',
+      trin:[ trin('Kommer snart', 'snart', [STK.kommer, STK.nedtaelling, STK.tilmelding, 'a-sidefod']), TAK() ] },
+    { id:'video', navn:'Videosalgsside', om:'Videoen gør arbejdet: video øverst, anmeldelser og knap. Video indlæses først ved klik.',
+      formål:['Sælg et fysisk produkt', 'Sælg et digitalt produkt'], type:'Præsentationsfunnel', kategori:'Alle brancher',
+      trin:[ trin('Video', 'se-videoen', ['a-overskrift', STK.video, 'a-knap', 'a-anmeldelser', 'a-sidefod']), BETALING(), TAK() ] },
+    { id:'app', navn:'Abonnement eller app', om:'Til et digitalt produkt med årlig betaling: fordele, billede og tekst, spørgsmål og betaling.',
+      formål:'Sælg et digitalt produkt', type:'Produktfunnel', kategori:'Digitalt',
+      trin:[ trin('Salgsside', 'appen', ['a-hero', 'a-fordele', 'a-billede-tekst', 'a-faq', 'a-knap', 'a-sidefod']), BETALING(), TAK() ] },
+    { id:'begivenhed', navn:'Tilmelding til en begivenhed', om:'Til en fællestur, workshop eller et webinar: nedtælling, program og tilmelding.',
+      formål:'Fyld en begivenhed', type:'Begivenhedsfunnel', kategori:'Begivenheder',
+      trin:[ trin('Begivenhed', 'begivenhed', ['a-hero-billede', STK.nedtaelling, 'a-tekst-billede', STK.tilmelding, 'a-faq', 'a-sidefod']), trin('Bekræftelse', 'bekraeftelse', [STK.tak, 'a-sidefod']) ] },
+    { id:'kampagne', navn:'Kampagne med rabat-popup', om:'Salgsside med pris og en popup, når kunden vil forlade siden. Rabatkoden er en pladsholder.',
+      formål:'Sælg et fysisk produkt', type:'Kampagnefunnel', kategori:'Alle brancher',
+      trin:[ trin('Kampagne', 'kampagne', ['a-hero-billede', 'a-fordele', 'a-pris', 'a-sidefod', STK.popup]), TAK() ] }
+  ];
+
   /* GrapesJS' egne tekster på dansk - kun dem, der ses. */
   var DANSK = {
     assetManager: { addButton:'Tilføj billede', inputPlh:'https://adresse/til/billede.jpg', modalTitle:'Vælg billede', uploadTitle:'Træk et billede hertil, eller klik for at vælge' },
@@ -1786,12 +2023,21 @@
     window.addEventListener('beforeunload', function(e){ if(editor && ændret){ e.preventDefault(); e.returnValue = ''; } });
   }
 
+  /* Runtime-stilen (side-runtime.css) lægges ind i miniaturerne som tekst:
+     de er sandboxede og må ikke selv hente filer. */
+  var RUNTIME_CSS = '';
+  function hentRuntimeCss(){
+    if(RUNTIME_CSS) return Promise.resolve();
+    return fetch('side-runtime.css?v=' + RUNTIME_V).then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(t){ RUNTIME_CSS = t || ''; }).catch(function(){});
+  }
+
   window.ArytmiSider = {
     vis: function(a){
       api = a;
       if(!startet){ startet = true; bind(); }
       visning.hvad = visning.hvad || 'liste';
-      hent();
+      hentRuntimeCss().then(hent);
     },
     /* Til tests uden en browser. */
     _tilSti: tilSti, _blokke: BLOKKE, _skabeloner: SKABELONER
