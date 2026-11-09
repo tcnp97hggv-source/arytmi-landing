@@ -115,12 +115,15 @@
 <!-- Sider & funnels (9/11): Arytmis egen sidebygger. GrapesJS (1,1 MB)
      hentes først, når en side åbnes - se sider.js. -->
 <link rel="stylesheet" href="sider.css?v=20261109j">
-<script src="sider-elementer.js?v=20261109m"></script>
-<script src="sider.js?v=20261109m"></script>
+<script src="sider-elementer.js?v=20261109n"></script>
+<script src="sider.js?v=20261109n"></script>
 <!-- Produkter (0085, 9/11): produkter, varianter, priser, samlinger, rabatter,
      fragt og tags til Arytmis egen ordreformular - se produkter.js. -->
 <link rel="stylesheet" href="produkter.css?v=20261109b">
 <script src="produkter.js?v=20261109b"></script>
+<!-- Kontakter (0089, 9/11): formularer -> kontakter, tidslinje, samtykke - se kontakter.js. -->
+<link rel="stylesheet" href="kontakter.css?v=20261109a">
+<script src="kontakter.js?v=20261109a"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1264,6 +1267,10 @@
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8" opacity=".6"/></svg>
         <span class="n-lang">Produkter</span>
       </button>
+      <button type="button" data-fane="kontakter" class="kun-stor">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" opacity=".6"/></svg>
+        <span class="n-lang">Kontakter</span>
+      </button>
       <button type="button" data-fane="drift">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
         <span class="n-lang">Drift &amp; sikkerhed</span><span class="n-kort">Drift</span>
@@ -1686,6 +1693,22 @@
       </div>
       <span class="status" id="pr-status" role="status"></span>
       <div id="pr-indhold"></div>
+    </section>
+
+    <!-- ---------- KONTAKTER (0089, 9/11) ----------
+         Formularer -> kontakter. Logikken ligger i kontakter.js. -->
+    <section id="fane-kontakter" hidden>
+      <h2>Kontakter</h2>
+      <p class="under">
+        Alle, der har udfyldt en formular på jeres sider, med deres felter, samtykker og køb.
+        Formularer bestemmer, hvem der får besked, når en formular sendes.
+      </p>
+      <div class="underfaner" id="kt-faner" role="tablist">
+        <button type="button" role="tab" data-kf="kontakter" aria-selected="true">Kontakter</button>
+        <button type="button" role="tab" data-kf="formularer" aria-selected="false">Formularer</button>
+      </div>
+      <span class="status" id="kt-status" role="status"></span>
+      <div id="kt-indhold"></div>
     </section>
 
     <!-- ---------- KUNDER ---------- -->
@@ -2496,7 +2519,7 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', drift:'fane-sikkerhed' };
   var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
   var valgtUnder = 'tekster';
 
@@ -2573,6 +2596,9 @@
        Intet af det lægges på window. */
     if(navn === 'sider' && window.ArytmiSider){
       window.ArytmiSider.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
+    }
+    if(navn === 'kontakter' && window.ArytmiKontakter){
+      window.ArytmiKontakter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
     }
     if(navn === 'produkter' && window.ArytmiProdukter){
       window.ArytmiProdukter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });

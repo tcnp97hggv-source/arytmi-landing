@@ -158,3 +158,8 @@ html:not(.a-editor) [data-a-anim]:not(.a-vist){opacity:0}
 .a-forhaand-knap{ background:#DE854A; border-color:#DE854A; color:#fff; text-align:center; font-weight:700; border-radius:999px; }
 .a-forhaand-test{ border:0; text-align:center; font-size:13px; color:#6b5a4e; }
 .a-forhaand-live{ border:0; text-align:center; font-size:13px; color:#a3332a; font-weight:700; }
+
+/* ---------- Formularer (0089) ---------- */
+.a-form-fejl{ color:#a3332a; background:#fbeeec; border-radius:10px; padding:10px 12px; margin:12px 0 0; font-size:15px; }
+.a-form-tak{ padding:20px; background:#eee5d7; border-radius:12px; margin:16px 0 0; font-size:16px; line-height:1.6; }
+[aria-busy="true"]{ opacity:.7; cursor:wait; }

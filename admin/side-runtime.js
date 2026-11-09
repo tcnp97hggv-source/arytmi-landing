@@ -7,7 +7,8 @@
    lærred (uden animationer og autostart) og på de udgivne sider.
 
    Alt styres af data-attributter, som editoren skriver. Ingen
-   afhængigheder, ingen cookies, intet sendes nogen steder hen.
+   afhængigheder, ingen cookies. Det eneste, der sendes, er en formular,
+   kunden selv sender (til funktionen `formular`, 0089).
 
    VIDEO indlæses FØRST, når kunden trykker afspil. Indtil da er det
    et billede med en knap, så YouTube og Vimeo hverken sætter cookies
@@ -170,6 +171,70 @@
     k.setAttribute('aria-expanded', String(å));
   });
 
+  /* ---------- Formularer -> kontakter (0089) ----------
+     form[data-arytmi-formular="nøgle"] sendes til funktionen `formular`,
+     der opretter eller opdaterer kontakten og giver formularens modtagere
+     besked. Afkrydsninger, der hedder samtykke_*, gemmes som samtykke med
+     den tekst, kunden så. Bagefter: data-a-efter (en adresse eller
+     "næste") eller en tak i stedet for formularen (data-a-tak). */
+  var FORMULAR_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co/functions/v1/formular';
+  function honningkrukke(form){
+    if(form.querySelector('[name="_hp"]')) return;
+    var hp = d.createElement('input');
+    hp.type = 'text'; hp.name = '_hp'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.setAttribute('aria-hidden', 'true');
+    hp.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;opacity:0';
+    form.appendChild(hp);
+  }
+  function sendFormular(form){
+    if(form.__sender) return;
+    var felter = {}, samtykker = [], hp = '';
+    alle('input,select,textarea', form).forEach(function(f){
+      if(!f.name || f.disabled) return;
+      if(f.name === '_hp'){ hp = f.value; return; }
+      if(f.type === 'checkbox'){
+        if(!f.checked) return;
+        if(/^samtykke_/.test(f.name)){
+          var l = f.closest('label');
+          samtykker.push({ noegle:f.name, tekst:(l ? l.textContent : f.name).replace(/\s+/g, ' ').trim().slice(0, 300) });
+          return;
+        }
+        felter[f.name] = f.value || 'ja'; return;
+      }
+      if(f.type === 'radio' && !f.checked) return;
+      felter[f.name] = f.value;
+    });
+    var q = new URLSearchParams(location.search), utm = {};
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function(n){ if(q.get(n)) utm[n] = q.get(n); });
+    var knap = form.querySelector('[data-a-handling="send"], button[type="submit"]');
+    var fejl = form.querySelector('.a-form-fejl');
+    if(!fejl){ fejl = d.createElement('p'); fejl.className = 'a-form-fejl'; fejl.setAttribute('role', 'alert'); fejl.hidden = true; form.appendChild(fejl); }
+    fejl.hidden = true;
+    form.__sender = true;
+    if(knap) knap.setAttribute('aria-busy', 'true');
+    fetch(FORMULAR_URL, { method:'POST', headers:{ 'Content-Type':'text/plain' },
+      body:JSON.stringify({ formular:form.getAttribute('data-arytmi-formular'), felter:felter, samtykker:samtykker, side:location.pathname, utm:utm, _hp:hp }) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error || 'Det gik ikke igennem. Prøv igen.'); return j; }); })
+      .then(function(){
+        var efter = form.getAttribute('data-a-efter') || '';
+        if(efter === 'næste' || efter === 'naeste') efter = meta('arytmi-naeste');
+        if(efter){ location.href = efter + location.search; return; }
+        var tak = d.createElement('p');
+        tak.className = 'a-form-tak'; tak.setAttribute('role', 'status');
+        tak.textContent = form.getAttribute('data-a-tak') || 'Tak! Vi har modtaget det.';
+        form.parentNode.replaceChild(tak, form);
+      })
+      .catch(function(e){ fejl.textContent = e.message || 'Det gik ikke igennem. Prøv igen.'; fejl.hidden = false; })
+      .then(function(){ form.__sender = false; if(knap) knap.removeAttribute('aria-busy'); });
+  }
+  d.addEventListener('submit', function(e){
+    var form = e.target.closest && e.target.closest('form[data-arytmi-formular]');
+    if(!form || iEditor) return;
+    e.preventDefault();
+    if(form.reportValidity && !form.reportValidity()) return;
+    sendFormular(form);
+  });
+  function startFormularer(){ if(!iEditor) alle('form[data-arytmi-formular]').forEach(honningkrukke); }
+
   /* Ordreformularen (egen checkout) hentes kun på sider, der har en - fra
      samme sted som dette script (/_a/ på de udgivne sider). */
   function startOrdreformular(){
@@ -185,6 +250,7 @@
 
   function start(){
     startOrdreformular();
+    startFormularer();
     startPopup();
     alle('[data-a-nedtaelling]').forEach(startNedtaelling);
     startAnimationer();

@@ -1,0 +1,29 @@
+/* =============================================================
+   KONTAKTER (0089, 9/11) — kun det, bagrummets egne klasser ikke dækker.
+   ============================================================= */
+#fane-kontakter .kt-top{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; margin:0 0 14px; }
+#fane-kontakter .kt-top input[type="search"]{ flex:1 1 260px; max-width:380px; }
+.kt-tabel .kt-række{ cursor:pointer; }
+.kt-tabel .kt-række:hover td, .kt-tabel .kt-række:focus td{ background:var(--flade-2); }
+.kt-tag{ display:inline-block; font-size:12px; padding:1px 8px; margin:0 4px 2px 0; border-radius:999px; border:1px solid var(--kant); color:var(--tekst-2); }
+.kt-afmeldt{ margin-left:8px; border-color:var(--fejl); color:var(--fejl); }
+.kt-navn{ margin:4px 0 12px; font-size:22px; }
+.kt-kort{ padding:16px 18px 18px; margin:0 0 18px; }
+.kt-kort > h4{ margin:16px 0 8px; font-size:16px; }
+.kt-kort > h4:first-child{ margin-top:0; }
+.kt-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px 16px; margin:0 0 12px; }
+.kt-felt label{ display:block; font-weight:600; font-size:14px; margin-bottom:4px; }
+.kt-felt input{ width:100%; }
+.kt-felter{ display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.kt-egen{ display:grid; grid-template-columns:140px minmax(120px, 200px) minmax(160px, 1fr) auto; gap:8px; align-items:center; width:100%; }
+.kt-handlinger{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.kt-kort textarea{ width:100%; }
+.kt-tidslinje{ list-style:none; margin:12px 0 0; padding:0; border-left:2px solid var(--kant); }
+.kt-post{ position:relative; padding:4px 0 14px 16px; }
+.kt-post::before{ content:''; position:absolute; left:-6px; top:9px; width:10px; height:10px; border-radius:50%; background:var(--kant); }
+.kt-post.kt-formular::before{ background:#de854a; }
+.kt-post.kt-samtykke::before{ background:#2f6b3a; }
+.kt-post.kt-koeb::before{ background:#8f4333; }
+.kt-tid{ display:block; font-size:12px; color:var(--tekst-2); }
+.kt-post .knap{ margin-top:6px; }
+@media (max-width:700px){ .kt-egen{ grid-template-columns:1fr; } }
