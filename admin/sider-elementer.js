@@ -442,7 +442,7 @@
       '<a class="a-knap" href="#" data-a-handling="rul" data-a-maal="">Se hvordan</a>');
     blok('e-knap-naeste', 'Knap: næste trin', 'Knapper og formular', skitse(K(30, 35, 60) + '<path d="M84 39h6M88 37l2 2-2 2" stroke="#fff" stroke-width="1.5" fill="none"/>'),
       '<a class="a-knap" href="#" data-a-handling="naeste">Videre<small>Det tager kun et minut</small></a>');
-    blok('e-ordreformular', 'Ordreformular (betaling)', 'Knapper og formular', skitse('<rect x="26" y="8" width="68" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(34, 16, 52, 10, '#efe5d8') + B(34, 30, 52, 8) + B(34, 42, 52, 8) + K(34, 56, 52)),
+    blok('e-ordreformular', 'Ordreformular', 'Betaling', skitse('<rect x="26" y="8" width="68" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(34, 16, 52, 10, '#efe5d8') + B(34, 30, 52, 8) + B(34, 42, 52, 8) + K(34, 56, 52)),
       '<div data-a-ordreformular data-a-tilstand="test"><p>Ordreformular: vælg produkterne i Indstillinger. Den vises med priser og betaling på den udgivne side.</p></div>');
     blok('e-formular', 'Formular', 'Knapper og formular', skitse('<rect x="30" y="8" width="60" height="64" rx="6" fill="#fff" stroke="#D9CFC2"/>' + B(38, 18, 44, 8) + B(38, 30, 44, 8) + K(45, 50)),
       '<form class="a-form-kort" data-arytmi-formular="tilmelding" style="max-width:460px;margin:0 auto">' +
