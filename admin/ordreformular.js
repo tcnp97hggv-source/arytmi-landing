@@ -116,104 +116,161 @@
     return andre.length ? andre : vs;
   }
 
+  /* Produktets beskrivelse er HTML, som bagrummet har skrevet (fx
+     fluebenslisten og "Passer madrassen i din bil?"). Den vises med en
+     snæver hvidliste, så en fejl i et produkt aldrig kan køre kode på
+     betalingssiden. */
+  var TILLADT = { P:1, BR:1, B:1, STRONG:1, I:1, EM:1, U:1, SPAN:1, UL:1, OL:1, LI:1, DETAILS:1, SUMMARY:1, A:1, SMALL:1, H3:1, H4:1 };
+  function renHtml(html){
+    var kilde = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html').body.firstChild;
+    var ud = d.createElement('div');
+    (function kopi(fra, til){
+      Array.prototype.forEach.call(fra.childNodes, function(n){
+        if(n.nodeType === 3){ til.appendChild(d.createTextNode(n.nodeValue)); return; }
+        if(n.nodeType !== 1) return;
+        if(!TILLADT[n.tagName]){ kopi(n, til); return; }
+        var ny = d.createElement(n.tagName);
+        var stil = n.getAttribute('style'); if(stil && !/url\(|expression/i.test(stil)) ny.setAttribute('style', stil);
+        if(n.tagName === 'A'){ var h = n.getAttribute('href') || ''; if(/^(https?:|mailto:|#)/i.test(h)) ny.setAttribute('href', h); ny.setAttribute('target', '_blank'); ny.setAttribute('rel', 'noopener'); }
+        kopi(n, ny); til.appendChild(ny);
+      });
+    })(kilde, ud);
+    return ud;
+  }
+  function trin(nr, titel){
+    return el('div', { klasse:'ao-trin' }, [el('span', { klasse:'ao-trin-nr', tekst:String(nr) }), el('span', { klasse:'ao-trin-titel', tekst:titel }), el('span', { klasse:'ao-trin-linje' })]);
+  }
+
   function byg(rod, status, tilstand, produkter, tilvalg, knapTekst, efter, Stripe){
     rod.removeChild(status);
     var valg = { produkt: produkter[0], variant: null, tilvalg: false };
     var form = el('form', { klasse:'ao-form', novalidate:true });
     var id = 'ao' + Math.random().toString(36).slice(2, 7);
+    var flere = produkter.length > 1;
 
-    /* 1. Produkt */
-    var prodBoks = el('fieldset', { klasse:'ao-del' }, [el('legend', { tekst: produkter.length > 1 ? 'Vælg' : 'Din ordre' })]);
+    /* 1. Madras og variant (fx bilmodel): hvert produkt sit kort, med
+       beskrivelse, pris og sin egen vælger - som ClickFunnels' checkout. */
+    var navn1 = (produkter[0].egenskaber || [])[0];
+    form.appendChild(trin(1, flere ? 'Vælg madras' + (navn1 ? ' og din ' + navn1.toLowerCase() : '') : 'Din ordre'));
+    var kortListe = [];
     produkter.forEach(function(p, i){
       var vs = valgbare(p);
       var pris = vs[0] && vs[0].priser[0];
-      var r = el('input', { type:'radio', name:id + '-p', id:id + '-p' + i, value:p.id });
+      var r = el('input', { type:'radio', name:id + '-p', id:id + '-p' + i, value:p.id, 'aria-label':p.navn });
       if(i === 0) r.checked = true;
-      if(produkter.length === 1) r.hidden = true;
+      if(!flere) r.hidden = true;
       var billede = (p.billeder || [])[0];
-      prodBoks.appendChild(el('label', { klasse:'ao-valg', for:id + '-p' + i }, [
-        r, billede ? el('img', { src:billede, alt:'', loading:'lazy' }) : null,
-        el('span', { klasse:'ao-valgtekst' }, [el('strong', { tekst:p.navn }), el('span', { klasse:'ao-pris', tekst:prisLinje(pris) })])
-      ]));
-      r.addEventListener('change', function(){ valg.produkt = p; tegnVariant(); beregn(); });
+      var s = null;
+      if(vs.length > 1){
+        s = el('select', { klasse:'ao-vaelg', 'aria-label':(p.egenskaber || [])[0] || 'Vælg' });
+        vs.forEach(function(v){ var o = new Option(v.navn + (v.udsolgt ? ' (udsolgt)' : ''), v.id); o.disabled = !!v.udsolgt; s.appendChild(o); });
+        s.addEventListener('change', function(){ vælgProdukt(i); valg.variant = vs.filter(function(v){ return v.id === s.value; })[0]; beregn(); });
+      }
+      var kort = el('div', { klasse:'ao-kort' }, [
+        el('div', { klasse:'ao-kort-top' }, [
+          el('label', { klasse:'ao-radio', for:r.id }, [r]),
+          billede ? el('img', { klasse:'ao-kort-billede', src:billede, alt:'', loading:'lazy' }) : null,
+          el('div', { klasse:'ao-kort-tekst' }, [el('h3', { klasse:'ao-kort-titel', tekst:p.navn }), renHtml(p.beskrivelse)]),
+          el('div', { klasse:'ao-kort-pris', tekst:prisLinje(pris).split(' · ')[0] })
+        ]),
+        s
+      ]);
+      kort.addEventListener('click', function(e){ if(!e.target.closest('select, details, a') && !r.checked){ r.checked = true; vælgProdukt(i); beregn(); } });
+      r.addEventListener('change', function(){ vælgProdukt(i); beregn(); });
+      kortListe.push({ kort:kort, radio:r, vælger:s, varianter:vs });
+      form.appendChild(kort);
     });
-    form.appendChild(prodBoks);
-
-    /* 2. Variant (fx bilmodel) */
-    var varBoks = el('div', { klasse:'ao-del ao-variant' });
-    form.appendChild(varBoks);
-    function tegnVariant(){
-      while(varBoks.firstChild) varBoks.removeChild(varBoks.firstChild);
-      var vs = valgbare(valg.produkt);
-      valg.variant = vs[0] || null;
-      if(vs.length < 2) return;
-      var navn = (valg.produkt.egenskaber || [])[0] || 'Vælg';
-      var s = el('select', { id:id + '-v', required:true });
-      vs.forEach(function(v){ var o = new Option(v.navn + (v.udsolgt ? ' (udsolgt)' : ''), v.id); o.disabled = !!v.udsolgt; s.appendChild(o); });
-      s.addEventListener('change', function(){ valg.variant = vs.filter(function(v){ return v.id === s.value; })[0]; beregn(); });
-      varBoks.appendChild(el('label', { for:id + '-v', tekst:navn }));
-      varBoks.appendChild(s);
+    function vælgProdukt(i){
+      var k = kortListe[i];
+      valg.produkt = produkter[i]; k.radio.checked = true;
+      valg.variant = k.vælger ? k.varianter.filter(function(v){ return v.id === k.vælger.value; })[0] : (k.varianter[0] || null);
+      kortListe.forEach(function(x, j){ x.kort.classList.toggle('ao-valgt', j === i); });
     }
-    tegnVariant();
+    vælgProdukt(0);
 
-    /* 3. Tilvalg (order bump) */
+    /* 2. Leveringsadresse og kunden */
+    var felter = {};
+    function felt(navn, etiket, type, auto, krav, bred){
+      var f = el('input', { id:id + '-' + navn, name:navn, type:type || 'text', autocomplete:auto || 'on', required:krav || null,
+        placeholder: etiket + (krav ? '' : ' (valgfri)'), 'aria-label': etiket });
+      felter[navn] = f;
+      return el('div', { klasse:'ao-felt' + (bred ? ' ao-bred' : '') }, [f]);
+    }
+    form.appendChild(trin(2, 'Leveringsadresse'));
+    form.appendChild(el('div', { klasse:'ao-felter' }, [
+      felt('email', 'Mail', 'email', 'email', true, true), felt('fornavn', 'Fornavn', 'text', 'given-name', true),
+      felt('efternavn', 'Efternavn', 'text', 'family-name', true), felt('adresse', 'Adresse', 'text', 'address-line1', true, true),
+      felt('postnr', 'Postnummer', 'text', 'postal-code', true), felt('by', 'By', 'text', 'address-level2', true),
+      felt('telefon', 'Telefon', 'tel', 'tel', false, true)]));
+    felter.postnr.inputMode = 'numeric'; felter.postnr.maxLength = 4;
+
+    /* 3. Levering: vises, når adressen er skrevet */
+    form.appendChild(trin(3, 'Levering'));
+    var levBoks = el('div', { klasse:'ao-levering' }, [el('span', { klasse:'ao-lev-ikon', 'aria-hidden':'true', tekst:'🚚' }), el('span', { tekst:'Leveringsmuligheder vises her, når du har skrevet din adresse.' })]);
+    form.appendChild(levBoks);
+    function tegnLevering(b){
+      var klar = felter.adresse.value.trim() && /^\d{4}$/.test(felter.postnr.value.trim()) && felter.by.value.trim();
+      while(levBoks.firstChild) levBoks.removeChild(levBoks.firstChild);
+      if(!klar || !b){ levBoks.classList.remove('ao-lev-klar'); levBoks.appendChild(el('span', { klasse:'ao-lev-ikon', 'aria-hidden':'true', tekst:'🚚' })); levBoks.appendChild(el('span', { tekst:'Leveringsmuligheder vises her, når du har skrevet din adresse.' })); return; }
+      levBoks.classList.add('ao-lev-klar');
+      levBoks.appendChild(el('label', { klasse:'ao-lev-valg' }, [el('input', { type:'radio', checked:true, disabled:true }),
+        el('span', { tekst:(b.fragt_navn || 'Levering') + ' · 5–7 hverdage' }), el('strong', { tekst: b.fragt_oere ? kr(b.fragt_oere) : 'Gratis' })]));
+    }
+    ['adresse', 'postnr', 'by'].forEach(function(n){ felter[n].addEventListener('input', function(){ tegnLevering(sidste); }); });
+
+    /* 4. Betaling */
+    form.appendChild(trin(4, 'Betaling'));
+    var betalBoks = el('div', { klasse:'ao-betaling' });
+    form.appendChild(betalBoks);
+
+    /* Tilvalg (order bump) - eget kort med beskrivelse og "Tilføj" */
     var tilvalgPris = null;
     if(tilvalg){
       var tv = valgbare(tilvalg)[0];
       tilvalgPris = tv && tv.priser[0];
       if(tilvalgPris){
-        var c = el('input', { type:'checkbox', id:id + '-t' });
-        c.addEventListener('change', function(){ valg.tilvalg = c.checked; beregn(); });
         var tb = (tilvalg.billeder || [])[0];
-        form.appendChild(el('label', { klasse:'ao-tilvalg', for:id + '-t' }, [
-          c, tb ? el('img', { src:tb, alt:'', loading:'lazy' }) : null,
-          el('span', {}, [el('strong', { tekst:'Ja tak, tilføj ' + tilvalg.navn }), el('span', { klasse:'ao-pris', tekst:' ' + prisLinje(tilvalgPris) })])
-        ]));
+        var tilføj = el('button', { type:'button', klasse:'ao-tilfoej', 'aria-pressed':'false', tekst:'+ Tilføj' });
+        var bump = el('div', { klasse:'ao-bump' }, [
+          tb ? el('img', { klasse:'ao-bump-billede', src:tb, alt:'', loading:'lazy' }) : null,
+          el('div', { klasse:'ao-bump-tekst' }, [
+            el('div', { klasse:'ao-bump-hoved' }, [el('strong', { klasse:'ao-bump-titel', tekst:tilvalg.navn }), el('span', { klasse:'ao-bump-pris', tekst:prisLinje(tilvalgPris) })]),
+            renHtml(tilvalg.beskrivelse)]),
+          el('div', { klasse:'ao-bump-knap' }, [tilføj])
+        ]);
+        tilføj.addEventListener('click', function(){
+          valg.tilvalg = !valg.tilvalg;
+          tilføj.textContent = valg.tilvalg ? '✓ Tilføjet' : '+ Tilføj';
+          tilføj.setAttribute('aria-pressed', String(valg.tilvalg));
+          bump.classList.toggle('ao-bump-valgt', valg.tilvalg);
+          beregn();
+        });
+        form.appendChild(bump);
       }
     }
 
-    /* 4. Kunden */
-    var felter = {};
-    function felt(navn, etiket, type, auto, krav, bred){
-      var f = el('input', { id:id + '-' + navn, name:navn, type:type || 'text', autocomplete:auto || 'on', required:krav || null });
-      felter[navn] = f;
-      return el('div', { klasse:'ao-felt' + (bred ? ' ao-bred' : '') }, [el('label', { for:f.id, tekst:etiket + (krav ? '' : ' (valgfri)') }), f]);
-    }
-    var kunde = el('fieldset', { klasse:'ao-del ao-felter' }, [el('legend', { tekst:'Dine oplysninger' }),
-      felt('email', 'Mail', 'email', 'email', true, true), felt('fornavn', 'Fornavn', 'text', 'given-name', true),
-      felt('efternavn', 'Efternavn', 'text', 'family-name', true), felt('telefon', 'Telefon', 'tel', 'tel', false, true)]);
-    form.appendChild(kunde);
-    var lev = el('fieldset', { klasse:'ao-del ao-felter' }, [el('legend', { tekst:'Levering' }),
-      felt('adresse', 'Adresse', 'text', 'address-line1', true, true), felt('postnr', 'Postnummer', 'text', 'postal-code', true),
-      felt('by', 'By', 'text', 'address-level2', true), el('p', { klasse:'ao-lille', tekst:'Vi sender til adresser i Danmark.' })]);
-    felter.postnr.inputMode = 'numeric'; felter.postnr.maxLength = 4;
-    form.appendChild(lev);
-
-    /* 5. Rabatkode */
-    var kode = el('input', { id:id + '-r', type:'text', autocomplete:'off', placeholder:'Rabatkode' });
+    /* Ordreoversigt: foldet sammen med totalen ude til højre, som hos ClickFunnels */
+    var kode = el('input', { id:id + '-r', type:'text', autocomplete:'off', placeholder:'Rabatkode', 'aria-label':'Rabatkode' });
     var kodeBesked = el('span', { klasse:'ao-lille', role:'status' });
     var brugtKode = '';
-    form.appendChild(el('div', { klasse:'ao-del ao-rabat' }, [
-      el('label', { for:kode.id, klasse:'ao-skjult', tekst:'Rabatkode' }), kode,
-      el('button', { type:'button', klasse:'ao-knap2', tekst:'Brug', klik:function(){ brugtKode = kode.value.trim().toUpperCase(); beregn(); } }),
-      kodeBesked
+    var sum = el('div', { klasse:'ao-sum', 'aria-live':'polite' });
+    var oversigtTotal = el('span', { klasse:'ao-oversigt-total', tekst:'Udfyld formularen for at se detaljerne' });
+    form.appendChild(el('details', { klasse:'ao-oversigt' }, [
+      el('summary', {}, [el('span', { klasse:'ao-oversigt-titel', tekst:'🧺 Ordreoversigt' }), oversigtTotal]),
+      sum,
+      el('div', { klasse:'ao-rabat' }, [kode,
+        el('button', { type:'button', klasse:'ao-knap2', tekst:'Brug', klik:function(){ brugtKode = kode.value.trim().toUpperCase(); beregn(); } }),
+        kodeBesked])
     ]));
 
-    /* 6. Opsummering */
-    var sum = el('div', { klasse:'ao-sum', 'aria-live':'polite' });
-    form.appendChild(sum);
-
-    /* 7. Betaling */
-    var betalBoks = el('div', { klasse:'ao-del ao-betaling' });
-    form.appendChild(betalBoks);
     var vilkår = el('input', { type:'checkbox', id:id + '-vilk', required:true });
     form.appendChild(el('label', { klasse:'ao-vilkaar', for:vilkår.id }, [vilkår, el('span', {}, [
       'Jeg accepterer ', el('a', { href:'https://arytmi.com/handelsbetingelser', target:'_blank', rel:'noopener', tekst:'handelsbetingelserne' }),
       ' og har læst ', el('a', { href:'https://arytmi.com/privatliv', target:'_blank', rel:'noopener', tekst:'privatlivspolitikken' }), '.'])]));
     var fejl = el('p', { klasse:'ao-fejl', role:'alert', hidden:true });
-    var knap = el('button', { type:'submit', klasse:'a-knap ao-betal', tekst:knapTekst });
+    var knap = el('button', { type:'submit', klasse:'ao-betal', tekst:knapTekst });
     form.appendChild(fejl); form.appendChild(knap);
-    form.appendChild(el('p', { klasse:'ao-lille ao-sikker', tekst:'Betalingen sker sikkert hos Stripe. Arytmi ser aldrig dit kortnummer.' }));
+    form.appendChild(el('p', { klasse:'ao-lille ao-sikker', tekst:'Vi bruger kun dine oplysninger til at behandle din ordre. Betalingen sker sikkert hos Stripe.' }));
     rod.appendChild(form);
 
     var stripe = Stripe(STRIPE_PK[tilstand], { locale:'da' });
@@ -255,6 +312,8 @@
         sum.appendChild(el('p', { klasse:'ao-abon', tekst: 'Derefter ' + kr(a.beloeb_oere) + ' pr. ' + iv(a.interval_antal, a.interval) +
           (a.proeve_slut ? ' fra ' + dato(a.proeve_slut) : '') + ' på samme kort. Kan opsiges når som helst.' }));
       }
+      oversigtTotal.textContent = 'I alt ' + kr(b.total_oere);
+      tegnLevering(b);
     }
     /* Payment Element ligger klar fra starten med beløbet; selve betalingen
        laves først ved "Betal" (Stripe: "deferred intent"). */
