@@ -242,6 +242,16 @@
           linjer.push([esc(a['data-a-knaptekst'] || 'Gennemfør købet'), 'a-forhaand-knap']);
           linjer.push([a['data-a-tilstand'] === 'live' ? 'LIVE: rigtige penge' : 'TEST: Stripes sandkasse - ingen rigtige penge', a['data-a-tilstand'] === 'live' ? 'a-forhaand-live' : 'a-forhaand-test']);
           this.el.innerHTML = forhaand('Ordreformular', linjer);
+          /* Er produkterne valgt, tegnes den rigtige formular (ordreformular.js i
+             lærredet) med jeres produkter, billeder og tekster - kun uden Stripe og køb. */
+          var e = this.el;
+          if(!valgt.length) return;
+          (function tegn(forsøg){
+            /* Elementet bygges før det flyttes ind i lærredet - vinduet slås op hver gang. */
+            var w = e.isConnected && e.ownerDocument.defaultView;
+            if(w && w.ArytmiOrdreformular) w.ArytmiOrdreformular.visning(e);
+            else if(forsøg < 40) setTimeout(function(){ tegn(forsøg + 1); }, 150);
+          })(0);
         }
       },
       model: { defaults: { name:'Ordreformular', droppable:false, editable:false, components:'', attributes:{ 'data-a-ordreformular':'', 'data-a-tilstand':'test' }, traits:[

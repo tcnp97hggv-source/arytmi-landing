@@ -85,7 +85,8 @@
     return u;
   }
 
-  function start(rod){
+  /* visning: editorens lærred - samme formular, men uden Stripe og uden køb. */
+  function start(rod, visning){
     var tilstand = rod.getAttribute('data-a-tilstand') === 'live' ? 'live' : 'test';
     var hoved = (rod.getAttribute('data-a-produkter') || '').split(',').filter(Boolean)
       .concat(['1', '2', '3'].map(function(n){ return rod.getAttribute('data-a-produkt-' + n); }).filter(Boolean));
@@ -97,10 +98,10 @@
     var status = el('p', { klasse:'ao-status', role:'status', tekst:'Henter …' });
     rod.appendChild(status);
     if(!hoved.length){ status.textContent = 'Ordreformularen mangler et produkt (vælg det i editoren).'; return; }
-    if(!STRIPE_PK[tilstand]){ status.textContent = 'Betalingen er ikke åbnet endnu.'; return; }
+    if(!visning && !STRIPE_PK[tilstand]){ status.textContent = 'Betalingen er ikke åbnet endnu.'; return; }
 
     var ids = hoved.concat(tilvalgId ? [tilvalgId] : []);
-    Promise.all([rpc('checkout_katalog', { p_produkter: ids }), hentStripe()]).then(function(r){
+    Promise.all([rpc('checkout_katalog', { p_produkter: ids }), visning ? null : hentStripe()]).then(function(r){
       var katalog = r[0] || [];
       var produkter = hoved.map(function(id){ return katalog.filter(function(p){ return p.id === id; })[0]; }).filter(Boolean);
       var tilvalg = katalog.filter(function(p){ return p.id === tilvalgId; })[0] || null;
@@ -273,7 +274,7 @@
     form.appendChild(el('p', { klasse:'ao-lille ao-sikker', tekst:'Vi bruger kun dine oplysninger til at behandle din ordre. Betalingen sker sikkert hos Stripe.' }));
     rod.appendChild(form);
 
-    var stripe = Stripe(STRIPE_PK[tilstand], { locale:'da' });
+    var stripe = Stripe ? Stripe(STRIPE_PK[tilstand], { locale:'da' }) : null;
     var elements = null, betalEl = null, sidste = null, abonnement = false;
 
     function kurv(){
@@ -323,6 +324,10 @@
       var valg2 = opsætning ? { mode:'setup', currency:'dkk' }
                             : { mode: abonnement ? 'subscription' : 'payment', amount: b.total_oere, currency:'dkk' };
       if(abonnement && !opsætning) valg2.setupFutureUsage = 'off_session';
+      if(!stripe){
+        if(!betalBoks.firstChild) betalBoks.appendChild(el('p', { klasse:'ao-status', tekst:'Her viser Stripe kortfelterne (kort, MobilePay, Klarna) på den udgivne side.' }));
+        return;
+      }
       if(!elements){
         valg2.appearance = { theme:'stripe', variables:{ colorPrimary:'#8e4333', borderRadius:'10px', fontFamily:'system-ui, sans-serif' } };
         /* Ingen Google Fonts (bagrummets regel): Stripes felter bruger systemets skrift. */
@@ -338,6 +343,7 @@
     form.addEventListener('input', function(){ fejl.hidden = true; });
     form.addEventListener('submit', function(e){
       e.preventDefault();
+      if(!stripe) return;
       fejl.hidden = true;
       if(!form.reportValidity()) return;
       if(!sidste){ visFejl('Vent et øjeblik, prisen regnes ud.'); return; }
@@ -449,5 +455,10 @@
       if(!r.__ao){ r.__ao = true; startKvittering(r); }
     });
   }
+  /* I sideeditorens lærred tegner editoren selv formularen via visning(). */
+  var iEditor = false;
+  try { iEditor = !!(window.frameElement && window.parent && window.parent.grapesjs); } catch(e){}
+  window.ArytmiOrdreformular = { visning: function(rod){ start(rod, true); } };
+  if(iEditor) return;
   if(d.readyState === 'loading') d.addEventListener('DOMContentLoaded', startAlle); else startAlle();
 })();

@@ -119,3 +119,6 @@
 /* Kvitteringen (takkesiden) */
 .ao-kvittering{ max-width:560px; text-align:left; }
 .ao-tak{ font-size:28px; margin:0 0 6px; }
+
+/* I sideeditorens lærred: formularen er en visning, hele elementet vælges med ét klik. */
+.a-editor [data-a-ordreformular] *{ pointer-events:none; }
