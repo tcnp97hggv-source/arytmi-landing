@@ -92,7 +92,7 @@
   function passer(o, f){
     if(f.status && o.status !== f.status) return false;
     if(f.tilstand && o.tilstand !== f.tilstand) return false;
-    if(f.forsendelse === 'ikke_sendt' && !(fysisk(o) && !o.sendt_kl)) return false;
+    if(f.forsendelse === 'ikke_sendt' && !(fysisk(o) && !o.sendt_kl && ['betalt', 'delvist_refunderet'].indexOf(o.status) >= 0)) return false;
     if(f.forsendelse === 'sendt' && !o.sendt_kl) return false;
     if(f.forsendelse === 'ingen' && fysisk(o)) return false;
     if(f.abonnement === 'ingen' && o.stripe_abonnement) return false;
