@@ -268,6 +268,19 @@
     var iKilde = false;
     function cmd(c, v){ flade.focus(); document.execCommand(c, false, v || null); }
     function blok(tag){ flade.focus(); document.execCommand('formatBlock', false, tag); }
+    var spørg = el('div', { klasse:'pr-rt-spoerg' });
+    /* Markeringen gemmes, før fokus flytter til skemaet, og sættes tilbage bagefter. */
+    function husk(){ var sel = window.getSelection(); return (sel.rangeCount && flade.contains(sel.anchorNode)) ? sel.getRangeAt(0).cloneRange() : null; }
+    function tilbage(r){ flade.focus(); if(r){ var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); } return r; }
+    function indsæt(r, node){ if(r && flade.contains(r.startContainer)){ r.collapse(false); r.insertNode(node); } else flade.appendChild(node); }
+    function foldUd(titel, r){
+      var d = document.createElement('details');
+      var s = document.createElement('summary'); s.textContent = titel;
+      var p = document.createElement('p'); p.textContent = 'Skriv teksten her.';
+      d.appendChild(s); d.appendChild(p);
+      indsæt(r, d);
+      d.open = true;
+    }
     var linje = el('div', { klasse:'pr-rt-linje', role:'toolbar', 'aria-label':'Formatering' }, [
       knap('F', 'pr-rt-k pr-rt-fed', function(){ cmd('bold'); }),
       knap('K', 'pr-rt-k pr-rt-kursiv', function(){ cmd('italic'); }),
@@ -276,21 +289,19 @@
       knap('• Liste', 'pr-rt-k', function(){ cmd('insertUnorderedList'); }),
       knap('1. Liste', 'pr-rt-k', function(){ cmd('insertOrderedList'); }),
       knap('Link', 'pr-rt-k', function(){
-        var u = window.prompt('Linkets adresse (https://…)');
-        if(u && /^(https:\/\/|mailto:)/i.test(u.trim())) cmd('createLink', u.trim());
+        var r = husk();
+        skemaFelt(spørg, [{ etiket:'Linkets adresse', start:'https://', krav:'Skriv en adresse.',
+          tjek:function(u){ return /^(https:\/\/[^\s]+\.[^\s]+|mailto:[^\s]+@[^\s]+)$/i.test(u) ? null : 'Adressen skal starte med https:// eller mailto:'; } }],
+          'Indsæt link', function(v){
+            tilbage(r);
+            if(r && !r.collapsed) document.execCommand('createLink', false, v[0]);
+            else { var a = document.createElement('a'); a.href = v[0]; a.textContent = v[0].replace(/^mailto:/i, ''); indsæt(r, a); }
+          });
       }),
       knap('Fold-ud', 'pr-rt-k', function(){
-        var titel = window.prompt('Overskrift på fold-ud-boksen', 'Passer madrassen i din bil?');
-        if(!titel) return;
-        var d = document.createElement('details');
-        var s = document.createElement('summary'); s.textContent = titel;
-        var p = document.createElement('p'); p.textContent = 'Skriv teksten her.';
-        d.appendChild(s); d.appendChild(p);
-        flade.focus();
-        var sel = window.getSelection();
-        if(sel.rangeCount && flade.contains(sel.anchorNode)){ var r = sel.getRangeAt(0); r.collapse(false); r.insertNode(d); }
-        else flade.appendChild(d);
-        d.open = true;
+        var r = husk();
+        skemaFelt(spørg, [{ etiket:'Overskrift på fold-ud-boksen', start:'Passer madrassen i din bil?', krav:'Skriv en overskrift.' }],
+          'Indsæt fold-ud', function(v){ foldUd(v[0], tilbage(r)); });
       }),
       knap('Ryd formatering', 'pr-rt-k', function(){ cmd('removeFormat'); }),
       knap('Avanceret: HTML', 'pr-rt-k pr-rt-avanceret', function(){
@@ -307,7 +318,7 @@
       e.preventDefault();
       document.execCommand('insertHTML', false, renHtml(html));
     });
-    boks.appendChild(linje); boks.appendChild(flade); boks.appendChild(kilde);
+    boks.appendChild(linje); boks.appendChild(spørg); boks.appendChild(flade); boks.appendChild(kilde);
     boks._værdi = function(){ return renHtml(iKilde ? kilde.value : flade.innerHTML); };
     return boks;
   }
@@ -345,14 +356,14 @@
     var linje = el('div', { klasse:'bb-linje' }, [knap(slags === 'billeder' ? 'Læg billede op' : 'Læg fil op', 'knap rolig lille', function(){ fil.click(); })]);
     if(slags === 'billeder'){
       linje.appendChild(knap('Tilføj adresse', 'knap rolig lille', function(){
-        var u = window.prompt('Billedets adresse (https://…)');
-        if(!u) return;
-        if(!/^https:\/\//.test(u.trim())){ besked.textContent = 'Adressen skal starte med https://'; return; }
-        boks._liste.push(u.trim()); tegn();
+        skemaFelt(spørg, [{ etiket:'Billedets adresse', start:'https://', krav:'Skriv en adresse.',
+          tjek:function(u){ return /^https:\/\/[^\s]+\.[^\s]+$/.test(u) ? null : 'Adressen skal starte med https://'; } }],
+          'Tilføj billedet', function(v){ boks._liste.push(v[0]); tegn(); });
       }));
     }
+    var spørg = el('div', { klasse:'pr-medie-spoerg' });
     linje.appendChild(besked);
-    boks.appendChild(rk); boks.appendChild(linje); boks.appendChild(fil);
+    boks.appendChild(rk); boks.appendChild(linje); boks.appendChild(spørg); boks.appendChild(fil);
     tegn();
     return boks;
   }
@@ -484,25 +495,50 @@
   /* Et navnefelt i siden (i stedet for browserens prompt(), der er grim og
      ikke virker overalt). ok(navn, besked) skal give et løfte. */
   function navnFelt(plads, etiket, knaptekst, ok){
+    skemaFelt(plads, [{ etiket:etiket, krav:'Skriv et navn.' }], knaptekst, function(v, besked){ return ok(v[0], besked); });
+  }
+
+  /* Et lille skema i siden med et eller flere tekstfelter. felter: [{ etiket, start,
+     krav (fejltekst hvis tomt), tjek(v) -> fejltekst|null, hint }]. ok(værdier, besked)
+     må give et løfte; skemaet lukker, når det er opfyldt. Enter gemmer, Escape fortryder. */
+  function skemaFelt(plads, felter, knaptekst, ok){
     tøm(plads);
-    var id = 'pr-navn-' + Math.random().toString(36).slice(2, 8);
-    var felt = el('input', { type:'text', id:id, maxlength:'200', autocomplete:'off' });
     var besked = el('div', { klasse:'besked', hidden:true, role:'alert' });
+    var input = felter.map(function(f){
+      var i = el('input', { type:'text', id:'pr-skema-' + Math.random().toString(36).slice(2, 8), maxlength:'500', autocomplete:'off' });
+      i.value = f.start || '';
+      return i;
+    });
     var gem = knap(knaptekst, 'knap lille', function(){
-      var navn = felt.value.trim();
-      if(!navn){ vis(besked, 'Skriv et navn.', 'fejl'); felt.focus(); return; }
+      var v = input.map(function(i){ return i.value.trim(); });
+      for(var n = 0; n < felter.length; n++){
+        var fejl = (!v[n] && felter[n].krav) ? felter[n].krav : (v[n] && felter[n].tjek ? felter[n].tjek(v[n]) : null);
+        if(fejl){ vis(besked, fejl, 'fejl'); input[n].focus(); return; }
+      }
       gem.disabled = true;
       vis(besked, 'Gemmer …');
-      ok(navn, besked).then(function(){ tøm(plads); })
+      Promise.resolve().then(function(){ return ok(v, besked); }).then(function(){ tøm(plads); })
         .catch(function(f){ gem.disabled = false; vis(besked, fejltekst(f), 'fejl'); });
     });
-    felt.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); gem.click(); } else if(e.key === 'Escape') tøm(plads); });
-    plads.appendChild(el('div', { klasse:'brud-form' }, [
-      el('div', { klasse:'pr-felt' }, [el('label', { for:id, tekst:etiket }), felt]),
+    input.forEach(function(i){
+      i.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); gem.click(); } else if(e.key === 'Escape') tøm(plads); });
+    });
+    var dele = felter.map(function(f, n){
+      var d = el('div', { klasse:'pr-felt' }, [el('label', { for:input[n].id, tekst:f.etiket }), input[n]]);
+      if(f.hint) d.appendChild(el('p', { klasse:'hint', tekst:f.hint }));
+      return d;
+    });
+    plads.appendChild(el('div', { klasse:'brud-form' }, dele.concat([
       el('div', { klasse:'bb-linje' }, [gem, knap('Fortryd', 'knap rolig lille', function(){ tøm(plads); })]),
       besked
-    ]));
-    felt.focus();
+    ])));
+    input[0].focus();
+    if(felter[0].start) input[0].select();
+  }
+  function landeListe(l){ return l.toUpperCase().split(/[,\s]+/).filter(Boolean); }
+  function tjekLande(l){
+    var x = landeListe(l);
+    return (!x.length || x.some(function(y){ return !/^[A-Z]{2}$/.test(y); })) ? 'Landene skal være to bogstaver adskilt med komma, fx DK eller SE, NO, FI.' : null;
   }
 
   function opretProdukt(plads){
@@ -940,32 +976,35 @@
 
   /* ---------- Fragt: profiler → zoner → satser ---------- */
   function tegnFragt(rod){
+    var topSpørg = el('div');
     rod.appendChild(el('div', { klasse:'pr-top' }, [
       el('p', { klasse:'hint', tekst:'En fragtprofil samler de varianter, der sendes på samme måde. Zonerne siger hvilke lande, satserne hvad det koster. Kunden ser satserne for sit land i ordreformularen.' }),
       knap('Opret fragtprofil', 'knap lille', function(){
-        var n = window.prompt('Fragtprofilens navn'); if(!n || !n.trim()) return;
-        gemRække('fragtprofil', null, { navn:n.trim() }).then(hent).catch(function(f){ status(fejltekst(f), 'fejl'); });
+        navnFelt(topSpørg, 'Fragtprofilens navn', 'Opret profilen', function(n){ return gemRække('fragtprofil', null, { navn:n }).then(hent); });
       })
     ]));
+    rod.appendChild(topSpørg);
     data.profiler.forEach(function(pf){
       var antal = data.varianter.filter(function(v){ return v.fragtprofil_id === pf.id; }).length;
       var kort = el('section', { klasse:'db-kort pr-kort' }, [el('h4', { tekst: pf.navn + (pf.standard ? ' (standard)' : '') }),
         el('p', { klasse:'hint', tekst: antal + ' variant(er) bruger profilen.' })]);
       var besked = el('div', { klasse:'besked', hidden:true, role:'alert' });
+      var pfSpørg = el('div');
       var greb = el('div', { klasse:'bb-linje' }, [
-        knap('Omdøb', 'knap rolig lille', function(){ var n = window.prompt('Nyt navn', pf.navn); if(n && n.trim()) gemRække('fragtprofil', pf.id, { navn:n.trim() }).then(hent).catch(function(f){ vis(besked, fejltekst(f), 'fejl'); }); }),
+        knap('Omdøb', 'knap rolig lille', function(){
+          skemaFelt(pfSpørg, [{ etiket:'Nyt navn', start:pf.navn, krav:'Skriv et navn.' }], 'Gem navnet',
+            function(v){ return gemRække('fragtprofil', pf.id, { navn:v[0] }).then(hent); });
+        }),
         knap('Tilføj zone', 'knap rolig lille', function(){
-          var n = window.prompt('Zonens navn (fx Danmark)'); if(!n || !n.trim()) return;
-          var l = window.prompt('Lande, to bogstaver adskilt med komma (fx DK eller SE, NO, FI)', 'DK'); if(l === null) return;
-          var lande = l.toUpperCase().split(/[,\s]+/).filter(Boolean);
-          if(lande.some(function(x){ return !/^[A-Z]{2}$/.test(x); })) return vis(besked, 'Landene skal være to bogstaver, fx DK.', 'fejl');
-          gemRække('fragtzone', null, { profil_id:pf.id, navn:n.trim(), lande:lande }).then(hent).catch(function(f){ vis(besked, fejltekst(f), 'fejl'); });
+          skemaFelt(pfSpørg, [{ etiket:'Zonens navn', hint:'Fx Danmark.', krav:'Skriv et navn.' },
+            { etiket:'Lande', start:'DK', krav:'Skriv mindst ét land.', tjek:tjekLande, hint:'To bogstaver adskilt med komma, fx DK eller SE, NO, FI.' }],
+            'Tilføj zonen', function(v){ return gemRække('fragtzone', null, { profil_id:pf.id, navn:v[0], lande:landeListe(v[1]) }).then(hent); });
         })
       ]);
       if(!pf.standard && !antal) greb.appendChild(knap('Slet', 'knap fare lille', function(){
         if(window.confirm('Slette profilen "' + pf.navn + '"?')) sletRække('fragtprofil', pf.id).then(hent).catch(function(f){ vis(besked, fejltekst(f), 'fejl'); });
       }));
-      kort.appendChild(greb); kort.appendChild(besked);
+      kort.appendChild(greb); kort.appendChild(pfSpørg); kort.appendChild(besked);
       data.zoner.filter(function(z){ return z.profil_id === pf.id; }).forEach(function(z){
         var zb = el('div', { klasse:'pr-zone' }, [el('h5', { tekst: z.navn + ' · ' + ((z.lande || []).join(', ') || (z.resten_af_verden ? 'resten af verden' : 'ingen lande')) })]);
         data.satser.filter(function(s){ return s.zone_id === z.id; }).forEach(function(s){
@@ -975,16 +1014,16 @@
             knap('Ret', 'knap rolig lille', function(){ satsForm(zb, z, s); })
           ]));
         });
+        var zSpørg = el('div');
         zb.appendChild(el('div', { klasse:'bb-linje' }, [
           knap('Tilføj sats', 'knap rolig lille', function(){ satsForm(zb, z, null); }),
           knap('Ret lande', 'knap rolig lille', function(){
-            var l = window.prompt('Lande, to bogstaver adskilt med komma', (z.lande || []).join(', ')); if(l === null) return;
-            var lande = l.toUpperCase().split(/[,\s]+/).filter(Boolean);
-            if(lande.some(function(x){ return !/^[A-Z]{2}$/.test(x); })) return vis(besked, 'Landene skal være to bogstaver, fx DK.', 'fejl');
-            gemRække('fragtzone', z.id, { lande:lande }).then(hent).catch(function(f){ vis(besked, fejltekst(f), 'fejl'); });
+            skemaFelt(zSpørg, [{ etiket:'Lande', start:(z.lande || []).join(', '), tjek:tjekLande, hint:'To bogstaver adskilt med komma. Tomt felt = ingen lande.' }],
+              'Gem landene', function(v){ return gemRække('fragtzone', z.id, { lande:landeListe(v[0]) }).then(hent); });
           }),
           knap('Slet zone', 'knap fare lille', function(){ if(window.confirm('Slette zonen "' + z.navn + '" og dens satser?')) sletRække('fragtzone', z.id).then(hent).catch(function(f){ vis(besked, fejltekst(f), 'fejl'); }); })
         ]));
+        zb.appendChild(zSpørg);
         kort.appendChild(zb);
       });
       rod.appendChild(kort);
