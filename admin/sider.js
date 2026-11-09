@@ -963,7 +963,7 @@
         .then(function(r){ return r[0]; });
     })).then(function(s){
       var fil = { format:'arytmi-funnel', version:1, eksporteret:new Date().toISOString(),
-        funnel:{ navn:f.navn, domaene:f.domaene, head_kode:f.head_kode, footer_kode:f.footer_kode, stil:f.stil, tags:f.tags, favicon_url:f.favicon_url },
+        funnel:{ navn:f.navn, domaene:f.domaene, head_kode:f.head_kode, footer_kode:f.footer_kode, stil:f.stil, tags:f.tags, favicon_url:f.favicon_url, gem_betalingsmetode:f.gem_betalingsmetode },
         sider:s };
       var a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(fil, null, 1)], { type:'application/json' })),
         download: tilSti(f.navn).slice(1) + '.arytmi-funnel.json' });
@@ -982,7 +982,10 @@
         return medBilleder(d).then(function(){ return api.json('/rest/v1/funnel', { method:'POST', headers:{ Prefer:'return=representation' }, body:{
           navn:String(d.funnel.navn || 'Importeret') + ' (importeret)', domaene:d.funnel.domaene || 'afsted.arytmi.com',
           head_kode:d.funnel.head_kode || '', footer_kode:d.funnel.footer_kode || '', stil:d.funnel.stil || {}, tags:d.funnel.tags || [],
-          favicon_url:d.funnel.favicon_url || null } }).then(function(r){
+          favicon_url:d.funnel.favicon_url || null,
+          /* Ligesom Duplikér. live_betaling kommer med vilje IKKE med: en
+             importeret funnel starter altid med testbetalinger. */
+          gem_betalingsmetode:['arv', 'ja', 'nej'].indexOf(d.funnel.gem_betalingsmetode) >= 0 ? d.funnel.gem_betalingsmetode : 'arv' } }).then(function(r){
           var nyF = r[0];
           return Promise.all(d.sider.map(function(s){
             var krop = {}; ['raekkefoelge','navn','seo_titel','seo_beskrivelse','seo_indekser','head_kode','footer_kode','custom_css','beskrivelse','social_billede','bloker_ai_traening','bloker_ai_soegning','bloker_ai_assistent','kladde','kladde_html','kladde_css']
