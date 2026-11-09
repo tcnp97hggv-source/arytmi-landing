@@ -294,7 +294,8 @@
         tegnSum(b); klargørBetaling(b);
       }).catch(function(e){
         if(nr !== tæller) return;
-        if(e.felt === 'rabatkode'){ kodeBesked.textContent = e.message; brugtKode = ''; return beregn(); }
+        /* Beskeden sættes EFTER den nye beregning - ellers visker den den ud igen. */
+        if(e.felt === 'rabatkode'){ var besked = e.message; brugtKode = ''; return beregn().then(function(){ kodeBesked.textContent = besked; }); }
         visFejl(e.message);
       }).then(function(){ sum.classList.remove('ao-venter'); });
     }
