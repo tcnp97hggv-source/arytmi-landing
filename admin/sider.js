@@ -1452,7 +1452,10 @@
 
   function udgiv(){
     if(!åbenSide) return;
-    if(!confirm('Udgiv "' + åbenSide.navn + '"?\n\nKladden bliver den version, kunderne får, og den gemmes, så den kan hentes frem igen.')) return;
+    var døde = dødeTing();
+    var liste = døde.length ? '\n\nDette virker ikke på den udgivne side:\n• ' + døde.slice(0, 12).join('\n• ') +
+      (døde.length > 12 ? '\n• … og ' + (døde.length - 12) + ' mere' : '') + '\n\nTryk Annuller for at rette det først.' : '';
+    if(!confirm('Udgiv "' + åbenSide.navn + '"' + (døde.length ? ' alligevel' : '') + '?\n\nKladden bliver den version, kunderne får, og den gemmes, så den kan hentes frem igen.' + liste)) return;
     gem().then(function(){ return api.rpc('udgiv_side', { p_side: åbenSide.id }); })
       .then(function(v){ åbenSide.udgivet_version = v; editorStatus('Udgivet v' + v, 'god'); })
       .catch(function(f){ editorStatus(api.forklar(f), 'fejl'); });
@@ -1818,8 +1821,76 @@
     }
     var i = el('input', { type: type === 'number' ? 'number' : type === 'color' ? 'color' : 'text' });
     i.value = v === undefined || v === null ? '' : v;
-    i.addEventListener('change', function(){ sæt(i.value); });
-    return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), i ]);
+    var slags = tr.get('adresse');
+    if(!slags){
+      i.addEventListener('change', function(){ sæt(i.value); });
+      return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), i ]);
+    }
+    /* Adressefelter tjekkes, før de gemmes (9/11): en forkert værdi gemmes
+       ikke, og feltet siger hvorfor. Samme tjek som før Udgiv. */
+    var fejlTekst = el('small', { klasse:'sf-felt-fejl', role:'alert' });
+    var vis = function(f){ fejlTekst.textContent = f; fejlTekst.hidden = !f; i.setAttribute('aria-invalid', f ? 'true' : 'false'); };
+    vis(window.ArytmiElementer.tjekAdresse(i.value, slags));
+    i.addEventListener('input', function(){ if(i.getAttribute('aria-invalid') === 'true') vis(window.ArytmiElementer.tjekAdresse(i.value, slags)); });
+    i.addEventListener('change', function(){
+      var f = window.ArytmiElementer.tjekAdresse(i.value, slags);
+      vis(f);
+      if(!f) sæt(i.value.trim());
+    });
+    return el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:label }), i, fejlTekst ]);
+  }
+
+  /* ---------- Tjek før Udgiv (9/11) ----------
+     K's regel: intet på den udgivne side må se ud til at virke uden at
+     gøre det. Fundet ved gennemprøvningen: knapper og links uden mål,
+     felter uden formular, adressefelter med vrøvl, billeder uden alt-tekst.
+     Ser på siden, som editoren har tegnet den. Giver en liste på dansk. */
+  function dødeTing(){
+    var doc = editor && editor.Canvas.getDocument();
+    if(!doc || !doc.body) return [];
+    var ud = [], tjek = window.ArytmiElementer.tjekAdresse;
+    var alle = function(sel){ return Array.prototype.slice.call(doc.body.querySelectorAll(sel)); };
+    var navn = function(e){ var t = (e.innerText || e.textContent || '').replace(/\s+/g, ' ').trim(); return t ? '"' + (t.length > 40 ? t.slice(0, 40) + '…' : t) + '"' : (e.getAttribute('aria-label') ? '"' + e.getAttribute('aria-label') + '"' : 'uden tekst'); };
+    var trin = sider.filter(function(x){ return x.funnel_id === åbenSide.funnel_id && !x.variant_af; })
+      .sort(function(a, b){ return (a.raekkefoelge || 0) - (b.raekkefoelge || 0); });
+    var sidsteTrin = !åbenSide.variant_af && trin.length && trin[trin.length - 1].id === åbenSide.id;
+    var harPopup = !!doc.body.querySelector('[data-a-popup]');
+    alle('a').forEach(function(a){
+      if(a.hasAttribute('data-a-video') || a.hasAttribute('data-a-videopopup')) return;
+      var h = a.getAttribute('data-a-handling'), href = (a.getAttribute('href') || '').trim();
+      if(h === 'rul'){
+        var m = a.getAttribute('data-a-maal');
+        if(!m) ud.push('Knappen ' + navn(a) + ' skal rulle, men har intet sted at rulle til.');
+        else if(!doc.getElementById(m)) ud.push('Knappen ' + navn(a) + ' ruller til "' + m + '", som ikke findes på siden.');
+      } else if(h === 'naeste'){ if(sidsteTrin) ud.push('Knappen ' + navn(a) + ' går til næste trin, men siden er funnelens sidste trin.'); }
+      else if(h === 'aaben-popup'){ if(!harPopup) ud.push('Knappen ' + navn(a) + ' åbner popuppen, men siden har ingen popup.'); }
+      else if(h === 'send'){ if(!a.closest('form')) ud.push('Knappen ' + navn(a) + ' sender en formular, men står ikke i en formular.'); }
+      else if(h === 'luk-popup'){ /* altid i orden */ }
+      else if(!href || href === '#') ud.push('Linket ' + navn(a) + ' går ingen steder hen.');
+      else if(href.charAt(0) === '#' && !doc.getElementById(href.slice(1))) ud.push('Linket ' + navn(a) + ' går til "' + href + '", som ikke findes på siden.');
+      else if(tjek(href, 'link')) ud.push('Linket ' + navn(a) + ' har en adresse, der ikke virker: ' + href);
+    });
+    var løse = alle('input,select,textarea').filter(function(f){ return !f.closest('[data-a-ordreformular]') && !f.closest('form'); })
+      .map(function(f){ return f.name || f.type; });
+    if(løse.length) ud.push(løse.length + (løse.length === 1 ? ' felt står' : ' felter står') + ' uden for en formular, så det, kunden skriver, sendes ikke (' + løse.join(', ') + ').');
+    alle('form').forEach(function(f){
+      if(!f.closest('[data-a-ordreformular]') && !f.getAttribute('data-arytmi-formular')) ud.push('En formular har intet navn, så den gemmer ikke kontakter (sæt "Formularens navn").');
+      var e = f.getAttribute('data-a-efter');
+      if(e && tjek(e, 'link,naeste')) ud.push('Formularen "' + (f.getAttribute('data-arytmi-formular') || '') + '" går efter afsendelse til noget, der ikke virker: ' + e);
+      else if(e && /^n(æ|ae)ste$/i.test(e) && sidsteTrin) ud.push('Formularen går efter afsendelse til næste trin, men siden er funnelens sidste trin.');
+    });
+    alle('[data-a-ordreformular]').forEach(function(o){ var e = o.getAttribute('data-a-efter'); if(e && tjek(e, 'link')) ud.push('Ordreformularen går efter betaling til noget, der ikke virker: ' + e); else if(!e && sidsteTrin) ud.push('Ordreformularen går efter betaling til næste trin, men siden er funnelens sidste trin (sæt "Efter betaling").'); });
+    alle('[data-a-nedtaelling]').forEach(function(n){
+      var e = n.getAttribute('data-a-ved-slut'); if(e && tjek(e, 'link,skjul')) ud.push('Nedtællingen gør ved slut noget, der ikke virker: ' + e);
+      if(!n.getAttribute('data-a-evergreen') && tjek(n.getAttribute('data-a-slut') || '', 'dato')) ud.push('Nedtællingen har ingen gyldig slutdato.');
+      else if(!n.getAttribute('data-a-evergreen') && !n.getAttribute('data-a-slut')) ud.push('Nedtællingen har ingen slutdato.');
+    });
+    alle('[data-a-video]').forEach(function(v){ var u = v.getAttribute('data-a-video'); if(!u || tjek(u, 'video')) ud.push('En video har ingen gyldig adresse' + (u ? ': ' + u : '.')); });
+    alle('[data-a-videopopup]').forEach(function(v){ var u = v.getAttribute('data-a-videopopup'); if(!u || tjek(u, 'video')) ud.push('En video-popup har ingen gyldig adresse' + (u ? ': ' + u : '.')); });
+    alle('audio').forEach(function(l){ var u = l.getAttribute('src'); if(!u || tjek(u, 'fil')) ud.push('En lydafspiller har ingen gyldig fil' + (u ? ': ' + u : '.')); });
+    var udenAlt = alle('img').filter(function(b){ return !(b.getAttribute('alt') || '').trim(); }).length;
+    if(udenAlt) ud.push(udenAlt + (udenAlt === 1 ? ' billede' : ' billeder') + ' uden alt-tekst (svagsynede og Google ser intet).');
+    return ud;
   }
 
   /* ---------- Animation ----------

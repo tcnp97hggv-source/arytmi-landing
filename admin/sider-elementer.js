@@ -54,6 +54,29 @@
 
   var LANDE = ['Danmark','Sverige','Norge','Finland','Island','Tyskland','Holland','Belgien','Frankrig','Storbritannien','Irland','Spanien','Italien','Østrig','Schweiz','Polen'];
 
+  /* ---------- Tjek af adressefelter (9/11) ----------
+     Fundet ved gennemprøvningen: felterne tog imod hvad som helst, og en
+     tekst som "Prøve" blev til en 404 på den udgivne side. Bruges både, mens
+     der skrives (sider.js traitFelt), og i tjekket før Udgiv.
+     slags: 'link', 'fil', 'video', 'dato', evt. med ',naeste' / ',skjul'.
+     Giver '' når værdien er i orden, ellers en dansk forklaring. */
+  var VIDEO = /(youtube\.com\/(watch\?v=|embed\/|shorts\/)|youtu\.be\/)[\w-]{6,}|vimeo\.com\/(video\/)?\d+|wistia\.(com|net)\/(medias|embed\/iframe)\/\w+|\.(mp4|webm|ogg)(\?|$)/i;
+  function tjekAdresse(v, slags){
+    v = String(v === undefined || v === null ? '' : v).trim();
+    if(!v) return '';
+    var s = String(slags || 'link').split(',');
+    if(s.indexOf('naeste') >= 0 && /^n(æ|ae)ste$/i.test(v)) return '';
+    if(s.indexOf('skjul') >= 0 && v.toLowerCase() === 'skjul') return '';
+    if(s[0] === 'dato') return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) && !isNaN(Date.parse(v)) ? '' : 'Skriv datoen som 2026-12-24T18:00.';
+    var ekstra = s.indexOf('naeste') >= 0 ? ', eller "næste"' : s.indexOf('skjul') >= 0 ? ', eller "skjul"' : '';
+    if(s[0] === 'link' && /^tel:\+?[\d ]+$/.test(v)) return '';
+    if(/\s/.test(v)) return 'En adresse kan ikke have mellemrum. Skriv fx /tak eller https://…' + ekstra + '.';
+    if(s[0] === 'video') return VIDEO.test(v) && /^https?:\/\//.test(v) ? '' : 'Ikke en video, siden kan vise. Brug et link fra YouTube, Vimeo eller Wistia, eller en .mp4-fil.';
+    if(s[0] === 'fil') return /^(https?:\/\/|\/)/.test(v) ? '' : 'Skriv hele adressen til filen (https://… eller /…).';
+    return /^(https?:\/\/[^.\/]+\.[^\/]|\/|#[\w-]+$|mailto:\S+@|tel:\+?[\d ]+$)/.test(v) ? '' :
+      'Ikke en adresse. Skriv /sti (på samme domæne), https://…, #anker, mailto: eller tel:' + ekstra + '.';
+  }
+
   function registrer(editor, valg){
     var DC = editor.DomComponents;
     var PLADS = valg.plads;
@@ -167,7 +190,7 @@
           { type:'select', name:'handling', label:'Når der klikkes', changeProp:true, options:[
             { id:'link', name:'Gå til en adresse' }, { id:'naeste', name:'Gå til næste trin i funnelen' }, { id:'rul', name:'Rul til et sted på siden' },
             { id:'send', name:'Send formularen' }, { id:'aaben-popup', name:'Åbn popuppen' }, { id:'luk-popup', name:'Luk popuppen' } ] },
-          { type:'text', name:'href', label:'Adresse' },
+          { type:'text', name:'href', label:'Adresse', adresse:'link' },
           { type:'text', name:'maal', label:'Rul til (anker-id)', changeProp:true },
           { type:'checkbox', name:'nytvindue', label:'Åbn i nyt vindue', changeProp:true },
           { type:'select', name:'udseende', label:'Udseende', changeProp:true, options:[{ id:'1', name:'Fyldt' }, { id:'2', name:'Kant' }, { id:'3', name:'Kun tekst' }] },
@@ -202,8 +225,8 @@
     DC.addType('a-video', {
       isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-video'); },
       model: { defaults: { name:'Video', droppable:false, attributes:{ 'data-a-video':'' }, traits:[
-        { type:'text', name:'data-a-video', label:'Videoens adresse (YouTube, Vimeo, Wistia eller .mp4)' },
-        { type:'text', name:'forside', label:'Forsidebillede (adresse, tom = sort)', changeProp:true }
+        { type:'text', name:'data-a-video', label:'Videoens adresse (YouTube, Vimeo, Wistia eller .mp4)', adresse:'video' },
+        { type:'text', name:'forside', label:'Forsidebillede (adresse, tom = sort)', changeProp:true, adresse:'fil' }
       ] }, init: function(){
         var bg = (this.getStyle()['background-image'] || '').replace(/^url\(["']?|["']?\)$/g, '');
         this.set('forside', bg, { silent:true });
@@ -213,13 +236,13 @@
     DC.addType('a-videopopup', {
       isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-videopopup'); },
       model: { defaults: { name:'Video-popup', droppable:false, traits:[
-        { type:'text', name:'data-a-videopopup', label:'Videoens adresse' }
+        { type:'text', name:'data-a-videopopup', label:'Videoens adresse (YouTube, Vimeo, Wistia eller .mp4)', adresse:'video' }
       ] } }
     });
     DC.addType('a-lyd', {
       isComponent: function(el){ return el.tagName === 'AUDIO'; },
       model: { defaults: { name:'Lyd', tagName:'audio', droppable:false, attributes:{ controls:'', preload:'none' }, traits:[
-        { type:'text', name:'src', label:'Lydfilens adresse (.mp3)' }, { type:'checkbox', name:'loop', label:'Gentag' }
+        { type:'text', name:'src', label:'Lydfilens adresse (.mp3)', adresse:'fil' }, { type:'checkbox', name:'loop', label:'Gentag' }
       ] } }
     });
 
@@ -275,7 +298,7 @@
         { type:'produktliste', name:'data-a-produkter', label:'Produkter i formularen' },
         { type:'select', name:'data-a-tilvalg', label:'Tilvalg (fx mørklægning)', options:produktValg('— intet —') },
         { type:'text', name:'data-a-knaptekst', label:'Tekst på knappen (tom = "Gennemfør købet")' },
-        { type:'text', name:'data-a-efter', label:'Efter betaling: gå til (tom = næste trin)' },
+        { type:'text', name:'data-a-efter', label:'Efter betaling: gå til (tom = næste trin)', adresse:'link' },
         { type:'select', name:'data-a-tilstand', label:'Betaling', options:[{ id:'test', name:'Test (Stripes sandkasse)' }, { id:'live', name:'Live (rigtige penge)' }] }
       ] } }
     });
@@ -299,7 +322,7 @@
       isComponent: function(el){ return el.tagName === 'FORM' && el.hasAttribute('data-arytmi-formular'); },
       model: { defaults: { name:'Formular', tagName:'form', traits:[
         { type:'text', name:'data-arytmi-formular', label:'Formularens navn (til kontakter, fx tilmelding)' },
-        { type:'text', name:'data-a-efter', label:'Efter afsendelse: gå til (en adresse eller "næste"; tom = vis takken)' },
+        { type:'text', name:'data-a-efter', label:'Efter afsendelse: gå til (en adresse eller "næste"; tom = vis takken)', adresse:'link,naeste' },
         { type:'text', name:'data-a-tak', label:'Takken, der vises i stedet for formularen' }
       ] } }
     });
@@ -378,9 +401,9 @@
       isComponent: function(el){ return el.hasAttribute && el.hasAttribute('data-a-nedtaelling'); },
       model: { defaults: { name:'Nedtælling', droppable:false, traits:[
         { type:'select', name:'nt-type', label:'Type', changeProp:true, options:[{ id:'fast', name:'Til en fast dato' }, { id:'evergreen', name:'Evergreen (fra kundens første besøg)' }] },
-        { type:'text', name:'data-a-slut', label:'Slutter (åååå-mm-ddTtt:mm, dansk tid)' },
+        { type:'text', name:'data-a-slut', label:'Slutter (åååå-mm-ddTtt:mm, dansk tid)', adresse:'dato' },
         { type:'number', name:'data-a-evergreen', label:'Evergreen: minutter', min:1 },
-        { type:'text', name:'data-a-ved-slut', label:'Når den er slut ("skjul" eller en adresse)' },
+        { type:'text', name:'data-a-ved-slut', label:'Når den er slut ("skjul" eller en adresse)', adresse:'link,skjul' },
         { type:'checkbox', name:'vis-dage', label:'Vis dage', changeProp:true }
       ] }, init: function(){
         this.set({ 'nt-type': this.getAttributes()['data-a-evergreen'] ? 'evergreen' : 'fast', 'vis-dage': !!søg(this, '[data-a-d]').length }, { silent:true });
@@ -393,7 +416,7 @@
       isComponent: function(el){ return el.classList && el.classList.contains('a-ikon'); },
       model: { defaults: { name:'Ikon', droppable:false, traits:[
         { type:'select', name:'ikon', label:'Ikon', changeProp:true, options:Object.keys(IKONER).map(function(k){ return { id:k, name:k.charAt(0).toUpperCase() + k.slice(1) }; }) },
-        { type:'text', name:'href', label:'Link (valgfrit)', changeProp:true }
+        { type:'text', name:'href', label:'Link (valgfrit)', changeProp:true, adresse:'link' }
       ] }, init: function(){
         /* Med et link bliver ikonet et <a> (ellers <span>) - "Link" var et dødt felt indtil 10/11. */
         var a = this.getAttributes();
@@ -574,5 +597,5 @@
        ligger i kategorierne Sektioner, Salg og Layout. */
   }
 
-  window.ArytmiElementer = { registrer:registrer, ikoner:IKONER };
+  window.ArytmiElementer = { registrer:registrer, ikoner:IKONER, tjekAdresse:tjekAdresse };
 })();

@@ -140,6 +140,9 @@ body.sf-redigerer{ overflow:hidden; }
 .sf-vfaner button[aria-selected="true"], .sf-hfaner button[aria-selected="true"]{ color:var(--tekst); border-bottom-color:var(--accent); }
 .sf-vpanel, .sf-hpanel{ flex:1; overflow-y:auto; overflow-x:hidden; min-height:0; }
 .sf-hint{ font-size:12px; color:var(--tekst-2); margin:10px 12px 0; }
+.sf-felt-fejl{ display:block; font-size:12px; color:var(--fejl); margin-top:4px; }
+.sf-felt-fejl[hidden]{ display:none; }
+.sf-r input[aria-invalid="true"]{ border-color:var(--fejl); }
 
 #sf-trinliste{ padding:10px; display:flex; flex-direction:column; gap:6px; }
 .sf-tl{ display:flex; gap:10px; align-items:center; padding:7px; border:1px solid var(--kant); border-radius:10px; background:#fff; cursor:pointer; font:inherit; text-align:left; color:var(--tekst); }
