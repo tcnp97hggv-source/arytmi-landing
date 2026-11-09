@@ -979,7 +979,7 @@
         var d = JSON.parse(t);
         if(d.format !== 'arytmi-funnel' || !d.funnel || !Array.isArray(d.sider)) throw new Error('Det er ikke en Arytmi-funnelfil.');
         var ext = Date.now().toString(36).slice(-4);
-        return api.json('/rest/v1/funnel', { method:'POST', headers:{ Prefer:'return=representation' }, body:{
+        return medBilleder(d).then(function(){ return api.json('/rest/v1/funnel', { method:'POST', headers:{ Prefer:'return=representation' }, body:{
           navn:String(d.funnel.navn || 'Importeret') + ' (importeret)', domaene:d.funnel.domaene || 'afsted.arytmi.com',
           head_kode:d.funnel.head_kode || '', footer_kode:d.funnel.footer_kode || '', stil:d.funnel.stil || {}, tags:d.funnel.tags || [],
           favicon_url:d.funnel.favicon_url || null } }).then(function(r){
@@ -989,11 +989,36 @@
               .forEach(function(k){ if(s[k] !== undefined && s[k] !== null) krop[k] = s[k]; });
             krop.funnel_id = nyF.id; krop.sti = tilSti((s.sti || s.navn) + '-' + ext);
             return api.json('/rest/v1/side', { method:'POST', headers:{ Prefer:'return=minimal' }, body:krop });
-          })).then(function(){ return hent().then(function(){ visning.hvad = 'funnel'; visning.funnel = nyF.id; tegn(); }); });
-        });
+          })).then(function(){ return hent().then(function(){ status(''); visning.hvad = 'funnel'; visning.funnel = nyF.id; tegn(); }); });
+        }); });
       }).catch(function(e){ status(e.message || api.forklar(e), 'fejl'); });
     });
     i.click();
+  }
+
+  /* En funnelfil kan have billederne med (`billeder`: gammel adresse ->
+     { type, data } i base64) - fx en side flyttet fra ClickFunnels, hvis
+     billeder forsvinder med abonnementet. De lægges i spanden ét ad gangen,
+     og den gamle adresse skiftes ud overalt i filen, før noget gemmes. */
+  function medBilleder(d){
+    var liste = Object.keys(d.billeder || {});
+    if(!liste.length) return Promise.resolve();
+    var nye = {}, n = 0;
+    return liste.reduce(function(kæde, gammel){
+      return kæde.then(function(){
+        status('Lægger billeder op … ' + (++n) + ' af ' + liste.length);
+        var b = d.billeder[gammel], bin = atob(b.data), bytes = new Uint8Array(bin.length);
+        for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return uploadFil(new Blob([bytes], { type:b.type })).then(function(ny){ nye[gammel] = ny; });
+      });
+    }, Promise.resolve()).then(function(){
+      function skift(t){ return typeof t === 'string' ? liste.reduce(function(s, g){ return s.split(g).join(nye[g]); }, t) : t; }
+      ['head_kode', 'footer_kode', 'favicon_url'].forEach(function(k){ d.funnel[k] = skift(d.funnel[k]); });
+      d.sider.forEach(function(s){
+        ['kladde_html', 'kladde_css', 'head_kode', 'footer_kode', 'custom_css', 'social_billede'].forEach(function(k){ s[k] = skift(s[k]); });
+        if(s.kladde && typeof s.kladde === 'object') s.kladde = JSON.parse(skift(JSON.stringify(s.kladde)));
+      });
+    });
   }
 
   function arkivér(f){
