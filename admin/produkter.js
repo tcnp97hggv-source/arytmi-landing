@@ -171,6 +171,12 @@
         if(f.h){ var hid = fid + '-h'; w.appendChild(el('p', { klasse:'hint', id:hid, tekst:f.h })); e.setAttribute('aria-describedby', hid); }
         input[f.n] = e;
       }
+      /* Et felt uden virkning endnu: det gemmes, men siges ærligt (K 9/11). */
+      if(f.ikke){
+        var lab = w.querySelector('label');
+        if(lab) lab.appendChild(el('span', { klasse:'pr-ikke', tekst:'Ikke bygget endnu' }));
+        w.appendChild(el('p', { klasse:'hint pr-ikke-hint', tekst:'Gemmes, men virker ikke endnu: ' + f.ikke + '.' }));
+      }
       rækker[f.n] = w;
       boks.appendChild(w);
     });
@@ -558,15 +564,15 @@
     { n:'egenskaber', t:'liste', l:'Egenskaber til varianter', h:'Fx "Bilmodel" eller "Størrelse, Farve". Højst 3, adskilt med komma.' },
     { n:'tags', t:'flervalg', l:'Tags', valg:function(){ return data.tags.map(function(t){ return [t.id, t.navn]; }); } },
     { t:'overskrift', l:'Synlighed og sider' },
-    { n:'synlig_i_butik', t:'flueben', l:'Synlig i butikken' },
-    { n:'synlig_i_kundecenter', t:'flueben', l:'Synlig i kundecenteret' },
-    { n:'sti', t:'tekst', l:'Produktsidens sti', h:'Fx /auto-level-madras. Tom = ingen produktside.', maks:200 },
-    { n:'funnel_id', t:'valg', l:'Omdiriger til funnel', valg:function(){ return [['', '— ingen —']].concat(data.funnels.map(function(f){ return [f.id, f.navn]; })); } },
-    { n:'opsigelse_url', t:'tekst', l:'Opsigelsesside', h:'Hvor en kunde, der vil opsige, sendes hen (https://…).', maks:500 },
+    { n:'synlig_i_butik', ikke:'der er ingen butik endnu', t:'flueben', l:'Synlig i butikken' },
+    { n:'synlig_i_kundecenter', ikke:'der er intet kundecenter endnu', t:'flueben', l:'Synlig i kundecenteret' },
+    { n:'sti', ikke:'der er ingen produktsider endnu', t:'tekst', l:'Produktsidens sti', h:'Fx /auto-level-madras. Tom = ingen produktside.', maks:200 },
+    { n:'funnel_id', ikke:'der er ingen produktsider endnu', t:'valg', l:'Omdiriger til funnel', valg:function(){ return [['', '— ingen —']].concat(data.funnels.map(function(f){ return [f.id, f.navn]; })); } },
+    { n:'opsigelse_url', ikke:'der er intet kundecenter endnu', t:'tekst', l:'Opsigelsesside', h:'Hvor en kunde, der vil opsige, sendes hen (https://…).', maks:500 },
     { t:'overskrift', l:'Søgemaskiner og deling' },
-    { n:'seo_titel', t:'tekst', l:'SEO-titel', maks:60, h:'Højst 60 tegn.' },
-    { n:'seo_beskrivelse', t:'tekstfelt', l:'SEO-beskrivelse', h:'Højst 160 tegn.', rækker:2 },
-    { n:'seo_billede', t:'tekst', l:'Delingsbillede (https://…)', maks:500 }
+    { n:'seo_titel', ikke:'der er ingen produktsider endnu', t:'tekst', l:'SEO-titel', maks:60, h:'Højst 60 tegn.' },
+    { n:'seo_beskrivelse', ikke:'der er ingen produktsider endnu', t:'tekstfelt', l:'SEO-beskrivelse', h:'Højst 160 tegn.', rækker:2 },
+    { n:'seo_billede', ikke:'der er ingen produktsider endnu', t:'tekst', l:'Delingsbillede (https://…)', maks:500 }
   ];
 
   function tegnProduktkort(rod){
@@ -644,30 +650,30 @@
     ];
     (p.egenskaber || []).forEach(function(e){ f.push({ n:'egenskab:' + e, t:'tekst', l:e, maks:100 }); });
     return f.concat([
-      { n:'sku', t:'tekst', l:'SKU (varenummer)', maks:100 },
+      { n:'sku', ikke:'varenummeret bruges ikke på ordrer eller fragtlabels endnu', t:'tekst', l:'SKU (varenummer)', maks:100 },
       { n:'beskrivelse', t:'rigtekst', l:'Beskrivelse (valgfri)', h:'Tom = produktets beskrivelse.', bred:true },
       { n:'billeder', t:'billeder', l:'Billeder', h:'Tom = produktets billeder.', bred:true },
       { t:'overskrift', l:'Levering' },
       { n:'slags', t:'valg', l:'Slags', valg:[['fysisk', 'Fysisk vare'], ['digital', 'Digital']] },
       { n:'skal_sendes', t:'flueben', l:'Skal sendes', vis:function(v){ return v.slags === 'fysisk'; }, skjult:false },
       { n:'fragtprofil_id', t:'valg', l:'Fragtprofil', valg:function(){ return [['', '— ingen —']].concat(data.profiler.map(function(x){ return [x.id, x.navn + (x.standard ? ' (standard)' : '')]; })); }, vis:function(v){ return v.slags === 'fysisk'; } },
-      { n:'vaegt', t:'tal', l:'Vægt', vis:function(v){ return v.slags === 'fysisk'; } },
+      { n:'vaegt', ikke:'fragten regnes ikke efter vægt, og der laves ingen fragtlabels endnu', t:'tal', l:'Vægt', vis:function(v){ return v.slags === 'fysisk'; } },
       { n:'vaegt_enhed', t:'valg', l:'Enhed', valg:[['kg','kg'], ['g','g']], vis:function(v){ return v.slags === 'fysisk'; }, skjult:'kg' },
-      { n:'laengde', t:'tal', l:'Længde', vis:function(v){ return v.slags === 'fysisk'; } },
-      { n:'bredde', t:'tal', l:'Bredde', vis:function(v){ return v.slags === 'fysisk'; } },
-      { n:'hoejde', t:'tal', l:'Højde', vis:function(v){ return v.slags === 'fysisk'; } },
+      { n:'laengde', ikke:'der laves ingen fragtlabels endnu', t:'tal', l:'Længde', vis:function(v){ return v.slags === 'fysisk'; } },
+      { n:'bredde', ikke:'der laves ingen fragtlabels endnu', t:'tal', l:'Bredde', vis:function(v){ return v.slags === 'fysisk'; } },
+      { n:'hoejde', ikke:'der laves ingen fragtlabels endnu', t:'tal', l:'Højde', vis:function(v){ return v.slags === 'fysisk'; } },
       { n:'maal_enhed', t:'valg', l:'Enhed', valg:[['cm','cm'], ['mm','mm'], ['m','m']], vis:function(v){ return v.slags === 'fysisk'; }, skjult:'cm' },
-      { n:'oprindelsesland', t:'tekst', l:'Fremstillingsland', h:'To bogstaver, fx CN eller DK.', maks:2 },
+      { n:'oprindelsesland', ikke:'der laves ingen told- eller fragtpapirer endnu', t:'tekst', l:'Fremstillingsland', h:'To bogstaver, fx CN eller DK.', maks:2 },
       { t:'overskrift', l:'Lager' },
-      { n:'spor_lager', t:'flueben', l:'Hold styr på lageret' },
+      { n:'spor_lager', ikke:'lageret tæller ikke ned ved køb endnu', t:'flueben', l:'Hold styr på lageret' },
       { n:'lager', t:'heltal', l:'Antal på lager', vis:function(v){ return v.spor_lager; }, skjult:0 },
       { n:'saelg_uden_lager', t:'flueben', l:'Sælg, også når lageret er tomt', vis:function(v){ return v.spor_lager; }, skjult:false },
       { t:'overskrift', l:'Moms, omkostninger og indhold' },
-      { n:'momspligtig', t:'flueben', l:'Momspligtig (25 % er inkluderet i prisen)' },
+      { n:'momspligtig', ikke:'momsen styres af Stripe Tax, ikke af feltet', t:'flueben', l:'Momspligtig (25 % er inkluderet i prisen)' },
       { n:'momskode', t:'tekst', l:'Stripe-momskode (valgfri)', h:'Fx txcd_99999999 (almindelige varer). Tom = Stripes standard.', maks:13 },
       { n:'vare_id', t:'valg', l:'Vare (til omkostningerne)', valg:function(){ return [['', '— ingen —']].concat(data.varer.map(function(x){ return [x.id, x.navn + (x.aktiv ? '' : ' (sælges ikke)')]; })); } },
       { n:'giver_app_adgang', t:'flueben', l:'Køb giver adgang til Arytmi-appen' },
-      { n:'filer', t:'filer', l:'Digitale filer', h:'Fx e-bogen. Kunden får et link efter købet. Ligger privat.', bred:true },
+      { n:'filer', ikke:'kunden får ikke filerne efter købet endnu', t:'filer', l:'Digitale filer', h:'Fx e-bogen. Kunden får et link efter købet. Ligger privat.', bred:true },
       { t:'overskrift', l:'Visning' },
       { n:'synlig', t:'flueben', l:'Synlig' },
       { n:'raekkefoelge', t:'heltal', l:'Rækkefølge', skjult:0 }
@@ -746,10 +752,10 @@
     { n:'proeve_interval', t:'valg', l:'Enhed', valg:INTERVAL, vis:function(v){ return v.slags === 'abonnement' && v.proeve; } },
     { n:'proeve_oere', t:'kr', l:'Pris for prøven (0 = gratis)', vis:function(v){ return v.slags === 'abonnement' && v.proeve; }, skjult:0 },
     { n:'foer_oere', t:'kr', l:'"Før"-pris (valgfri)', h:'Vises overstreget.' },
-    { n:'kost_oere', t:'kr', l:'Kostpris (valgfri)' },
-    { n:'kunde_kan_opsige', t:'flueben', l:'Kunden kan selv opsige', vis:function(v){ return v.slags !== 'engang'; }, skjult:true },
-    { n:'kunde_kan_genoptage', t:'flueben', l:'Kunden kan selv genoptage', vis:function(v){ return v.slags !== 'engang'; }, skjult:true },
-    { n:'noegle', t:'tekst', l:'Nøgle (valgfri, til links)', h:'Små bogstaver, tal, - og _.', maks:60 },
+    { n:'kost_oere', ikke:'kostprisen bruges ikke i tallene endnu', t:'kr', l:'Kostpris (valgfri)' },
+    { n:'kunde_kan_opsige', ikke:'der er intet kundecenter endnu', t:'flueben', l:'Kunden kan selv opsige', vis:function(v){ return v.slags !== 'engang'; }, skjult:true },
+    { n:'kunde_kan_genoptage', ikke:'der er intet kundecenter endnu', t:'flueben', l:'Kunden kan selv genoptage', vis:function(v){ return v.slags !== 'engang'; }, skjult:true },
+    { n:'noegle', ikke:'ingen links bruger nøglen endnu', t:'tekst', l:'Nøgle (valgfri, til links)', h:'Små bogstaver, tal, - og _.', maks:60 },
     { n:'synlig', t:'flueben', l:'Synlig i ordreformularen' },
     { n:'raekkefoelge', t:'heltal', l:'Rækkefølge', skjult:0 }
   ];
@@ -893,13 +899,13 @@
         { n:'beskrivelse', t:'rigtekst', l:'Beskrivelse', bred:true },
         { n:'billede', t:'tekst', l:'Billede (https://…)', maks:500 },
         { n:'produkter', t:'flervalg', l:'Produkter', valg:produktValg },
-        { n:'sortering', t:'valg', l:'Sortering', valg:[['manuelt','Manuelt'], ['navn_op','Navn A–Å'], ['navn_ned','Navn Å–A'], ['pris_op','Pris lav–høj'],
+        { n:'sortering', ikke:'der er ingen butik endnu', t:'valg', l:'Sortering', valg:[['manuelt','Manuelt'], ['navn_op','Navn A–Å'], ['navn_ned','Navn Å–A'], ['pris_op','Pris lav–høj'],
           ['pris_ned','Pris høj–lav'], ['tilfoejet_ny','Senest tilføjet først'], ['tilfoejet_gammel','Først tilføjet først'],
           ['oprettet_ny','Nyeste produkter først'], ['oprettet_gammel','Ældste produkter først']] },
-        { n:'synlig_i_butik', t:'flueben', l:'Synlig i butikken' },
-        { n:'seo_titel', t:'tekst', l:'SEO-titel', maks:60 },
-        { n:'seo_beskrivelse', t:'tekstfelt', l:'SEO-beskrivelse', rækker:2 },
-        { n:'seo_billede', t:'tekst', l:'Delingsbillede (https://…)', maks:500 }
+        { n:'synlig_i_butik', ikke:'der er ingen butik endnu', t:'flueben', l:'Synlig i butikken' },
+        { n:'seo_titel', ikke:'der er ingen butik endnu', t:'tekst', l:'SEO-titel', maks:60 },
+        { n:'seo_beskrivelse', ikke:'der er ingen butik endnu', t:'tekstfelt', l:'SEO-beskrivelse', rækker:2 },
+        { n:'seo_billede', ikke:'der er ingen butik endnu', t:'tekst', l:'Delingsbillede (https://…)', maks:500 }
       ]; }
     });
   }

@@ -122,3 +122,5 @@
 
 /* I sideeditorens lærred: formularen er en visning, hele elementet vælges med ét klik. */
 .a-editor [data-a-ordreformular] *{ pointer-events:none; }
+
+.ao-foer{ opacity:.6; font-weight:400; }

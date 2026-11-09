@@ -48,6 +48,14 @@
   var IV = { dag:['dag','dage'], uge:['uge','uger'], maaned:['måned','måneder'], kvartal:['kvartal','kvartaler'], aar:['år','år'] };
   function iv(n, i){ return n === 1 ? IV[i][0] : n + ' ' + IV[i][1]; }
   function dato(iso){ var x = new Date(iso); return x.getDate() + '/' + (x.getMonth() + 1) + ' ' + x.getFullYear(); }
+  /* "Før"-prisen vises overstreget foran prisen, når den er højere end det, der betales nu. */
+  function medFoer(p, tekst){
+    var nu = !p ? 0 : (p.slags === 'engang' ? p.beloeb_oere : (p.opstart_oere || p.beloeb_oere));
+    var dele = [];
+    if(p && p.foer_oere && p.foer_oere > nu) dele.push(el('s', { klasse:'ao-foer', tekst:kr(p.foer_oere) }), el('span', { tekst:' ' }));
+    dele.push(el('span', { tekst:tekst }));
+    return dele;
+  }
   /* Prisen, som kunden læser den ved valget. */
   function prisLinje(p){
     if(!p) return '';
@@ -172,7 +180,7 @@
           el('label', { klasse:'ao-radio', for:r.id }, [r]),
           billede ? el('img', { klasse:'ao-kort-billede', src:billede, alt:'', loading:'lazy' }) : null,
           el('div', { klasse:'ao-kort-tekst' }, [el('h3', { klasse:'ao-kort-titel', tekst:p.navn }), renHtml(p.beskrivelse)]),
-          el('div', { klasse:'ao-kort-pris', tekst:prisLinje(pris).split(' · ')[0] })
+          el('div', { klasse:'ao-kort-pris' }, medFoer(pris, prisLinje(pris).split(' · ')[0]))
         ]),
         s
       ]);
@@ -235,7 +243,7 @@
         var bump = el('div', { klasse:'ao-bump' }, [
           tb ? el('img', { klasse:'ao-bump-billede', src:tb, alt:'', loading:'lazy' }) : null,
           el('div', { klasse:'ao-bump-tekst' }, [
-            el('div', { klasse:'ao-bump-hoved' }, [el('strong', { klasse:'ao-bump-titel', tekst:tilvalg.navn }), el('span', { klasse:'ao-bump-pris', tekst:prisLinje(tilvalgPris) })]),
+            el('div', { klasse:'ao-bump-hoved' }, [el('strong', { klasse:'ao-bump-titel', tekst:tilvalg.navn }), el('span', { klasse:'ao-bump-pris' }, medFoer(tilvalgPris, prisLinje(tilvalgPris)))]),
             renHtml(tilvalg.beskrivelse)]),
           el('div', { klasse:'ao-bump-knap' }, [tilføj])
         ]);
