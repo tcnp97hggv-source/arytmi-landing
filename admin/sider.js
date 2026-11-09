@@ -27,6 +27,8 @@
   var api = null;            /* json, rpc, kaldRaa, PROJEKT_URL, forklar */
   var startet = false;
   var funnels = [], sider = [], tal = {};
+  var domæner = [], splitTal = [];   /* 0084: domæner med forside/404/kode, visninger pr. variant */
+  var STANDARD = 'afsted.arytmi.com';
   var visning = { hvad:'liste', fane:'alle', søg:'', funnel:null };
   var editor = null, åbenSide = null, ændret = false;
   var SPAND = 'sidebilleder';
@@ -240,9 +242,13 @@
     return Promise.all([
       api.json('/rest/v1/funnel?select=*&order=arkiveret.asc,opdateret.desc'),
       api.json('/rest/v1/side?select=id,funnel_id,variant_af,split_vaegt,raekkefoelge,navn,sti,seo_titel,seo_beskrivelse,custom_css,kladde_html,kladde_css,udgivet_version,udgivet_kl,opdateret&order=raekkefoelge.asc,oprettet.asc'),
-      api.rpc('sidernes_tal', { p_dage:30 }).catch(function(){ return []; })
+      api.rpc('sidernes_tal', { p_dage:30 }).catch(function(){ return []; }),
+      /* 0084. Mangler migrationen endnu, er listerne bare tomme. */
+      api.json('/rest/v1/domaene?select=*&order=navn.asc').catch(function(){ return []; }),
+      api.rpc('split_tal', { p_dage:30 }).catch(function(){ return []; })
     ]).then(function(r){
       funnels = r[0] || []; sider = r[1] || [];
+      domæner = r[3] || []; splitTal = r[4] || [];
       tal = {}; (r[2] || []).forEach(function(x){ tal[x.sti] = Number(x.visninger) || 0; });
       status('');
       tegn();
@@ -257,6 +263,7 @@
   function tegn(){
     var rod = $('sider-liste'); tøm(rod);
     if(visning.hvad === 'skabeloner') return rod.appendChild(skabelonVisning());
+    if(visning.hvad === 'domæner') return rod.appendChild(domæneVisning());
     if(visning.hvad === 'indstillinger'){
       var fi = funnels.filter(function(x){ return x.id === visning.funnel; })[0];
       if(fi) return rod.appendChild(indstillingsVisning(fi));
@@ -281,6 +288,7 @@
         el('button', { type:'button', role:'tab', 'aria-selected':String(visning.fane === 'arkiv'), tekst:'Arkiveret', klik:function(){ visning.fane = 'arkiv'; tegn(); } })
       ]),
       el('div', { klasse:'sf-knaprække' }, [
+        el('button', { type:'button', klasse:'knap rolig', klik:function(){ visning.hvad = 'domæner'; tegn(); window.scrollTo(0, 0); } }, [ ikon(IK.tandhjul, 16), ' Domæner' ]),
         el('button', { type:'button', klasse:'knap rolig', klik:importér }, [ ikon(IK.kopi, 16), ' Hent funnel fra fil' ]),
         el('button', { type:'button', klasse:'knap', klik:nyFunnel }, [ ikon(IK.plus, 16), ' Opret funnel' ])
       ])
@@ -397,6 +405,7 @@
       el('button', { type:'button', klik:function(){ åbn(s.id); } }, [ ikon(IK.blyant, 14), ' Rediger side' ]),
       el('button', { type:'button', klik:function(){ sideIndstillinger(s); } }, [ ikon(IK.tandhjul, 14), ' Navn, adresse og Google' ]),
       el('button', { type:'button', klik:function(){ forhåndsvisSide(s); } }, [ ikon(IK.øje, 14), ' Forhåndsvis' ]),
+      s.udgivet_version ? el('button', { type:'button', klik:function(){ lukMenuer(); window.open(udgivetAdresse(f, s), '_blank', 'noopener'); } }, [ ikon(IK.øje, 14), ' Åbn den udgivne side' ]) : null,
       variantAf(s) ? null : el('button', { type:'button', klik:function(){ startSplit(s); } }, [ ikon(IK.kopi, 14), ' Start split-test (A/B)' ]),
       i > 0 ? el('button', { type:'button', klik:function(){ flyt(trin, i, -1); } }, [ ikon(IK.op, 14), ' Flyt op' ]) : null,
       i < trin.length - 1 ? el('button', { type:'button', klik:function(){ flyt(trin, i, 1); } }, [ ikon(IK.ned, 14), ' Flyt ned' ]) : null,
@@ -482,11 +491,32 @@
       ]),
       el('div', { klasse:'sf-split-rækker' }, [ variant(a, 'A'), variant(b, 'B') ]),
       el('div', { klasse:'sf-split-vægt' }, [ el('label', { tekst:'Fordeling af besøgende' }), vægt, tekst,
-        el('small', { tekst:'Samme kunde ser altid samme variant. Tal pr. variant kommer, når siderne udgives på afsted.arytmi.com.' }) ]),
+        el('small', { tekst:'Samme kunde ser altid samme variant (husket i en cookie, der kun rummer bogstavet).' }) ]),
+      splitTalBoks(f, a),
       el('div', { klasse:'sf-knaprække sf-split-bund' }, [
         el('button', { type:'button', klasse:'knap rolig lille', tekst:'Stop testen (behold A)', klik:function(){ vælgVinder(a, 'a'); } })
       ])
     ]);
+  }
+  /* Tal pr. variant (0084): visninger af trinnet, og hvor mange af dem der
+     gik videre til næste trin. Kun sidevisninger - ingen personer. */
+  function splitTalBoks(f, a){
+    var trin = trinI(f), i = trin.indexOf(a), næste = trin[i + 1];
+    function tæl(variant, sti){
+      return splitTal.filter(function(x){ return x.split_sti === a.sti && x.variant === variant && x.sti === sti; })
+        .reduce(function(n, x){ return n + (Number(x.visninger) || 0); }, 0);
+    }
+    var rækker = ['a', 'b'].map(function(v){
+      var vist = tæl(v, a.sti), videre = næste ? tæl(v, næste.sti) : 0;
+      return el('div', {}, [
+        el('small', { tekst:'Variant ' + v.toUpperCase() }),
+        el('b', { tekst:heltal(vist) + ' visninger' }),
+        næste ? el('span', { klasse:'sf-svag', tekst:heltal(videre) + ' videre til ' + næste.navn + (vist ? ' (' + (videre / vist * 100).toLocaleString('da-DK', { maximumFractionDigits:1 }) + ' %)' : '') }) : null
+      ]);
+    });
+    return el('div', { klasse:'sf-tk-tal sf-split-resultat' }, rækker.concat([
+      el('p', { klasse:'sf-tk-fod' }, [ ikon(IK.tal, 12), ' Seneste 30 dage, fra den udgivne side. Vælg først en vinder, når begge har nogle hundrede visninger.' ])
+    ]));
   }
   function vælgVinder(a, hvem){
     var tekst = hvem === 'b'
@@ -651,7 +681,8 @@
 
     /* Domæne: dem vi kender fra funnelerne + afsted.arytmi.com. Et nyt
        domæne skal også pege på udgivelsen (Cloudflare), før det virker. */
-    var kendte = ['afsted.arytmi.com'];
+    var kendte = [STANDARD];
+    domæner.forEach(function(x){ if(kendte.indexOf(x.navn) < 0) kendte.push(x.navn); });
     funnels.forEach(function(x){ if(kendte.indexOf(x.domaene) < 0) kendte.push(x.domaene); });
     var domæne = el('select');
     kendte.forEach(function(d){ var o = el('option', { value:d, tekst:d }); if(d === ny.domaene) o.selected = true; domæne.appendChild(o); });
@@ -735,7 +766,7 @@
     boks.appendChild(kort('Generelt', 'Oplysninger om funnelen.', [
       felt('navn', 'Navn', tekst('navn')),
       el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Domæne' }), domæne,
-        el('small', { tekst:'Et nyt domæne skal også pege på Arytmis udgivelse, før det virker.' }) ]),
+        el('small', { tekst:'Et nyt domæne skal også pege på Arytmis udgivelse, før det virker (se Domæner).' }) ]),
       el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Funnelens adresse' }), stiRække,
         el('small', { tekst:'Adressen, der fører til første trin' + (trin[0] ? ' (' + trin[0].sti + ')' : '') + '. Lad den være tom, hvis første trins egen adresse er nok.' }) ]),
       felt('live_betaling', 'Rigtige betalinger', live, 'Slået fra: funnelen tager kun testbetalinger. Virker, når Arytmis egen checkout er bygget.'),
@@ -763,7 +794,9 @@
         stil: ny.stil || {}, tags: ny.tags, head_kode: ny.head_kode || '', footer_kode: ny.footer_kode || ''
       };
       meld.textContent = 'Gemmer …';
-      api.json('/rest/v1/funnel?id=eq.' + encodeURIComponent(f.id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } })
+      nytDomæne(krop.domaene).then(function(){
+        return api.json('/rest/v1/funnel?id=eq.' + encodeURIComponent(f.id), { method:'PATCH', body:krop, headers:{ Prefer:'return=minimal' } });
+      })
         .then(hent).then(function(){ var m = document.querySelector('.sf-i-bund .status'); if(m) m.textContent = 'Gemt'; })
         .catch(function(e){ meld.textContent = e && e.kode === '23505' ? 'Den adresse bruges allerede på domænet.' : api.forklar(e); });
     });
@@ -774,6 +807,105 @@
       el('span', { klasse:'sf-skub' }), meld, fortrydKnap, gemKnap
     ]));
     return boks;
+  }
+
+  /* =============================================================
+     DOMÆNER (punkt 5, 0084)
+     =============================================================
+     Et domæne har en forside ("/"), en 404-side og kode på hele sitet.
+     Siderne serveres af Cloudflare (udgivelse/ i app-repoet,
+     docs/udgivelse.md); domænet skal pege dertil (CNAME) for at virke. */
+  function domæneAf(f){ return f ? f.domaene : STANDARD; }
+  function udgivetAdresse(f, s){
+    var a = sider.filter(function(x){ return x.id === s.variant_af; })[0] || s;
+    return 'https://' + domæneAf(f || funnels.filter(function(x){ return x.id === a.funnel_id; })[0]) + a.sti;
+  }
+  function nytDomæne(navn){
+    if(!navn || domæner.some(function(d){ return d.navn === navn; })) return Promise.resolve();
+    return api.json('/rest/v1/domaene', { method:'POST', body:{ navn:navn }, headers:{ Prefer:'return=minimal,resolution=ignore-duplicates' } });
+  }
+  /* Udgivne sider, der kan vises på domænet: trin i domænets funnels
+     (ikke arkiverede) og - på standarddomænet - løse sider. */
+  function siderPå(navn){
+    return sider.filter(function(s){
+      if(s.variant_af || !s.udgivet_version) return false;
+      var f = funnels.filter(function(x){ return x.id === s.funnel_id; })[0];
+      return f ? (f.domaene === navn && !f.arkiveret) : navn === STANDARD;
+    });
+  }
+  function domæneVisning(){
+    var boks = el('div', { klasse:'sf-fv' });
+    boks.appendChild(el('div', { klasse:'sf-fv-top' }, [
+      el('button', { type:'button', klasse:'knap rolig lille', klik:function(){ visning.hvad = 'liste'; tegn(); } }, [ ikon(IK.tilbage, 14), ' Funnels' ]),
+      el('h3', { tekst:'Domæner' }),
+      el('span', { klasse:'sf-skub' }),
+      el('button', { type:'button', klasse:'knap rolig', klik:function(){
+        var d = (prompt('Nyt domæne (fx kampagne.arytmi.com):', '') || '').trim().toLowerCase();
+        if(!d) return;
+        if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)){ alert('Det ligner ikke et domæne.'); return; }
+        nytDomæne(d).then(hent).then(function(){ visning.hvad = 'domæner'; tegn(); }).catch(fejl);
+      } }, [ ikon(IK.plus, 14), ' Tilføj domæne' ])
+    ]));
+    if(!domæner.length){
+      boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Domænerne kommer, når migration 0084 er kørt på databasen.' }));
+      return boks;
+    }
+    boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Et domæne virker først, når det i DNS peger på Arytmis udgivelse (CNAME til arytmi-sider.pages.dev) og er tilføjet i Cloudflare. Ændringer her slår igennem på siderne inden for et halvt minut.' }));
+    domæner.forEach(function(d){ boks.appendChild(domæneKort(d)); });
+    return boks;
+  }
+  function domæneKort(d){
+    var ny = { forside_id:d.forside_id || '', ikke_fundet_id:d.ikke_fundet_id || '', head_kode:d.head_kode || '', footer_kode:d.footer_kode || '' };
+    var meld = el('span', { klasse:'status', role:'status' });
+    var gemKnap = el('button', { type:'button', klasse:'knap', disabled:true, tekst:'Gem' });
+    function rørt(){ gemKnap.disabled = false; meld.textContent = ''; }
+    var mulige = siderPå(d.navn);
+    function vælger(navn, tom){
+      var v = el('select');
+      v.appendChild(el('option', { value:'', tekst:tom }));
+      mulige.forEach(function(s){
+        var o = el('option', { value:s.id, tekst:s.navn + ' (' + s.sti + ')' }); if(s.id === ny[navn]) o.selected = true; v.appendChild(o);
+      });
+      v.addEventListener('change', function(){ ny[navn] = v.value; rørt(); });
+      return v;
+    }
+    function kode(navn){
+      var t = el('textarea', { rows:4, spellcheck:'false', wrap:'off', klasse:'sf-kode' }); t.value = ny[navn];
+      t.addEventListener('input', function(){ ny[navn] = t.value; rørt(); });
+      return t;
+    }
+    var brugt = funnels.filter(function(f){ return f.domaene === d.navn; }).length;
+    gemKnap.addEventListener('click', function(){
+      meld.textContent = 'Gemmer …';
+      api.json('/rest/v1/domaene?navn=eq.' + encodeURIComponent(d.navn), { method:'PATCH', headers:{ Prefer:'return=minimal' },
+        body:{ forside_id:ny.forside_id || null, ikke_fundet_id:ny.ikke_fundet_id || null, head_kode:ny.head_kode, footer_kode:ny.footer_kode } })
+        .then(hent).then(function(){ visning.hvad = 'domæner'; tegn(); status('Domænet ' + d.navn + ' er gemt.', 'god'); })
+        .catch(function(e){ meld.textContent = api.forklar(e); });
+    });
+    return el('section', { klasse:'sf-i-kort' }, [
+      el('div', { klasse:'sf-i-om' }, [
+        el('h4', { tekst:d.navn }),
+        el('p', { tekst: brugt ? brugt + (brugt === 1 ? ' funnel' : ' funnels') + ' bruger domænet.' : 'Ingen funnels bruger domænet endnu.' }),
+        el('p', {}, [ el('a', { href:'https://' + d.navn + '/', target:'_blank', rel:'noopener', tekst:'Åbn ' + d.navn }) ])
+      ]),
+      el('div', { klasse:'sf-i-felter' }, [
+        el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Forside (' + d.navn + '/)' }), vælger('forside_id', 'Ingen - "/" viser 404-siden'),
+          el('small', { tekst:'Siden, der vises, når nogen skriver domænet uden sti. Kun udgivne sider på domænet kan vælges.' }) ]),
+        el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'404-side' }), vælger('ikke_fundet_id', 'Arytmis standard ("Siden findes ikke")'),
+          el('small', { tekst:'Vises med status 404 for adresser, der ikke findes.' }) ]),
+        el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Kode i <head> på hele domænet' }), kode('head_kode'),
+          el('small', { tekst:'Før funnelens og sidens egen head-kode. Tælleren er bygget ind og skal IKKE stå her.' }) ]),
+        el('div', { klasse:'sf-i-felt' }, [ el('label', { tekst:'Kode i bunden på hele domænet' }), kode('footer_kode') ]),
+        el('div', { klasse:'sf-knaprække' }, [
+          brugt || d.navn === STANDARD ? null : el('button', { type:'button', klasse:'knap sf-farligknap', tekst:'Slet domænet', klik:function(){
+            if(!confirm('Slet ' + d.navn + '?')) return;
+            api.json('/rest/v1/domaene?navn=eq.' + encodeURIComponent(d.navn), { method:'DELETE', headers:{ Prefer:'return=minimal' } })
+              .then(hent).then(function(){ visning.hvad = 'domæner'; tegn(); }).catch(fejl);
+          } }),
+          el('span', { klasse:'sf-skub' }), meld, gemKnap
+        ])
+      ])
+    ]);
   }
 
   /* ---------- Stilguiden ----------
@@ -795,7 +927,7 @@
       { navn:'baggrund', label:'Baggrund', type:'color', værdi:s.baggrund || '#FAF6EF' },
       { navn:'tekst', label:'Tekst', type:'color', værdi:s.tekst || '#4A2417' },
       { navn:'accent', label:'Accent (små overskrifter, links)', type:'color', værdi:s.accent || '#8F4333' },
-      { type:'overskrift', label:'Skrifter', hjælp:'Bagrummet kan kun vise Fraunces og Inter; de andre ses i forhåndsvisningen og på den udgivne side.' },
+      { type:'overskrift', label:'Skrifter', hjælp:'Alle skrifter ligger hos Arytmi selv (ingen Google Fonts) og ses i editoren, forhåndsvisningen og på den udgivne side.' },
       { navn:'skrift_overskrift', label:'Overskrifter', type:'valg', muligheder:SKRIFTER, værdi:s.skrift_overskrift || '' },
       { navn:'skrift_broed', label:'Brødtekst', type:'valg', muligheder:SKRIFTER, værdi:s.skrift_broed || '' },
       { type:'overskrift', label:'Knapper' },
@@ -986,7 +1118,7 @@
     var doc = '<!doctype html><html lang="da"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
       String(titel || 'Forhåndsvisning').replace(/[<&]/g, '') + '</title>' +
-      '<link rel="stylesheet" href="' + her + 'side-runtime.css?v=' + RUNTIME_V + '"><style>' + css + '</style></head><body>' + html +
+      '<link rel="stylesheet" href="' + her + 'skrifter/skrifter.css"><link rel="stylesheet" href="' + her + 'side-runtime.css?v=' + RUNTIME_V + '"><style>' + css + '</style></head><body>' + html +
       '<script src="' + her + 'side-runtime.js?v=' + RUNTIME_V + '"><\/script></body></html>';
     var url = URL.createObjectURL(new Blob([doc], { type:'text/html' }));
     window.open(url, '_blank', 'noopener');
@@ -1112,7 +1244,7 @@
     var her = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
     if(editor){ editor.destroy(); editor = null; }
     editor = window.grapesjs.init({
-      canvas: { styles:[ her + 'side-runtime.css?v=' + RUNTIME_V ], scripts:[ her + 'side-runtime.js?v=' + RUNTIME_V ] },
+      canvas: { styles:[ her + 'skrifter/skrifter.css', her + 'side-runtime.css?v=' + RUNTIME_V ], scripts:[ her + 'side-runtime.js?v=' + RUNTIME_V ] },
       container: '#sf-laerred',
       height: '100%', width: 'auto',
       fromElement: false,

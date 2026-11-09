@@ -70,6 +70,10 @@
 .sf-tk-tal{ display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; padding:12px 16px; border-top:1px solid var(--skille); background:#fdf9f3; border-radius:0 0 var(--r, 16px) var(--r, 16px); }
 .sf-tk-tal > div{ border-left:3px solid var(--accent); padding-left:10px; display:flex; flex-direction:column; }
 .sf-tk-tal > div:nth-child(2){ border-left-color:var(--kant-felt); }
+.sf-split-resultat{ border-radius:0; margin-top:8px; }
+.sf-split-resultat > div:nth-child(2){ border-left-color:var(--accent); }
+.sf-split-resultat .sf-svag{ font-size:13px; }
+.sf-split-resultat .sf-tk-fod{ grid-column:1 / -1; }
 .sf-tk-tal small{ font-size:12px; color:var(--tekst-2); }
 .sf-tk-tal b{ font-size:18px; }
 .sf-tk-fod{ grid-column:1 / -1; margin:4px 0 0; font-size:11px; color:var(--tekst-2); }
