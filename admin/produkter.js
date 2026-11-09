@@ -134,6 +134,7 @@
       } else {
         var e;
         if(f.t === 'tekstfelt'){ e = el('textarea', { id:fid, rows:f.rækker || 4 }); e.value = start[f.n] || ''; }
+        else if(f.t === 'rigtekst'){ e = rigtekst(fid, start[f.n] || ''); }
         else if(f.t === 'valg'){
           e = el('select', { id:fid });
           (typeof f.valg === 'function' ? f.valg() : f.valg).forEach(function(v){ e.appendChild(new Option(v[1], v[0])); });
@@ -146,7 +147,9 @@
             var cid = fid + '-' + i;
             var c2 = el('input', { type:'checkbox', id:cid, 'data-v':v[0] });
             c2.checked = valgte.indexOf(v[0]) >= 0;
-            e.appendChild(el('span', { klasse:'afkryds' }, [c2, el('label', { for:cid, tekst:v[1] })]));
+            /* Hver mulighed er én brik: feltet og navnet i samme <label>, så de
+               aldrig skilles, og listen brydes over linjer i stedet for at rulle. */
+            e.appendChild(el('label', { klasse:'pr-valg', for:cid }, [c2, el('span', { tekst:v[1] })]));
           });
           if(!e.firstChild) e.appendChild(el('span', { klasse:'hint', tekst:'Intet at vælge endnu.' }));
         }
@@ -178,6 +181,7 @@
       if(f.t === 'flueben') return { v: e.checked };
       if(f.t === 'flervalg') return { v: Array.prototype.map.call(e.querySelectorAll('input:checked'), function(c){ return c.getAttribute('data-v'); }) };
       if(f.t === 'billeder' || f.t === 'filer') return { v: e._liste.slice() };
+      if(f.t === 'rigtekst') return { v: e._værdi() };
       var s = e.value.trim();
       if(f.t === 'kr'){ var k = læsKr(s); if(k !== null && isNaN(k)) return { fejl:'Skriv beløbet i kroner, fx 2.995 eller 675,50.' }; return { v:k }; }
       if(f.t === 'heltal'){ if(!s) return { v:null }; if(!/^-?\d+$/.test(s)) return { fejl:'Skriv et helt tal.' }; return { v:parseInt(s, 10) }; }
@@ -213,6 +217,99 @@
         return { værdier: ud };
       }
     };
+  }
+
+  /* ---------- Teksteditoren (beskrivelser) ----------
+     Visuel redigering som i ClickFunnels: det, man ser, er det, kunden ser.
+     Værktøjslinje: fed, kursiv, overskrift, afsnit, punktliste, nummereret
+     liste, link, fold-ud-boks og ryd formatering. Rå HTML kun under
+     "Avanceret". Alt renses ved gem (renHtml): kun en tilladt liste af
+     mærker; ingen script, ingen on*-attributter, kun https/mailto-links. */
+  var TILLADTE = { P:1, BR:1, B:1, STRONG:1, I:1, EM:1, U:1, H3:1, H4:1, UL:1, OL:1, LI:1, A:1, DETAILS:1, SUMMARY:1, SPAN:1, DIV:1 };
+  function renHtml(html){
+    var doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
+    function rens(n){
+      Array.prototype.slice.call(n.childNodes).forEach(function(b){
+        if(b.nodeType === 3) return;
+        if(b.nodeType !== 1){ b.remove(); return; }
+        if(!TILLADTE[b.tagName]){
+          /* Ukendte mærker pakkes ud (teksten bliver), farlige fjernes helt. */
+          if(/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|FORM|INPUT|BUTTON|TEXTAREA|SELECT|LINK|META|SVG|MATH|TEMPLATE)$/.test(b.tagName)){ b.remove(); return; }
+          var far = b.parentNode;
+          while(b.firstChild) far.insertBefore(b.firstChild, b);
+          b.remove();
+          rens(far);
+          return;
+        }
+        Array.prototype.slice.call(b.attributes).forEach(function(a){
+          var navn = a.name.toLowerCase();
+          if(b.tagName === 'A' && navn === 'href'){
+            if(!/^(https:\/\/|mailto:)/i.test(a.value.trim())) b.removeAttribute(a.name);
+            return;
+          }
+          if(navn === 'style' && !/url\s*\(|expression|javascript:/i.test(a.value)) return;
+          b.removeAttribute(a.name);
+        });
+        if(b.tagName === 'A'){ b.setAttribute('rel', 'noopener'); b.setAttribute('target', '_blank'); }
+        rens(b);
+      });
+    }
+    var rod = doc.body.firstChild;
+    rens(rod);
+    var ud = rod.innerHTML.replace(/<p>(\s|<br>)*<\/p>/g, '').trim();
+    return ud === '<br>' ? '' : ud;
+  }
+
+  function rigtekst(fid, start){
+    var boks = el('div', { id:fid, klasse:'pr-rigtekst' });
+    var flade = el('div', { klasse:'pr-rt-flade', contenteditable:'true', role:'textbox', 'aria-multiline':'true', 'aria-label':'Beskrivelse' });
+    flade.innerHTML = renHtml(start);
+    var kilde = el('textarea', { klasse:'pr-rt-kilde', rows:'10', 'aria-label':'Beskrivelsen som HTML', hidden:true });
+    var iKilde = false;
+    function cmd(c, v){ flade.focus(); document.execCommand(c, false, v || null); }
+    function blok(tag){ flade.focus(); document.execCommand('formatBlock', false, tag); }
+    var linje = el('div', { klasse:'pr-rt-linje', role:'toolbar', 'aria-label':'Formatering' }, [
+      knap('F', 'pr-rt-k pr-rt-fed', function(){ cmd('bold'); }),
+      knap('K', 'pr-rt-k pr-rt-kursiv', function(){ cmd('italic'); }),
+      knap('Overskrift', 'pr-rt-k', function(){ blok('H3'); }),
+      knap('Afsnit', 'pr-rt-k', function(){ blok('P'); }),
+      knap('• Liste', 'pr-rt-k', function(){ cmd('insertUnorderedList'); }),
+      knap('1. Liste', 'pr-rt-k', function(){ cmd('insertOrderedList'); }),
+      knap('Link', 'pr-rt-k', function(){
+        var u = window.prompt('Linkets adresse (https://…)');
+        if(u && /^(https:\/\/|mailto:)/i.test(u.trim())) cmd('createLink', u.trim());
+      }),
+      knap('Fold-ud', 'pr-rt-k', function(){
+        var titel = window.prompt('Overskrift på fold-ud-boksen', 'Passer madrassen i din bil?');
+        if(!titel) return;
+        var d = document.createElement('details');
+        var s = document.createElement('summary'); s.textContent = titel;
+        var p = document.createElement('p'); p.textContent = 'Skriv teksten her.';
+        d.appendChild(s); d.appendChild(p);
+        flade.focus();
+        var sel = window.getSelection();
+        if(sel.rangeCount && flade.contains(sel.anchorNode)){ var r = sel.getRangeAt(0); r.collapse(false); r.insertNode(d); }
+        else flade.appendChild(d);
+        d.open = true;
+      }),
+      knap('Ryd formatering', 'pr-rt-k', function(){ cmd('removeFormat'); }),
+      knap('Avanceret: HTML', 'pr-rt-k pr-rt-avanceret', function(){
+        iKilde = !iKilde;
+        if(iKilde){ kilde.value = renHtml(flade.innerHTML); }
+        else { flade.innerHTML = renHtml(kilde.value); }
+        kilde.hidden = !iKilde; flade.hidden = iKilde;
+      })
+    ]);
+    /* Indsat tekst (fx fra Word) renses med det samme. */
+    flade.addEventListener('paste', function(e){
+      var html = e.clipboardData && e.clipboardData.getData('text/html');
+      if(!html) return;
+      e.preventDefault();
+      document.execCommand('insertHTML', false, renHtml(html));
+    });
+    boks.appendChild(linje); boks.appendChild(flade); boks.appendChild(kilde);
+    boks._værdi = function(){ return renHtml(iKilde ? kilde.value : flade.innerHTML); };
+    return boks;
   }
 
   /* Billeder (offentlig billedspand) eller filer (privat spand) som en liste
@@ -394,7 +491,7 @@
   /* ---------- Produktkortet ---------- */
   var PRODUKTFELTER = [
     { n:'navn', t:'tekst', l:'Navn', krav:true, maks:200, bred:true },
-    { n:'beskrivelse', t:'tekstfelt', l:'Beskrivelse', h:'Vises på produktet og i ordreformularen. Enkel HTML er tilladt (<p>, <b>, <ul>, <li>).', rækker:6, bred:true, tom:'' },
+    { n:'beskrivelse', t:'rigtekst', l:'Beskrivelse', h:'Vises på produktet og i ordreformularen, som du ser den her.', bred:true },
     { n:'billeder', t:'billeder', l:'Billeder', h:'Det første er hovedbilledet. Højst 30.', bred:true },
     { n:'egenskaber', t:'liste', l:'Egenskaber til varianter', h:'Fx "Bilmodel" eller "Størrelse, Farve". Højst 3, adskilt med komma.' },
     { n:'tags', t:'flervalg', l:'Tags', valg:function(){ return data.tags.map(function(t){ return [t.id, t.navn]; }); } },
@@ -485,7 +582,7 @@
     (p.egenskaber || []).forEach(function(e){ f.push({ n:'egenskab:' + e, t:'tekst', l:e, maks:100 }); });
     return f.concat([
       { n:'sku', t:'tekst', l:'SKU (varenummer)', maks:100 },
-      { n:'beskrivelse', t:'tekstfelt', l:'Beskrivelse (valgfri)', h:'Tom = produktets beskrivelse.', rækker:3, bred:true, tom:'' },
+      { n:'beskrivelse', t:'rigtekst', l:'Beskrivelse (valgfri)', h:'Tom = produktets beskrivelse.', bred:true },
       { n:'billeder', t:'billeder', l:'Billeder', h:'Tom = produktets billeder.', bred:true },
       { t:'overskrift', l:'Levering' },
       { n:'slags', t:'valg', l:'Slags', valg:[['fysisk', 'Fysisk vare'], ['digital', 'Digital']] },
@@ -724,7 +821,7 @@
                 ['Synlig', function(s){ return s.synlig_i_butik ? 'I butikken' : 'Skjult'; }]],
       felter:function(){ return [
         { n:'navn', t:'tekst', l:'Navn', krav:true, maks:200 },
-        { n:'beskrivelse', t:'tekstfelt', l:'Beskrivelse', rækker:3, tom:'' },
+        { n:'beskrivelse', t:'rigtekst', l:'Beskrivelse', bred:true },
         { n:'billede', t:'tekst', l:'Billede (https://…)', maks:500 },
         { n:'produkter', t:'flervalg', l:'Produkter', valg:produktValg },
         { n:'sortering', t:'valg', l:'Sortering', valg:[['manuelt','Manuelt'], ['navn_op','Navn A–Å'], ['navn_ned','Navn Å–A'], ['pris_op','Pris lav–høj'],
