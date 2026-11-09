@@ -1,0 +1,75 @@
+/* =============================================================
+   SIDER & FUNNELS (9/11) — se sider.js
+   ============================================================= */
+
+/* Editoren kræver en stor skærm. På telefon (bundbjælken, ≤860 px) er
+   der ikke plads til et sjette rum, og man kan ikke bygge en side på en
+   telefon alligevel. Fanen vises derfor kun på store skærme. */
+@media (max-width:860px){
+  nav.faner button.kun-stor{ display:none; }
+}
+
+.sf-funnel{ margin-bottom:18px; }
+.sf-arkiv{ opacity:.6; }
+.sf-hoved{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.sf-hoved h3{ margin:0; }
+.sf-domaene{ color:var(--tekst-2); font-size:14px; }
+.sf-trin{ list-style:none; margin:14px 0 0; padding:0; counter-reset:trin; }
+.sf-trin > li{
+  display:grid; grid-template-columns:28px minmax(0,1fr) auto auto; gap:12px; align-items:center;
+  padding:12px 0; border-top:1px solid var(--skille);
+}
+.sf-trin > li::before{
+  counter-increment:trin; content:counter(trin);
+  width:26px; height:26px; border-radius:50%; display:grid; place-items:center;
+  background:var(--bund); color:var(--tekst-2); font-size:13px; font-weight:600;
+}
+.sf-trin > li.tomt{ display:block; color:var(--tekst-2); }
+.sf-trin > li.tomt::before{ display:none; }
+.sf-navn{ display:flex; flex-direction:column; min-width:0; }
+.sf-sti{ color:var(--tekst-2); font-family:var(--skrift-kode); font-size:13px; overflow-wrap:anywhere; }
+.sf-maerke{ font-size:12px; padding:3px 10px; border-radius:999px; background:var(--advar-bg); color:var(--advar); border:1px solid var(--advar-kant); white-space:nowrap; }
+.sf-maerke.god{ background:var(--god-bg); color:var(--god); border-color:var(--god-kant); }
+.sf-greb{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.sf-bund{ display:flex; gap:8px; margin-top:14px; }
+#sider-status.fejl{ color:var(--fejl); }
+#sider-status.god{ color:var(--god); }
+
+/* ---------- Editoren: fylder hele vinduet ---------- */
+body.sf-redigerer{ overflow:hidden; }
+#sider-editor{
+  position:fixed; inset:0; z-index:100; background:var(--bund);
+  display:grid; grid-template-rows:auto minmax(0,1fr);
+}
+#sider-editor[hidden]{ display:none; }
+.sf-top{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:10px 14px; background:var(--flade); border-bottom:1px solid var(--kant);
+}
+.sf-top .sf-hvad{ display:flex; flex-direction:column; min-width:0; margin-right:auto; }
+.sf-top .sf-hvad b{ font-size:15px; }
+.sf-top .sf-hvad span{ color:var(--tekst-2); font-family:var(--skrift-kode); font-size:12px; }
+.sf-tilstand{ font-size:13px; color:var(--tekst-2); min-width:120px; }
+.sf-tilstand.god{ color:var(--god); }
+.sf-tilstand.fejl{ color:var(--fejl); }
+.sf-gruppe{ display:flex; gap:4px; }
+.sf-gruppe [aria-pressed="true"]{ background:var(--tekst); color:var(--flade); border-color:var(--tekst); }
+
+.sf-krop{ display:grid; grid-template-columns:minmax(0,1fr) 300px; min-height:0; }
+#sf-laerred{ min-height:0; }
+.sf-side{ display:flex; flex-direction:column; min-height:0; background:#2b2723; color:#eee; }
+#sf-paneler{ display:flex; gap:2px; padding:6px; border-bottom:1px solid rgba(255,255,255,.1); }
+#sf-paneler button{
+  flex:1; background:transparent; color:#ddd; border:1px solid transparent; border-radius:8px;
+  padding:7px 4px; font:inherit; font-size:13px; cursor:pointer;
+}
+#sf-paneler button[aria-pressed="true"]{ background:rgba(255,255,255,.12); color:#fff; }
+.sf-panel{ flex:1; overflow:auto; }
+
+/* GrapesJS' egne farver, så editoren ligner resten af bagrummet. */
+#sider-editor .gjs-one-bg{ background-color:#2b2723; }
+#sider-editor .gjs-two-color{ color:#eee; }
+#sider-editor .gjs-three-bg{ background-color:#8e4333; color:#fff; }
+#sider-editor .gjs-four-color, #sider-editor .gjs-four-color-h:hover{ color:#e8935a; }
+#sider-editor .gjs-block{ width:calc(50% - 10px); min-height:72px; font-size:12px; }
+#sider-editor .gjs-cv-canvas{ width:100%; height:100%; top:0; }

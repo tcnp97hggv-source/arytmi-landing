@@ -112,6 +112,10 @@
 <!-- Nummerpladerne (24/9). Filen er lille; motoren og modellen (22 MB)
      hentes først, når nogen lægger et billede op. -->
 <script src="nummerplader.js?v=20260924"></script>
+<!-- Sider & funnels (9/11): Arytmis egen sidebygger. GrapesJS (1,1 MB)
+     hentes først, når en side åbnes - se sider.js. -->
+<link rel="stylesheet" href="sider.css?v=20261109">
+<script src="sider.js?v=20261109"></script>
 <!--
   =============================================================
   ARYTMI — BAGRUMMET. arytmi.com/admin
@@ -1245,6 +1249,12 @@
         <span class="n-lang">Indhold</span>
         <span class="nav-tal" id="nav-venter" hidden></span>
       </button>
+      <!-- Kun på store skærme (sider.css): editoren kan ikke bruges på en
+           telefon, og bundbjælken har kun plads til fem rum. -->
+      <button type="button" data-fane="sider" class="kun-stor">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9h16M9 9v11" opacity=".6"/></svg>
+        <span class="n-lang">Sider &amp; funnels</span>
+      </button>
       <button type="button" data-fane="drift">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
         <span class="n-lang">Drift &amp; sikkerhed</span><span class="n-kort">Drift</span>
@@ -1637,6 +1647,23 @@
     </section>
     </section><!-- /fane-indhold -->
 
+    <!-- ---------- SIDER & FUNNELS (9/11) ----------
+         Arytmis egen sidebygger, der skal afløse ClickFunnels. Logikken
+         ligger i sider.js; her står kun skelettet. -->
+    <section id="fane-sider" hidden>
+      <h2>Sider &amp; funnels</h2>
+      <p class="under">
+        Byg salgssider og funnels. Kladden kan rettes frit. Kunden ser først noget,
+        når siden er udgivet, og udgivelsen til afsted.arytmi.com er slået til.
+      </p>
+      <div class="værktøjslinje">
+        <button type="button" class="knap" id="sider-ny-funnel">+ Ny funnel</button>
+        <button type="button" class="knap rolig" id="sider-ny-side">+ Løs side</button>
+        <span class="status" id="sider-status" role="status"></span>
+      </div>
+      <div id="sider-liste"></div>
+    </section>
+
     <!-- ---------- KUNDER ---------- -->
     <section id="fane-kunder" hidden>
       <h2>Brugere</h2>
@@ -1768,6 +1795,45 @@
 
   </main>
   </div><!-- .ark -->
+</div>
+
+<!-- SIDEEDITOREN (9/11) - fylder hele vinduet, mens en side redigeres.
+     GrapesJS tegner sig selv i #sf-laerred og panelerne til højre. -->
+<div id="sider-editor" hidden>
+  <div class="sf-top">
+    <button type="button" class="knap rolig lille" id="sf-luk">← Sider</button>
+    <div class="sf-hvad"><b id="sf-titel"></b><span id="sf-adresse"></span></div>
+    <div class="sf-gruppe" id="sf-enheder" role="group" aria-label="Skærmstørrelse">
+      <button type="button" class="knap rolig lille" data-enhed="computer">Computer</button>
+      <button type="button" class="knap rolig lille" data-enhed="tablet">Tablet</button>
+      <button type="button" class="knap rolig lille" data-enhed="mobil">Mobil</button>
+    </div>
+    <div class="sf-gruppe">
+      <button type="button" class="knap rolig lille" id="sf-fortryd" aria-label="Fortryd">↶</button>
+      <button type="button" class="knap rolig lille" id="sf-gentag" aria-label="Gentag">↷</button>
+    </div>
+    <button type="button" class="knap rolig lille" id="sf-indstillinger">Indstillinger</button>
+    <button type="button" class="knap rolig lille" id="sf-versioner">Versioner</button>
+    <button type="button" class="knap rolig lille" id="sf-vis">Forhåndsvis</button>
+    <span class="sf-tilstand" id="sf-tilstand" role="status"></span>
+    <button type="button" class="knap rolig lille" id="sf-gem">Gem kladde</button>
+    <button type="button" class="knap lille" id="sf-udgiv">Udgiv</button>
+  </div>
+  <div class="sf-krop">
+    <div id="sf-laerred"></div>
+    <div class="sf-side">
+      <div id="sf-paneler" role="group" aria-label="Paneler">
+        <button type="button" data-panel="blokke">Blokke</button>
+        <button type="button" data-panel="stil">Stil</button>
+        <button type="button" data-panel="egenskaber">Egenskaber</button>
+        <button type="button" data-panel="lag">Lag</button>
+      </div>
+      <div class="sf-panel" id="sf-blokke"></div>
+      <div class="sf-panel" id="sf-stil" hidden></div>
+      <div class="sf-panel" id="sf-egenskaber" hidden></div>
+      <div class="sf-panel" id="sf-lag" hidden></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -2379,7 +2445,7 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', drift:'fane-sikkerhed' };
   var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
   var valgtUnder = 'tekster';
 
@@ -2451,6 +2517,12 @@
        skærm, der påstår "ikke slået til" om en konto, der har den, er
        værre end et kald for meget. */
     if(navn === 'drift'){ tegnSikkerhed(); hentBrud(); }
+    /* Sider & funnels (9/11) bor i sider.js og får de samme kald som
+       resten af siden - samme token, samme fornyelse, samme fejltekster.
+       Intet af det lægges på window. */
+    if(navn === 'sider' && window.ArytmiSider){
+      window.ArytmiSider.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
+    }
   }
 
   $('faner').addEventListener('click', function(e){
