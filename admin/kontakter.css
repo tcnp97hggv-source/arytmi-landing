@@ -27,3 +27,14 @@
 .kt-tid{ display:block; font-size:12px; color:var(--tekst-2); }
 .kt-post .knap{ margin-top:6px; }
 @media (max-width:700px){ .kt-egen{ grid-template-columns:1fr; } }
+
+/* Segmenter (0093, 10/11) */
+.kt-isegment{ margin:12px 0 0; }
+.kt-seg-alle select{ margin-left:6px; }
+.kt-seg-rækker{ display:flex; flex-direction:column; gap:8px; margin:0 0 10px; }
+.kt-seg-række{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--kant); border-radius:var(--r-lille); background:var(--flade-2); }
+.kt-seg-række select, .kt-seg-række input:not([type="checkbox"]){ flex:0 1 auto; min-width:120px; max-width:260px; }
+.kt-seg-række .kt-seg-test{ margin:0; }
+.kt-seg-række > .knap{ margin-left:auto; }
+.kt-seg-viser{ margin:6px 0 4px; padding:10px 12px; border-left:3px solid var(--kant); min-height:24px; }
+.kt-seg-liste{ margin:6px 0 0; padding-left:18px; font-size:14px; }

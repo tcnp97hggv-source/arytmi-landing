@@ -122,8 +122,8 @@
 <link rel="stylesheet" href="produkter.css?v=20261109e">
 <script src="produkter.js?v=20261110a"></script>
 <!-- Kontakter (0089, 9/11): formularer -> kontakter, tidslinje, samtykke - se kontakter.js. -->
-<link rel="stylesheet" href="kontakter.css?v=20261109a">
-<script src="kontakter.js?v=20261109a"></script>
+<link rel="stylesheet" href="kontakter.css?v=20261110s">
+<script src="kontakter.js?v=20261110s"></script>
 <!-- Ordrer (0090, 9/11): egen checkouts ordrer, filtre, refusion, annullering - se ordrer.js. -->
 <link rel="stylesheet" href="ordrer.css?v=20261110a">
 <script src="ordrer.js?v=20261110a"></script>
@@ -1726,10 +1726,11 @@
       <h2>Kontakter</h2>
       <p class="under">
         Alle, der har udfyldt en formular på jeres sider, med deres felter, samtykker og køb.
-        Formularer bestemmer, hvem der får besked, når en formular sendes.
+        Segmenter er navngivne målgrupper ud fra regler. Formularer bestemmer, hvem der får besked, når en formular sendes.
       </p>
       <div class="underfaner" id="kt-faner" role="tablist">
         <button type="button" role="tab" data-kf="kontakter" aria-selected="true">Kontakter</button>
+        <button type="button" role="tab" data-kf="segmenter" aria-selected="false">Segmenter</button>
         <button type="button" role="tab" data-kf="formularer" aria-selected="false">Formularer</button>
       </div>
       <span class="status" id="kt-status" role="status"></span>
@@ -2557,7 +2558,7 @@
     ['Byg', [['sider', 'Funnels & sider', 'sider']]],
     ['Butik', [['produkter', 'Produkter', 'produkter'], ['ordrer', 'Ordrer', 'ordrer']]],
     ['Kontakter', [['kontakter', 'Kontakter & formularer', 'kontakter'],
-      ['segmenter', 'Segmenter', 'ikke', 'Navngivne målgrupper (fx "Pasform – venteliste") ud fra tags, køb og formularer - bruges i kampagner og automatiseringer.']]],
+      ['segmenter', 'Segmenter', 'kontakter']]],
     ['Marketing', [['automatiseringer', 'Automatiseringer', 'ikke', 'Forløb: en udløser (fx en formular eller et køb), så vent, mail, tag og betingelser - som pasformsbeskeden og velkomstmailen, der i dag kører i ClickFunnels.'],
       ['kampagner', 'Mail & kampagner', 'ikke', 'Kampagnemails til et segment: emne, tekst, testmail, planlagt afsendelse, statistik og afmelding pr. emne. Systemmails (ordre, kvittering) findes allerede under Indhold → Arytmi mails.']]],
     ['Indhold', [['kurser', 'Kurser', 'ikke', 'Kurser med moduler og lektioner, som et køb kan give adgang til.'],
@@ -2568,6 +2569,8 @@
   ];
   var FUNNELS_RUM = { sider:1, produkter:1, ordrer:1, kontakter:1, ikke:1 };
   var valgtFunnels = 'sider', valgtIkke = 'automatiseringer';
+  /* Kontakter har underfaner (kontakter, segmenter, formularer); Segmenter har sit eget menupunkt. */
+  var KT_UNDER = ['kontakter', 'segmenter', 'formularer'], valgtKt = 'kontakter';
   function tegnCfMenu(navn){
     var nav = $('cf-menu');
     if(!nav.firstChild){
@@ -2585,10 +2588,10 @@
         var b = e.target.closest('button[data-cf]');
         if(!b) return;
         var rum = b.getAttribute('data-rum');
-        skiftFane(rum, rum === 'ikke' ? b.getAttribute('data-cf') : undefined);
+        skiftFane(rum, rum === 'ikke' || rum === 'kontakter' ? b.getAttribute('data-cf') : undefined);
       });
     }
-    var nøgle = navn === 'ikke' ? valgtIkke : navn;
+    var nøgle = navn === 'ikke' ? valgtIkke : (navn === 'kontakter' && valgtKt === 'segmenter' ? 'segmenter' : navn);
     nav.querySelectorAll('button[data-cf]').forEach(function(b){
       if(b.getAttribute('data-cf') === nøgle) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
@@ -2607,7 +2610,7 @@
   /* Kun et rum og en underfane i adressen - aldrig persondata. replaceState,
      så tilbage-knappen ikke skal igennem hver fane, man har kigget i. */
   function skrivAdresse(navn){
-    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '') + (navn === 'ikke' ? '/' + valgtIkke : '')
+    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '') + (navn === 'ikke' ? '/' + valgtIkke : '') + (navn === 'kontakter' && valgtKt !== 'kontakter' ? '/' + valgtKt : '')
           + (navn === 'salg' && valgtSalg !== 'tal' ? '/' + valgtSalg : '');
     if(location.hash !== h){ try { history.replaceState(null, '', h); } catch(e){} }
   }
@@ -2658,6 +2661,7 @@
     var iFunnels = !!FUNNELS_RUM[navn];
     if(iFunnels) valgtFunnels = navn;
     if(navn === 'ikke') visIkke(under || valgtIkke);
+    if(navn === 'kontakter' && KT_UNDER.indexOf(under) >= 0) valgtKt = under;
     $('cf-menu').hidden = !iFunnels;
     document.querySelector('#faner [data-fane=funnels]').setAttribute('aria-expanded', String(iFunnels));
     if(iFunnels){ document.body.setAttribute('data-funnels', ''); tegnCfMenu(navn); }
@@ -2694,7 +2698,8 @@
       window.ArytmiSider.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
     }
     if(navn === 'kontakter' && window.ArytmiKontakter){
-      window.ArytmiKontakter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
+      window.ArytmiKontakter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar,
+        underfane:function(u){ if(KT_UNDER.indexOf(u) >= 0){ valgtKt = u; tegnCfMenu('kontakter'); skrivAdresse('kontakter'); } } }, valgtKt);
     }
     if(navn === 'produkter' && window.ArytmiProdukter){
       window.ArytmiProdukter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
