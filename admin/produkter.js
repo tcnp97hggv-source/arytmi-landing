@@ -665,7 +665,7 @@
       { n:'maal_enhed', t:'valg', l:'Enhed', valg:[['cm','cm'], ['mm','mm'], ['m','m']], vis:function(v){ return v.slags === 'fysisk'; }, skjult:'cm' },
       { n:'oprindelsesland', ikke:'der laves ingen told- eller fragtpapirer endnu', t:'tekst', l:'Fremstillingsland', h:'To bogstaver, fx CN eller DK.', maks:2 },
       { t:'overskrift', l:'Lager' },
-      { n:'spor_lager', ikke:'lageret tæller ikke ned ved køb endnu', t:'flueben', l:'Hold styr på lageret' },
+      { n:'spor_lager', t:'flueben', l:'Hold styr på lageret' },
       { n:'lager', t:'heltal', l:'Antal på lager', vis:function(v){ return v.spor_lager; }, skjult:0 },
       { n:'saelg_uden_lager', t:'flueben', l:'Sælg, også når lageret er tomt', vis:function(v){ return v.spor_lager; }, skjult:false },
       { t:'overskrift', l:'Moms, omkostninger og indhold' },
@@ -673,7 +673,7 @@
       { n:'momskode', t:'tekst', l:'Stripe-momskode (valgfri)', h:'Fx txcd_99999999 (almindelige varer). Tom = Stripes standard.', maks:13 },
       { n:'vare_id', t:'valg', l:'Vare (til omkostningerne)', valg:function(){ return [['', '— ingen —']].concat(data.varer.map(function(x){ return [x.id, x.navn + (x.aktiv ? '' : ' (sælges ikke)')]; })); } },
       { n:'giver_app_adgang', t:'flueben', l:'Køb giver adgang til Arytmi-appen' },
-      { n:'filer', ikke:'kunden får ikke filerne efter købet endnu', t:'filer', l:'Digitale filer', h:'Fx e-bogen. Kunden får et link efter købet. Ligger privat.', bred:true },
+      { n:'filer', t:'filer', l:'Digitale filer', h:'Fx e-bogen. Kunden får et link efter købet. Ligger privat.', bred:true },
       { t:'overskrift', l:'Visning' },
       { n:'synlig', t:'flueben', l:'Synlig' },
       { n:'raekkefoelge', t:'heltal', l:'Rækkefølge', skjult:0 }
