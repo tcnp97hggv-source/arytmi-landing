@@ -58,6 +58,8 @@
     font:600 16px/1 inherit; font-family:inherit; padding:16px 34px; margin-top:8px; cursor:pointer; min-height:48px;
   }
   button:hover{background:var(--knap-hover)}
+  button.let{background:transparent; color:inherit; border:1px solid currentColor; margin-top:12px}
+  button.let:hover{background:transparent; opacity:.75}
   button:focus-visible, a:focus-visible{outline:3px solid var(--rav); outline-offset:3px}
   button[disabled]{opacity:.6; cursor:default}
   a{color:var(--rav)}
@@ -77,6 +79,8 @@
       <h1>Afmeld mails fra Arytmi?</h1>
       <p>Vi holder op med at sende mails til</p>
       <p class="mail" id="hvem"></p>
+      <p id="emne-tekst" hidden></p>
+      <button type="button" id="emne-knap" hidden></button>
       <button type="button" id="afmeld-knap">Ja, afmeld mig</button>
       <p class="fejl" id="fejl" role="alert" hidden></p>
       <p class="lille">Ordrebekræftelser og beskeder om din adgang sender vi stadig – dem har du brug for.</p>
@@ -84,7 +88,7 @@
 
     <section id="trin-faerdig" hidden aria-live="polite">
       <h1>Du er afmeldt</h1>
-      <p class="god">Vi sender ikke flere mails til <span id="hvem-faerdig"></span>.</p>
+      <p class="god" id="faerdig-tekst">Vi sender ikke flere mails til <span id="hvem-faerdig"></span>.</p>
       <p class="lille">Fortryder du, så skriv til <a href="mailto:kundeservice@arytmi.com">kundeservice@arytmi.com</a>.</p>
     </section>
 
@@ -99,8 +103,15 @@
 (function () {
   'use strict';
   var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
-  var noegle = new URLSearchParams(location.search).get('n') || '';
-  var adresse = PROJEKT_URL + '/functions/v1/afmeld?n=' + encodeURIComponent(noegle);
+  var sp = new URLSearchParams(location.search);
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  var noegle = sp.get('n') || '';
+  /* Fra en kampagne: k = kampagnen (til dens statistik), e = dens emne. */
+  var kampagne = UUID.test(sp.get('k') || '') ? sp.get('k') : '';
+  var emneId = UUID.test(sp.get('e') || '') ? sp.get('e') : '';
+  var grund = PROJEKT_URL + '/functions/v1/afmeld?n=' + encodeURIComponent(noegle) + (kampagne ? '&k=' + kampagne : '');
+  var adresse = grund + (emneId ? '&e=' + emneId : '');
+  var emneNavn = '';
   var TRIN = ['tjekker', 'spoerg', 'faerdig', 'ukendt'];
   var hvem = '';
 
@@ -108,9 +119,26 @@
   function vis(trin) {
     TRIN.forEach(function (t) { id('trin-' + t).hidden = t !== trin; });
   }
-  function faerdig() {
-    id('hvem-faerdig').textContent = hvem || 'dig';
+  function faerdig(kunEmne) {
+    if (kunEmne) {
+      id('faerdig-tekst').textContent = 'Vi sender ikke flere mails om "' + emneNavn + '" til ' + (hvem || 'dig') + '.';
+    } else {
+      id('hvem-faerdig').textContent = hvem || 'dig';
+    }
     vis('faerdig');
+  }
+  function send(url, knap, kunEmne) {
+    var fejl = id('fejl'), knapper = [id('afmeld-knap'), id('emne-knap')];
+    knapper.forEach(function (k) { k.disabled = true; });
+    fejl.hidden = true;
+    fetch(url, { method: 'POST' })
+      .then(function (r) { if (!r.ok) throw new Error('nej'); return r.json(); })
+      .then(function (j) { if (!j || !j.ok) throw new Error('nej'); faerdig(kunEmne); })
+      .catch(function () {
+        knapper.forEach(function (k) { k.disabled = false; });
+        fejl.textContent = 'Det gik ikke igennem. Prøv igen om lidt.';
+        fejl.hidden = false;
+      });
   }
 
   if (!/^[0-9a-f]{64}$/.test(noegle)) { vis('ukendt'); return; }
@@ -122,23 +150,22 @@
       hvem = String(j.email || '');
       if (j.afmeldt) { faerdig(); return; }
       id('hvem').textContent = hvem;
+      /* Har mailen et emne, kan kunden nøjes med at fravælge det. */
+      if (j.emne && j.emne.navn && !j.emne_fravalgt) {
+        emneNavn = String(j.emne.navn);
+        id('emne-tekst').textContent = 'Mailen hører til emnet "' + emneNavn + '"' + (j.emne.beskrivelse ? ' – ' + j.emne.beskrivelse : '') + '. Du kan nøjes med at fravælge det.';
+        id('emne-tekst').hidden = false;
+        id('emne-knap').textContent = 'Afmeld kun "' + emneNavn + '"';
+        id('emne-knap').hidden = false;
+        id('afmeld-knap').textContent = 'Afmeld alle mails';
+        id('afmeld-knap').className = 'let';
+      }
       vis('spoerg');
     })
     .catch(function () { vis('ukendt'); });
 
-  id('afmeld-knap').addEventListener('click', function () {
-    var knap = this, fejl = id('fejl');
-    knap.disabled = true;
-    fejl.hidden = true;
-    fetch(adresse, { method: 'POST' })
-      .then(function (r) { if (!r.ok) throw new Error('nej'); return r.json(); })
-      .then(function (j) { if (!j || !j.ok) throw new Error('nej'); faerdig(); })
-      .catch(function () {
-        knap.disabled = false;
-        fejl.textContent = 'Det gik ikke igennem. Prøv igen om lidt.';
-        fejl.hidden = false;
-      });
-  });
+  id('afmeld-knap').addEventListener('click', function () { send(grund, this, false); });
+  id('emne-knap').addEventListener('click', function () { send(adresse, this, true); });
 })();
 </script>
 </body>
