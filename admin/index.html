@@ -122,8 +122,13 @@
 <link rel="stylesheet" href="produkter.css?v=20261109e">
 <script src="produkter.js?v=20261110a"></script>
 <!-- Kontakter (0089, 9/11): formularer -> kontakter, tidslinje, samtykke - se kontakter.js. -->
-<link rel="stylesheet" href="kontakter.css?v=20261110s">
-<script src="kontakter.js?v=20261110t"></script>
+<link rel="stylesheet" href="kontakter.css?v=20261110u">
+<script src="segmentregler.js?v=20261110a"></script>
+<script src="kontakter.js?v=20261110u"></script>
+<!-- Automatiseringer (0094, 10/11): forløb = udløser + trin; liste, editor, kørsler - se automatiseringer.js.
+     Bruger segmentregler.js (delt med Kontakter) og nogle kt-klasser fra kontakter.css. -->
+<link rel="stylesheet" href="automatiseringer.css?v=20261110a">
+<script src="automatiseringer.js?v=20261110a"></script>
 <!-- Ordrer (0090, 9/11): egen checkouts ordrer, filtre, refusion, annullering - se ordrer.js. -->
 <link rel="stylesheet" href="ordrer.css?v=20261110a">
 <script src="ordrer.js?v=20261110a"></script>
@@ -1737,6 +1742,18 @@
       <div id="kt-indhold"></div>
     </section>
 
+    <!-- ---------- AUTOMATISERINGER (0094, 10/11) ----------
+         Forløb: en udløser og en liste af trin. Logikken ligger i automatiseringer.js. -->
+    <section id="fane-automatiseringer" hidden>
+      <h2>Automatiseringer</h2>
+      <p class="under">
+        Forløb, der kører af sig selv: en udløser (fx en formular, et tag eller et køb) og så trin som mail, vent, tag,
+        besked til teamet og betingelser. Følg, hvem der står hvor, under Kørsler.
+      </p>
+      <span class="status" id="au-status" role="status"></span>
+      <div id="au-indhold"></div>
+    </section>
+
     <!-- ---------- IKKE BYGGET ENDNU (Funnels-menuens tomme punkter) ---------- -->
     <section id="fane-ikke" hidden>
       <h2 id="ikke-titel"></h2>
@@ -2552,14 +2569,14 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', ordrer:'fane-ordrer', ikke:'fane-ikke', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', ordrer:'fane-ordrer', automatiseringer:'fane-automatiseringer', ikke:'fane-ikke', drift:'fane-sikkerhed' };
   /* Funnels-menuen: [gruppe, [[nøgle, navn, rum, forklaring hvis ikke bygget]]]. */
   var CF_MENU = [
     ['Byg', [['sider', 'Funnels & sider', 'sider']]],
     ['Butik', [['produkter', 'Produkter', 'produkter'], ['ordrer', 'Ordrer', 'ordrer']]],
     ['Kontakter', [['kontakter', 'Kontakter & formularer', 'kontakter'],
       ['segmenter', 'Segmenter', 'kontakter']]],
-    ['Marketing', [['automatiseringer', 'Automatiseringer', 'ikke', 'Forløb: en udløser (fx en formular eller et køb), så vent, mail, tag og betingelser - som pasformsbeskeden og velkomstmailen, der i dag kører i ClickFunnels.'],
+    ['Marketing', [['automatiseringer', 'Automatiseringer', 'automatiseringer'],
       ['kampagner', 'Mail & kampagner', 'ikke', 'Kampagnemails til et segment: emne, tekst, testmail, planlagt afsendelse, statistik og afmelding pr. emne. Systemmails (ordre, kvittering) findes allerede under Indhold → Arytmi mails.']]],
     ['Indhold', [['kurser', 'Kurser', 'ikke', 'Kurser med moduler og lektioner, som et køb kan give adgang til.'],
       ['community', 'Community', 'ikke', 'Et lukket fællesskab med grupper, opslag og kommentarer for kunder.'],
@@ -2567,8 +2584,8 @@
     ['Salg', [['pipeline', 'Pipeline', 'ikke', 'Salgsmuligheder i faser (fx tilbud sendt → vundet) knyttet til kontakter.'],
       ['aftaler', 'Aftaler', 'ikke', 'Booking af møder med kalender, tidspunkter og påmindelser.']]]
   ];
-  var FUNNELS_RUM = { sider:1, produkter:1, ordrer:1, kontakter:1, ikke:1 };
-  var valgtFunnels = 'sider', valgtIkke = 'automatiseringer';
+  var FUNNELS_RUM = { sider:1, produkter:1, ordrer:1, kontakter:1, automatiseringer:1, ikke:1 };
+  var valgtFunnels = 'sider', valgtIkke = 'kampagner';
   /* Kontakter har underfaner (kontakter, segmenter, formularer); Segmenter har sit eget menupunkt. */
   var KT_UNDER = ['kontakter', 'segmenter', 'formularer'], valgtKt = 'kontakter';
   function tegnCfMenu(navn){
@@ -2599,7 +2616,7 @@
   function visIkke(nøgle){
     var punkt = null;
     CF_MENU.forEach(function(g){ g[1].forEach(function(x){ if(x[0] === nøgle && x[3]) punkt = x; }); });
-    if(!punkt){ nøgle = 'automatiseringer'; return visIkke(nøgle); }
+    if(!punkt){ nøgle = 'kampagner'; return visIkke(nøgle); }
     valgtIkke = nøgle;
     $('ikke-titel').textContent = punkt[1];
     $('ikke-tekst').textContent = punkt[3];
@@ -2657,6 +2674,8 @@
       }
       navn = valgtFunnels;
     }
+    /* Gamle adresser: #ikke/automatiseringer fra før fanen blev bygget (10/11). */
+    if(navn === 'ikke' && RUM[under] && FUNNELS_RUM[under] && under !== 'ikke'){ navn = under; under = undefined; }
     if(!RUM[navn]) navn = 'oversigt';
     var iFunnels = !!FUNNELS_RUM[navn];
     if(iFunnels) valgtFunnels = navn;
@@ -2700,6 +2719,9 @@
     if(navn === 'kontakter' && window.ArytmiKontakter){
       window.ArytmiKontakter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar,
         underfane:function(u){ if(KT_UNDER.indexOf(u) >= 0){ valgtKt = u; tegnCfMenu('kontakter'); skrivAdresse('kontakter'); } } }, valgtKt);
+    }
+    if(navn === 'automatiseringer' && window.ArytmiAutomatiseringer){
+      window.ArytmiAutomatiseringer.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });
     }
     if(navn === 'produkter' && window.ArytmiProdukter){
       window.ArytmiProdukter.vis({ json:json, rpc:rpc, kaldRaa:kaldRaa, PROJEKT_URL:PROJEKT_URL, forklar:forklar });

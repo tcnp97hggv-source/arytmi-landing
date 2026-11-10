@@ -38,3 +38,11 @@
 .kt-seg-række > .knap{ margin-left:auto; }
 .kt-seg-viser{ margin:6px 0 4px; padding:10px 12px; border-left:3px solid var(--kant); min-height:24px; }
 .kt-seg-liste{ margin:6px 0 0; padding-left:18px; font-size:14px; }
+
+/* Forløb (0094, 10/11): afkrydsning + massehandling i listen, forløb på kontaktkortet */
+.kt-tabel .kt-vælg{ width:34px; text-align:center; cursor:default; }
+.kt-masse{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0 0 12px; padding:8px 12px; border:1px solid var(--kant); border-radius:var(--r-lille); background:var(--flade-2); }
+.kt-masse[hidden]{ display:none; }
+.kt-forloeb{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.kt-forloeb li{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.kt-fl-fejlet{ border-color:var(--fejl); color:var(--fejl); }

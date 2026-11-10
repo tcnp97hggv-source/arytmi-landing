@@ -23,8 +23,9 @@
   'use strict';
   var api = null, startet = false;
   /* segmenter === null: 0093 er ikke kørt endnu. medlem: { segment-id: { kontakt-id: true } }. */
-  var data = { kontakter:[], formularer:[], segmenter:null, medlem:{}, produkter:[] };
-  var visning = { fane:'kontakter', søg:'', tag:'', segment:'', åben:null, seg:null };
+  /* forloeb === null: 0094 er ikke kørt endnu. */
+  var data = { kontakter:[], formularer:[], segmenter:null, medlem:{}, produkter:[], forloeb:null };
+  var visning = { fane:'kontakter', søg:'', tag:'', segment:'', åben:null, seg:null, valgt:{} };
 
   function $(id){ return document.getElementById(id); }
   function el(tag, eg, børn){
@@ -53,7 +54,7 @@
   }
   function kr(oere){ var h = Math.floor(oere / 100), r = oere % 100; return String(h).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (r ? ',' + String(r).padStart(2, '0') : '') + ' kr.'; }
   function navn(k){ return ((k.fornavn || '') + ' ' + (k.efternavn || '')).trim() || '—'; }
-  function feltNavn(n){ var t = n.replace(/^arytmi_/, '').replace(/_/g, ' '); return t.charAt(0).toUpperCase() + t.slice(1); }
+  function feltNavn(n){ return window.ArytmiSegmentregler.feltNavn(n); }
   function liste(v){ return String(v || '').split(/[,\n]/).map(function(x){ return x.trim(); }).filter(Boolean); }
 
   function hent(){
@@ -62,9 +63,12 @@
       rest('kontakt?select=*&order=oprettet.desc&limit=2000'),
       rest('formular?select=*&order=noegle.asc'),
       rest('segment?select=*&order=navn.asc').catch(function(){ return null; }),
-      rest('produkt?select=id,navn&order=navn.asc').catch(function(){ return []; })
+      rest('produkt?select=id,navn&order=navn.asc').catch(function(){ return []; }),
+      rest('automatisering?select=id,navn,status,en_gang&order=navn.asc').catch(function(){ return null; })
     ]).then(function(r){
-      data.kontakter = r[0] || []; data.formularer = r[1] || []; data.segmenter = r[2]; data.produkter = r[3] || [];
+      data.kontakter = r[0] || []; data.formularer = r[1] || []; data.segmenter = r[2]; data.produkter = r[3] || []; data.forloeb = r[4];
+      var findes = {}; data.kontakter.forEach(function(k){ findes[k.id] = 1; });
+      Object.keys(visning.valgt).forEach(function(id){ if(!findes[id]) delete visning.valgt[id]; });
       return hentMedlemskab();
     }).then(function(){ status(''); tegn(); }).catch(fejl);
   }
@@ -119,19 +123,65 @@
       seg.addEventListener('change', function(){ visning.segment = seg.value; tegnRækker(); });
     }
     var antal = el('span', { klasse:'hint' });
+    var masse = el('div', { klasse:'kt-masse', role:'group', 'aria-label':'Handlinger for de valgte kontakter' });
+    var alleBoks = el('input', { type:'checkbox', 'aria-label':'Vælg alle viste kontakter' });
+    alleBoks.addEventListener('change', function(){
+      filtreret().forEach(function(k){ if(alleBoks.checked) visning.valgt[k.id] = true; else delete visning.valgt[k.id]; });
+      tegnRækker();
+    });
     rod.appendChild(el('div', { klasse:'kt-top' }, [søg, tag, seg, antal,
       knap('+ Ny kontakt', 'knap lille', function(){ nyKontakt(); }),
       knap('Eksportér CSV', 'knap lille rolig', function(){ eksport(filtreret()); })]));
+    rod.appendChild(masse);
     var tbody = el('tbody');
     rod.appendChild(el('div', { klasse:'rulle' }, [el('table', { klasse:'kt-tabel' }, [
-      el('thead', {}, [el('tr', {}, ['Mail', 'Navn', 'Tags', 'Kilde', 'Oprettet'].map(function(t){ return el('th', { tekst:t }); }))]), tbody])]));
+      el('thead', {}, [el('tr', {}, [el('th', { klasse:'kt-vælg' }, [alleBoks])].concat(['Mail', 'Navn', 'Tags', 'Kilde', 'Oprettet'].map(function(t){ return el('th', { tekst:t }); })))]), tbody])]));
+    /* Massehandlingen: start et LIVE forløb for de valgte (automatisering_start, 0094). */
+    function tegnMasse(){
+      tøm(masse);
+      var ids = Object.keys(visning.valgt);
+      masse.hidden = !ids.length;
+      if(!ids.length) return;
+      masse.appendChild(el('strong', { tekst:ids.length + (ids.length === 1 ? ' kontakt valgt' : ' kontakter valgt') }));
+      var live = (data.forloeb || []).filter(function(a){ return a.status === 'live'; });
+      if(data.forloeb === null) masse.appendChild(el('span', { klasse:'hint', tekst:'Forløb er ikke sat op endnu (migration 0094 mangler).' }));
+      else if(!live.length) masse.appendChild(el('span', { klasse:'hint', tekst:'Der er ingen live forløb at starte. Sæt et forløb live under Automatiseringer.' }));
+      else {
+        var vælg = el('select', { 'aria-label':'Forløb, der skal startes' });
+        live.forEach(function(a){ vælg.appendChild(new Option(a.navn + (a.en_gang ? '' : ' (kan køres flere gange)'), a.id)); });
+        masse.appendChild(vælg);
+        masse.appendChild(knap('Start forløb', 'knap lille', function(){
+          var a = live.filter(function(x){ return x.id === vælg.value; })[0];
+          if(!a || !confirm('Start forløbet "' + a.navn + '" for ' + ids.length + (ids.length === 1 ? ' kontakt' : ' kontakter') + '?\n\nMails i forløbet sendes rigtigt.')) return;
+          rest('rpc/automatisering_start', { method:'POST', body:{ p_forloeb:a.id, p_kontakter:ids, p_segment:null } })
+            .then(function(n){
+              var sprunget = ids.length - (n || 0);
+              status((n || 0) + (n === 1 ? ' kontakt er startet' : ' kontakter er startet') + ' i "' + a.navn + '".' + (sprunget ? ' ' + sprunget + ' blev sprunget over (har været i forløbet før).' : ''));
+              visning.valgt = {}; tegnRækker();
+            }).catch(fejl);
+        }));
+      }
+      masse.appendChild(knap('Fravælg alle', 'knap lille rolig', function(){ visning.valgt = {}; tegnRækker(); }));
+    }
     function tegnRækker(){
       tøm(tbody);
       var r = filtreret();
       antal.textContent = r.length + ' af ' + data.kontakter.length;
-      if(!r.length) tbody.appendChild(el('tr', {}, [el('td', { colspan:'5', klasse:'hint', tekst: data.kontakter.length ? 'Ingen kontakter passer.' : 'Ingen kontakter endnu. De kommer, når nogen sender en formular på jeres sider.' })]));
+      alleBoks.checked = r.length > 0 && r.every(function(k){ return visning.valgt[k.id]; });
+      tegnMasse();
+      if(!r.length) tbody.appendChild(el('tr', {}, [el('td', { colspan:'6', klasse:'hint', tekst: data.kontakter.length ? 'Ingen kontakter passer.' : 'Ingen kontakter endnu. De kommer, når nogen sender en formular på jeres sider.' })]));
       r.forEach(function(k){
-        var tr = el('tr', { klasse:'kt-række', tabindex:'0' }, [
+        var boks = el('input', { type:'checkbox', 'aria-label':'Vælg ' + k.email }); boks.checked = !!visning.valgt[k.id];
+        boks.addEventListener('click', function(e){ e.stopPropagation(); });
+        boks.addEventListener('keydown', function(e){ e.stopPropagation(); });
+        boks.addEventListener('change', function(){
+          if(boks.checked) visning.valgt[k.id] = true; else delete visning.valgt[k.id];
+          alleBoks.checked = filtreret().every(function(x){ return visning.valgt[x.id]; });
+          tegnMasse();
+        });
+        var vælgTd = el('td', { klasse:'kt-vælg' }, [boks]);
+        vælgTd.addEventListener('click', function(e){ e.stopPropagation(); });
+        var tr = el('tr', { klasse:'kt-række', tabindex:'0' }, [vælgTd,
           el('td', {}, [el('strong', { tekst:k.email }), k.afmeldt_kl ? el('span', { klasse:'kt-tag kt-afmeldt', tekst:'afmeldt' }) : null]),
           el('td', { tekst:navn(k) }),
           el('td', {}, (k.tags || []).map(function(t){ return el('span', { klasse:'kt-tag', tekst:t }); })),
@@ -215,6 +265,49 @@
             .catch(fejl);
         })])]));
 
+    /* Forløb (0094): hvor står kontakten, og start et live forløb for hende. */
+    if(data.forloeb !== null){
+      var flListe = el('ul', { klasse:'kt-forloeb' });
+      var flStart = el('div', { klasse:'kt-handlinger' });
+      rod.appendChild(el('div', { klasse:'kort kt-kort' }, [el('h4', { tekst:'Forløb' }), flListe, flStart]));
+      var STATUS = { venter:'venter', koerer:'kører nu', faerdig:'færdig', fejlet:'fejlet', stoppet:'stoppet' };
+      var tegnForloeb = function(){
+        tøm(flListe); flListe.appendChild(el('li', { klasse:'hint', tekst:'Henter …' }));
+        rest('automatisering_koersel?select=id,status,trin_nr,naeste_kl,oprettet,automatisering(navn,trin)&kontakt_id=eq.' + encodeURIComponent(k.id) + '&order=oprettet.desc&limit=50')
+          .then(function(r){
+            tøm(flListe);
+            if(!r || !r.length) flListe.appendChild(el('li', { klasse:'hint', tekst:'Kontakten har ikke været i et forløb.' }));
+            (r || []).forEach(function(x){
+              var a = x.automatisering || {}, antal = (a.trin || []).length;
+              var hvor = x.status === 'venter' ? ' · trin ' + (x.trin_nr + 1) + ' af ' + antal + ' · fortsætter ' + dato(x.naeste_kl, true) : '';
+              flListe.appendChild(el('li', {}, [el('strong', { tekst:a.navn || 'Slettet forløb' }),
+                el('span', { klasse:'kt-tag kt-fl-' + x.status, tekst:STATUS[x.status] || x.status }),
+                el('span', { klasse:'hint', tekst:'startet ' + dato(x.oprettet, true) + hvor }),
+                x.status === 'venter' ? knap('Stop', 'knap lille rolig', function(){
+                  if(!confirm('Stop forløbet "' + (a.navn || '') + '" for ' + k.email + '?')) return;
+                  rest('rpc/automatisering_stop', { method:'POST', body:{ p_koersel:x.id } }).then(function(ok){
+                    status(ok ? 'Stoppet.' : 'Kørslen ventede ikke længere - den er ikke stoppet.', ok ? '' : 'fejl'); tegnForloeb();
+                  }).catch(fejl);
+                }) : null]));
+            });
+          }).catch(function(f){ tøm(flListe); flListe.appendChild(el('li', { klasse:'status fejl', tekst:api.forklar(f) })); });
+      };
+      var liveFl = data.forloeb.filter(function(a){ return a.status === 'live'; });
+      if(liveFl.length){
+        var flVælg = el('select', { 'aria-label':'Forløb, der skal startes for kontakten' });
+        liveFl.forEach(function(a){ flVælg.appendChild(new Option(a.navn, a.id)); });
+        flStart.appendChild(flVælg);
+        flStart.appendChild(knap('Start forløb', 'knap lille', function(){
+          var a = liveFl.filter(function(x){ return x.id === flVælg.value; })[0];
+          if(!a || !confirm('Start forløbet "' + a.navn + '" for ' + k.email + '?\n\nMails i forløbet sendes rigtigt.')) return;
+          rest('rpc/automatisering_start', { method:'POST', body:{ p_forloeb:a.id, p_kontakter:[k.id], p_segment:null } })
+            .then(function(n){ status(n ? 'Startet.' : 'Ikke startet: kontakten har været i forløbet før, og det kører kun én gang pr. kontakt.', n ? '' : 'fejl'); tegnForloeb(); })
+            .catch(fejl);
+        }));
+      } else flStart.appendChild(el('span', { klasse:'hint', tekst:'Ingen live forløb at starte.' }));
+      tegnForloeb();
+    }
+
     /* Note */
     var note = el('textarea', { rows:'3', placeholder:'Skriv en note …', 'aria-label':'Ny note' });
     rod.appendChild(el('div', { klasse:'kort kt-kort' }, [el('h4', { tekst:'Tidslinje' }), note,
@@ -276,77 +369,10 @@
   }
 
   /* ---------- Segmenter (0093) ---------- */
-  var TEKST_OPS = [['er', 'er'], ['er_ikke', 'er ikke'], ['indeholder', 'indeholder'], ['indeholder_ikke', 'indeholder ikke'], ['udfyldt', 'er udfyldt'], ['tom', 'er tomt']];
-  var DAGE_OPS = [['sidste_dage', 'inden for de sidste (dage)'], ['aeldre_end_dage', 'for mere end (dage) siden']];
-  var UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
-  /* felt -> navn, regler (ops) og hvilket værdifelt der hører til (slags).
-     Samme liste som segment_regler_ok() i 0093 - databasen afviser resten. */
-  var SEG_FELTER = {
-    tag:           { navn:'Tag', ops:[['har', 'har tagget'], ['har_ikke', 'har ikke tagget']], slags:'tag' },
-    formular:      { navn:'Formular', ops:[['indsendt', 'har sendt'], ['ikke_indsendt', 'har ikke sendt']], slags:'formular' },
-    formular_side: { navn:'Formular fra side', ops:[['indeholder', 'sendt fra en sti, der indeholder'], ['indeholder_ikke', 'ikke sendt fra en sti, der indeholder']], slags:'tekst' },
-    koeb:          { navn:'Køb', ops:[['har_koebt', 'har købt'], ['har_ikke_koebt', 'har ikke købt']], slags:'produkt', test:true },
-    abonnement:    { navn:'Abonnement', ops:[['aktiv', 'er aktivt'], ['opsagt', 'er opsagt, men løber endnu'], ['ophoert', 'er ophørt'], ['ingen', 'har intet løbende']], slags:'ingen', test:true },
-    nyheder:       { navn:'Nyhedsmails', ops:[['ja', 'har sagt ja'], ['nej', 'har ikke sagt ja']], slags:'ingen' },
-    afmeldt:       { navn:'Afmelding', ops:[['ja', 'har afmeldt mails'], ['nej', 'har ikke afmeldt mails']], slags:'ingen' },
-    eget_felt:     { navn:'Eget felt', ops:TEKST_OPS, slags:'tekst', nøgle:'felt' },
-    utm:           { navn:'Kom fra (UTM)', ops:TEKST_OPS, slags:'tekst', nøgle:'utm' },
-    email:         { navn:'Mail', ops:TEKST_OPS, slags:'tekst' },
-    fornavn:       { navn:'Fornavn', ops:TEKST_OPS, slags:'tekst' },
-    efternavn:     { navn:'Efternavn', ops:TEKST_OPS, slags:'tekst' },
-    telefon:       { navn:'Telefon', ops:TEKST_OPS, slags:'tekst' },
-    kilde:         { navn:'Kilde', ops:TEKST_OPS, slags:'tekst' },
-    oprettet:      { navn:'Oprettet', ops:DAGE_OPS.concat([['fra', 'fra og med datoen'], ['foer', 'før datoen']]), slags:'tid' },
-    aktivitet:     { navn:'Sidste aktivitet', ops:DAGE_OPS, slags:'tid' }
-  };
-  function udenVærdi(b){ var d = SEG_FELTER[b.felt]; return !d || d.slags === 'ingen' || b.op === 'udfyldt' || b.op === 'tom'; }
-  function betingelseFejl(b){
-    var d = SEG_FELTER[b.felt];
-    if(!d) return 'Vælg, hvad betingelsen handler om.';
-    if(!d.ops.some(function(o){ return o[0] === b.op; })) return 'Vælg en regel.';
-    var v = String(b.vaerdi || '').trim();
-    if(d.nøgle && !/^[a-z0-9_]{1,60}$/.test(b.noegle || '')) return 'Vælg, hvilket felt det gælder.';
-    if(v.length > 200) return 'Teksten er for lang.';
-    if(d.slags === 'tag' && !v) return 'Skriv et tag.';
-    if(d.slags === 'tekst' && !udenVærdi(b) && !v) return 'Skriv en tekst.';
-    if(d.slags === 'tid'){
-      if(b.op === 'fra' || b.op === 'foer'){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return 'Vælg en dato.'; }
-      else if(!/^\d{1,4}$/.test(v)) return 'Skriv et antal dage.';
-    }
-    return '';
-  }
-  /* Det, databasen får: kun de felter, reglen bruger. */
-  function rens(regler){
-    return { alle: regler.alle !== false, betingelser:(regler.betingelser || []).map(function(b){
-      var d = SEG_FELTER[b.felt] || {}, ud = { felt:b.felt, op:b.op, vaerdi: udenVærdi(b) ? '' : String(b.vaerdi || '').trim() };
-      if(d.nøgle) ud.noegle = b.noegle;
-      if(d.test && b.med_test) ud.med_test = true;
-      return ud;
-    }) };
-  }
-  function opNavn(d, op){ var o = d.ops.filter(function(x){ return x[0] === op; })[0]; return o ? o[1] : '?'; }
-  function betingelseTekst(b){
-    var d = SEG_FELTER[b.felt]; if(!d) return 'ukendt betingelse';
-    var op = opNavn(d, b.op), v = String(b.vaerdi || ''), test = d.test && b.med_test ? ' (også testkøb)' : '', t;
-    if(d.slags === 'ingen') t = d.navn + ': ' + op + test;
-    else if(d.slags === 'tag') t = op + ' "' + v + '"';
-    else if(d.slags === 'formular'){
-      var fm = data.formularer.filter(function(x){ return x.noegle === v; })[0];
-      t = op + (v ? ' formularen "' + ((fm && fm.navn) || v) + '"' : ' en formular');
-    }
-    else if(d.slags === 'produkt'){
-      var p = data.produkter.filter(function(x){ return x.id === v; })[0];
-      t = op + ' ' + (v ? '"' + (p ? p.navn : 'et slettet produkt') + '"' : 'noget') + test;
-    }
-    else if(d.slags === 'tid') t = d.navn + ' ' + (b.op === 'fra' || b.op === 'foer' ? op + ' ' + v : op.replace('(dage)', v + ' dage'));
-    else t = (d.nøgle === 'felt' ? feltNavn(b.noegle || '?') : d.nøgle ? (b.noegle || '?') : d.navn) + ' ' + op + (udenVærdi(b) ? '' : ' "' + v + '"');
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  }
-  function reglerTekst(regler){
-    var b = (regler && regler.betingelser) || [];
-    if(!b.length) return 'Alle kontakter';
-    return b.map(betingelseTekst).join(regler.alle === false ? ' ELLER ' : ' OG ');
-  }
+  /* Reglernes felter, tjek og tekster bor i segmentregler.js (delt med Automatiseringer). */
+  var SR = window.ArytmiSegmentregler;
+  function kilder(){ return { formularer:data.formularer, produkter:data.produkter, tagListe:'kt-seg-tags', feltListe:'kt-seg-felter' }; }
+  function reglerTekst(regler){ return SR.reglerTekst(regler, kilder()); }
   function kendteFelter(){
     var s = {}; data.kontakter.forEach(function(k){ Object.keys(k.felter || {}).forEach(function(n){ s[n] = 1; }); });
     return Object.keys(s).sort();
@@ -398,88 +424,20 @@
     var sidste = null, tæller = 0, ur = null;
 
     function tegnRækker(){
-      tøm(rækker);
-      if(!kl.betingelser.length) rækker.appendChild(el('p', { klasse:'hint', tekst:'Ingen betingelser endnu - segmentet er alle kontakter.' }));
-      kl.betingelser.forEach(function(b, i){
-        var d = SEG_FELTER[b.felt], dele = [];
-        var felt = el('select', { 'aria-label':'Betingelse ' + (i + 1) + ': handler om' });
-        Object.keys(SEG_FELTER).forEach(function(n){ felt.appendChild(new Option(SEG_FELTER[n].navn, n)); });
-        felt.value = b.felt;
-        felt.addEventListener('change', function(){
-          var ny = SEG_FELTER[felt.value];
-          b.felt = felt.value; b.op = ny.ops[0][0]; b.vaerdi = ''; delete b.med_test;
-          if(ny.nøgle === 'utm') b.noegle = UTM[0]; else delete b.noegle;
-          tegnRækker(); forhånd();
-        });
-        dele.push(felt);
-        if(d.nøgle === 'utm'){
-          var u = el('select', { 'aria-label':'UTM-felt' });
-          UTM.forEach(function(n){ u.appendChild(new Option(n.replace('utm_', ''), n)); });
-          u.value = b.noegle || UTM[0]; b.noegle = u.value;
-          u.addEventListener('change', function(){ b.noegle = u.value; forhånd(); });
-          dele.push(u);
-        } else if(d.nøgle === 'felt'){
-          var fn = el('input', { 'aria-label':'Feltets navn', list:'kt-seg-felter', placeholder:'feltets navn' });
-          fn.value = b.noegle || '';
-          fn.addEventListener('input', function(){ b.noegle = fn.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'); forhånd(); });
-          dele.push(fn);
-        }
-        var op = el('select', { 'aria-label':'Regel' });
-        d.ops.forEach(function(o){ op.appendChild(new Option(o[1], o[0])); });
-        op.value = b.op;
-        op.addEventListener('change', function(){
-          var før = b.op; b.op = op.value;
-          if(d.slags === 'tid' && ((før === 'fra' || før === 'foer') !== (b.op === 'fra' || b.op === 'foer'))) b.vaerdi = '';
-          tegnRækker(); forhånd();
-        });
-        dele.push(op);
-
-        var v = null;
-        if(d.slags === 'formular'){
-          v = el('select', { 'aria-label':'Formular' });
-          v.appendChild(new Option('en hvilken som helst formular', ''));
-          data.formularer.forEach(function(fm){ v.appendChild(new Option(fm.navn || fm.noegle, fm.noegle)); });
-          if(b.vaerdi && !data.formularer.some(function(fm){ return fm.noegle === b.vaerdi; })) v.appendChild(new Option(b.vaerdi + ' (findes ikke længere)', b.vaerdi));
-        } else if(d.slags === 'produkt'){
-          v = el('select', { 'aria-label':'Produkt' });
-          v.appendChild(new Option('et hvilket som helst produkt', ''));
-          data.produkter.forEach(function(p){ v.appendChild(new Option(p.navn, p.id)); });
-          if(b.vaerdi && !data.produkter.some(function(p){ return p.id === b.vaerdi; })) v.appendChild(new Option('et slettet produkt', b.vaerdi));
-        } else if(d.slags === 'tag'){
-          v = el('input', { 'aria-label':'Tag', list:'kt-seg-tags', placeholder:'tagget' });
-        } else if(d.slags === 'tid'){
-          v = (b.op === 'fra' || b.op === 'foer') ? el('input', { type:'date', 'aria-label':'Dato' })
-            : el('input', { type:'number', min:'0', max:'9999', step:'1', 'aria-label':'Antal dage', placeholder:'dage' });
-        } else if(d.slags === 'tekst' && !udenVærdi(b)){
-          v = el('input', { 'aria-label':'Tekst', placeholder:'tekst', maxlength:'200' });
-        }
-        if(v){
-          v.value = b.vaerdi || '';
-          v.addEventListener(v.tagName === 'SELECT' ? 'change' : 'input', function(){ b.vaerdi = v.value; forhånd(); });
-          dele.push(v);
-        }
-        if(d.test){
-          var t = el('input', { type:'checkbox', id:'kt-seg-test-' + i }); t.checked = !!b.med_test;
-          t.addEventListener('change', function(){ b.med_test = t.checked; forhånd(); });
-          dele.push(el('span', { klasse:'afkryds kt-seg-test' }, [t, el('label', { for:t.id, tekst:'Tæl også testkøb' })]));
-        }
-        dele.push(knap('Fjern', 'knap lille rolig', function(){ kl.betingelser.splice(i, 1); tegnRækker(); forhånd(); }));
-        rækker.appendChild(el('div', { klasse:'kt-seg-række' }, dele));
-      });
+      SR.tegnRækker(rækker, kl, kilder(), forhånd, 'kt-seg', 'Ingen betingelser endnu - segmentet er alle kontakter.');
     }
 
     function forhånd(){
       clearTimeout(ur);
-      var nr = -1, hvad = '';
-      kl.betingelser.some(function(b, i){ hvad = betingelseFejl(b); if(hvad){ nr = i; return true; } return false; });
-      if(nr >= 0){
+      var hvad = SR.førsteFejl(kl);
+      if(hvad){
         tæller++; sidste = null; tøm(viser);
-        viser.appendChild(el('span', { klasse:'hint', tekst:'Betingelse ' + (nr + 1) + ' mangler noget: ' + hvad }));
+        viser.appendChild(el('span', { klasse:'hint', tekst:hvad }));
         return;
       }
       ur = setTimeout(function(){
         var mit = ++tæller;
-        rest('rpc/segment_kontakter', { method:'POST', body:{ p_regler:rens(kl) } }).then(function(r){
+        rest('rpc/segment_kontakter', { method:'POST', body:{ p_regler:SR.rens(kl) } }).then(function(r){
           if(mit !== tæller) return;
           sidste = r || []; tøm(viser);
           viser.appendChild(el('strong', { tekst:sidste.length + (sidste.length === 1 ? ' kontakt passer lige nu' : ' kontakter passer lige nu') }));
@@ -498,11 +456,10 @@
     }
 
     function gem(){
-      var n = navnInp.value.trim(), galt = '';
+      var n = navnInp.value.trim(), galt = SR.førsteFejl(kl);
       if(!n){ status('Giv segmentet et navn.', 'fejl'); navnInp.focus(); return; }
-      kl.betingelser.some(function(b, i){ var h = betingelseFejl(b); if(h) galt = 'Betingelse ' + (i + 1) + ' mangler noget: ' + h; return !!h; });
       if(galt){ status(galt, 'fejl'); return; }
-      var krop = { navn:n, beskrivelse:besk.value.trim(), regler:rens(kl) };
+      var krop = { navn:n, beskrivelse:besk.value.trim(), regler:SR.rens(kl) };
       var kald = gemt
         ? rest('segment?id=eq.' + encodeURIComponent(gemt.id), { method:'PATCH', headers:{ Prefer:'return=representation' }, body:krop })
         : rest('segment', { method:'POST', headers:{ Prefer:'return=representation' }, body:krop });
@@ -527,7 +484,7 @@
       el('h4', { tekst:'Hvem er med?' }),
       el('p', { klasse:'kt-seg-alle' }, [el('label', { for:'kt-seg-alle', tekst:'Kontakten skal passe på ' }), alle]),
       tagListe, feltListe, rækker,
-      el('p', {}, [knap('+ Betingelse', 'knap lille rolig', function(){ kl.betingelser.push({ felt:'tag', op:'har', vaerdi:'' }); tegnRækker(); forhånd(); })]),
+      el('p', {}, [knap('+ Betingelse', 'knap lille rolig', function(){ kl.betingelser.push(SR.ny()); tegnRækker(); forhånd(); })]),
       viser,
       el('div', { klasse:'kt-handlinger' }, [
         knap('Gem', 'knap', gem),

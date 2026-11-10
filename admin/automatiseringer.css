@@ -1,0 +1,44 @@
+/* =============================================================
+   AUTOMATISERINGER (0094, omgang B, 10/11) — kun det, bagrummets egne
+   klasser og kontakter.css (kt-kort, kt-grid, kt-felt, kt-tabel,
+   kt-seg-række) ikke dækker.
+   ============================================================= */
+.au-top{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; margin:0 0 14px; }
+.au-top .au-arkiv{ margin:0; }
+.au-status{ display:inline-block; font-size:12px; font-weight:600; padding:1px 9px; border-radius:999px; border:1px solid var(--kant); color:var(--tekst-2); white-space:nowrap; vertical-align:middle; }
+.au-status.au-live, .au-status.au-faerdig{ border-color:#2f6b3a; color:#2f6b3a; }
+.au-status.au-venter, .au-status.au-koerer{ border-color:#de854a; color:#a85a22; }
+.au-status.au-fejlet{ border-color:var(--fejl); color:var(--fejl); }
+.au-fejltal{ color:var(--fejl); }
+.au-tabel td{ vertical-align:top; }
+#fane-automatiseringer .kt-navn .au-status{ margin-left:8px; }
+#fane-automatiseringer .underfaner{ margin:0 0 16px; }
+#fane-automatiseringer .kt-felt textarea{ width:100%; }
+#fane-automatiseringer .afkryds{ flex-wrap:wrap; }
+
+/* Udløser og trin */
+.au-udl .kt-seg-række{ margin:0 0 8px; }
+.au-trin-liste{ display:flex; flex-direction:column; gap:12px; margin:0 0 14px; }
+.au-trin{ border:1px solid var(--kant); border-radius:var(--r-lille); background:var(--flade); }
+.au-trin-hoved{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:8px 12px; background:var(--flade-2); border-bottom:1px solid var(--kant); border-radius:var(--r-lille) var(--r-lille) 0 0; }
+.au-nr{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--tekst); color:var(--flade); font-size:13px; font-weight:600; flex:0 0 auto; }
+.au-trin-knapper{ margin-left:auto; display:flex; flex-wrap:wrap; gap:6px; }
+.au-trin-krop{ padding:12px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+.au-trin-krop > p{ margin:0; }
+.au-trin-krop .kt-grid{ margin:0; }
+.au-trin-krop .afkryds{ margin-top:0; }
+.au-vent{ align-self:flex-start; }
+.au-vent input{ width:90px; min-width:0; }
+.au-tilfoej{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.au-advarsel{ padding:8px 12px; border-left:3px solid #de854a; }
+
+/* Kørslernes log */
+.au-log-række > td{ background:var(--flade-2); padding:10px 14px 12px 28px; }
+.au-log{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.au-log .kt-tid{ display:block; }
+.au-l-fejl strong{ color:var(--fejl); }
+.au-l-ok strong{ color:#2f6b3a; }
+
+/* Valgfelter i en linje skal ikke fylde hele bredden. */
+.au-top select, .au-vent select, #fane-automatiseringer .kt-seg-alle select{ width:auto; }
+.au-vent{ flex-wrap:nowrap; }
