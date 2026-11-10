@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<!--
+  INDHOLDSPOLITIK (CSP) som på nulstil.html: alt er lukket, og der åbnes kun
+  for sidens eget script og <style>, logoet herfra og Edge-funktionen `afmeld`.
+  ⚠️ `connect-src` peger på Supabase-projektets adresse - skiftes projektet,
+  skal linjen med (og PROJEKT_URL nederst).
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src https://vxleyvtumbwtkejoiaev.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Afmeld mails fra Arytmi</title>
+<meta name="description" content="Afmeld mails fra Arytmi.">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.ico?v=20260927" sizes="any">
+<link rel="icon" href="favicon-32.png?v=20260927" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-180.png?v=20260927">
+<!--
+  ARYTMI — afmeld.html. Afmeldingslinket nederst i mails fra forløb (0094, 10/11).
+
+  Linket i mailen er arytmi.com/afmeld?n=<nøgle>. Nøglen er kontaktens egen,
+  64 tilfældige tegn. Siden kan ikke noget selv - alt afgøres af
+  Edge-funktionen `afmeld`:
+    GET   → hvem er det (maskeret: a***@eksempel.dk), og er hun allerede afmeldt?
+    POST  → afmeld.
+  At ÅBNE linket afmelder ikke: mailprogrammer og virusskannere åbner links
+  på forhånd. Der skal trykkes på knappen.
+
+  `referrer: no-referrer`, så nøglen i adressen ikke følger med videre.
+  Siden skriver ALTID med textContent, aldrig innerHTML.
+-->
+<style>
+  :root{
+    --bund:#f7efe4; --flade:#fcf8f2; --tekst:#4a2417; --broed:#6f5245; --daempet:#7e6154;
+    --linje:#e6d8c8; --rav:#8e4333; --knap:#e8935a; --knap-hover:#dc8249; --god:#4f6b4a; --fejl:#9c4221;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:var(--bund); color:var(--tekst);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; align-items:center; justify-content:center; min-height:100dvh; padding:24px 16px;
+  }
+  .kort{
+    width:100%; max-width:440px; background:var(--flade); border:1px solid var(--linje);
+    border-radius:24px; padding:36px 28px 32px; text-align:center;
+  }
+  .logo{width:150px; height:auto; margin:0 auto 26px; display:block}
+  h1{font-family:Georgia,"Times New Roman",serif; font-weight:normal; font-size:26px; line-height:1.25; margin-bottom:12px}
+  p{font-size:16px; line-height:1.6; color:var(--broed); margin-bottom:14px}
+  p.mail{font-weight:600; color:var(--tekst); word-break:break-all}
+  p.lille{font-size:14px; color:var(--daempet); margin:18px 0 0}
+  p.god{color:var(--god)} p.fejl{color:var(--fejl)}
+  button{
+    appearance:none; border:0; border-radius:999px; background:var(--knap); color:var(--tekst);
+    font:600 16px/1 inherit; font-family:inherit; padding:16px 34px; margin-top:8px; cursor:pointer; min-height:48px;
+  }
+  button:hover{background:var(--knap-hover)}
+  button:focus-visible, a:focus-visible{outline:3px solid var(--rav); outline-offset:3px}
+  button[disabled]{opacity:.6; cursor:default}
+  a{color:var(--rav)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+  <main class="kort">
+    <img class="logo" src="logo-2026.svg" alt="Arytmi">
+
+    <section id="trin-tjekker" aria-live="polite">
+      <h1>Et øjeblik</h1>
+      <p>Vi finder din tilmelding.</p>
+    </section>
+
+    <section id="trin-spoerg" hidden>
+      <h1>Afmeld mails fra Arytmi?</h1>
+      <p>Vi holder op med at sende mails til</p>
+      <p class="mail" id="hvem"></p>
+      <button type="button" id="afmeld-knap">Ja, afmeld mig</button>
+      <p class="fejl" id="fejl" role="alert" hidden></p>
+      <p class="lille">Ordrebekræftelser og beskeder om din adgang sender vi stadig – dem har du brug for.</p>
+    </section>
+
+    <section id="trin-faerdig" hidden aria-live="polite">
+      <h1>Du er afmeldt</h1>
+      <p class="god">Vi sender ikke flere mails til <span id="hvem-faerdig"></span>.</p>
+      <p class="lille">Fortryder du, så skriv til <a href="mailto:kundeservice@arytmi.com">kundeservice@arytmi.com</a>.</p>
+    </section>
+
+    <section id="trin-ukendt" hidden>
+      <h1>Linket virker ikke</h1>
+      <p>Vi kan ikke finde en tilmelding, der hører til linket. Det kan være klippet over i mailen.</p>
+      <p class="lille">Skriv til <a href="mailto:kundeservice@arytmi.com">kundeservice@arytmi.com</a>, så afmelder vi dig.</p>
+    </section>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+  var PROJEKT_URL = 'https://vxleyvtumbwtkejoiaev.supabase.co';
+  var noegle = new URLSearchParams(location.search).get('n') || '';
+  var adresse = PROJEKT_URL + '/functions/v1/afmeld?n=' + encodeURIComponent(noegle);
+  var TRIN = ['tjekker', 'spoerg', 'faerdig', 'ukendt'];
+  var hvem = '';
+
+  function id(x) { return document.getElementById(x); }
+  function vis(trin) {
+    TRIN.forEach(function (t) { id('trin-' + t).hidden = t !== trin; });
+  }
+  function faerdig() {
+    id('hvem-faerdig').textContent = hvem || 'dig';
+    vis('faerdig');
+  }
+
+  if (!/^[0-9a-f]{64}$/.test(noegle)) { vis('ukendt'); return; }
+
+  fetch(adresse, { method: 'GET' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || !j.fundet) { vis('ukendt'); return; }
+      hvem = String(j.email || '');
+      if (j.afmeldt) { faerdig(); return; }
+      id('hvem').textContent = hvem;
+      vis('spoerg');
+    })
+    .catch(function () { vis('ukendt'); });
+
+  id('afmeld-knap').addEventListener('click', function () {
+    var knap = this, fejl = id('fejl');
+    knap.disabled = true;
+    fejl.hidden = true;
+    fetch(adresse, { method: 'POST' })
+      .then(function (r) { if (!r.ok) throw new Error('nej'); return r.json(); })
+      .then(function (j) { if (!j || !j.ok) throw new Error('nej'); faerdig(); })
+      .catch(function () {
+        knap.disabled = false;
+        fejl.textContent = 'Det gik ikke igennem. Prøv igen om lidt.';
+        fejl.hidden = false;
+      });
+  });
+})();
+</script>
+</body>
+</html>
