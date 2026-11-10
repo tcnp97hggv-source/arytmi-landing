@@ -545,6 +545,18 @@
     }
     rod.appendChild(sum);
     if(o.giver_app_adgang) rod.appendChild(el('p', { klasse:'ao-lille', tekst:'Din adgang til Arytmi-appen er klar. Se mailen "Velkommen til Arytmi" for at komme i gang.' }));
+    /* Digitale filer (10/11): ordre-filer giver listen; hvert link henter filen. */
+    if(o.status === 'betalt' && o.id){
+      var fUrl = SUPABASE + '/functions/v1/ordre-filer?o=' + encodeURIComponent(o.id);
+      fetch(fUrl, { headers:{ apikey:NOEGLE } }).then(function(r){ return r.ok ? r.json() : { filer:[] }; }).then(function(j){
+        if(!j.filer || !j.filer.length) return;
+        rod.appendChild(el('h3', { klasse:'ao-filer-titel', tekst:'Dine filer' }));
+        var ul = el('ul', { klasse:'ao-filer' });
+        j.filer.forEach(function(f){ ul.appendChild(el('li', {}, [el('a', { href:fUrl + '&fil=' + f.nr, tekst:f.navn, rel:'noopener' })])); });
+        rod.appendChild(ul);
+        rod.appendChild(el('p', { klasse:'ao-lille', tekst:'Linkene står også i din ordrebekræftelse på mail.' }));
+      }).catch(function(){});
+    }
   }
   function samtykkeJa(){
     try { var v = JSON.parse(localStorage.getItem('arytmi-samtykke')); return !!(v && v.valg === 'ja'); } catch(e){ return false; }
