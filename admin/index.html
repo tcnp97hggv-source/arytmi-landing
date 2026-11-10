@@ -507,6 +507,18 @@
 
   /* ---------- SIDEN ---------- */
   main{ flex:1 1 auto; max-width:1200px; width:100%; padding:36px 44px 110px; }
+  /* Funnels: venstremenu + indhold (K 9/11) */
+  body[data-funnels] main{ max-width:1440px; display:grid; grid-template-columns:210px minmax(0, 1fr); column-gap:32px; align-items:start; }
+  body[data-funnels] main > section{ grid-column:2; grid-row:1; min-width:0; }
+  .cf-menu{ grid-column:1; grid-row:1; position:sticky; top:20px; display:flex; flex-direction:column; gap:2px; }
+  .cf-menu[hidden]{ display:none; }
+  .cf-menu .cf-gruppe{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.6; margin:14px 10px 4px; }
+  .cf-menu .cf-gruppe:first-child{ margin-top:0; }
+  .cf-menu button{ display:flex; align-items:center; justify-content:space-between; gap:6px; text-align:left; background:none; border:0; border-radius:8px; padding:8px 10px; font:inherit; font-size:14px; color:inherit; cursor:pointer; }
+  .cf-menu button:hover{ background:rgba(142,67,51,.08); }
+  .cf-menu button[aria-current]{ background:rgba(142,67,51,.14); font-weight:600; }
+  .cf-ikke{ display:inline-block; padding:1px 6px; border-radius:8px; font-size:10.5px; font-weight:600; background:#f3e3c3; color:#6b4a12; white-space:nowrap; }
+  @media (max-width:860px){ body[data-funnels] main{ display:block; } .cf-menu{ position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:16px; } .cf-menu .cf-gruppe{ display:none; } }
   h2{ font-size:30px; line-height:1.15; letter-spacing:-.012em; margin-bottom:6px; }
   .under{ color:var(--tekst-2); font-size:14px; margin-bottom:24px; max-width:68ch; line-height:1.55; }
   .afsnit{ margin-top:24px; margin-bottom:4px; }
@@ -1261,22 +1273,11 @@
         <span class="nav-tal" id="nav-venter" hidden></span>
       </button>
       <!-- Kun på store skærme (sider.css): editoren kan ikke bruges på en
-           telefon, og bundbjælken har kun plads til fem rum. -->
-      <button type="button" data-fane="sider" class="kun-stor">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9h16M9 9v11" opacity=".6"/></svg>
-        <span class="n-lang">Sider &amp; funnels</span>
-      </button>
-      <button type="button" data-fane="produkter" class="kun-stor">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8" opacity=".6"/></svg>
-        <span class="n-lang">Produkter</span>
-      </button>
-      <button type="button" data-fane="ordrer" class="kun-stor">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8.5h6M9 12h6M9 15.5h3.5" opacity=".6"/></svg>
-        <span class="n-lang">Ordrer</span>
-      </button>
-      <button type="button" data-fane="kontakter" class="kun-stor">
-        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" opacity=".6"/></svg>
-        <span class="n-lang">Kontakter</span>
+           telefon. ÉN knap "Funnels" (K 9/11) - alt fra ClickFunnels ligger i
+           venstremenuen #cf-menu: sider, produkter, ordrer, kontakter … -->
+      <button type="button" data-fane="funnels" class="kun-stor">
+        <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.5V19l-4 1.5v-8Z"/></svg>
+        <span class="n-lang">Funnels</span>
       </button>
       <button type="button" data-fane="drift">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
@@ -1327,6 +1328,10 @@
     <div class="venter-liste" id="venter-liste" hidden></div>
 
   <main>
+    <!-- ---------- FUNNELS: venstremenuen (K 9/11) ----------
+         Vises i alle Funnels-rum (body[data-funnels]). Punkter uden virkning
+         endnu står som "Ikke bygget endnu" og åbner #fane-ikke. -->
+    <nav class="cf-menu" id="cf-menu" aria-label="Funnels" hidden></nav>
     <!-- ---------- OVERSIGT ---------- -->
     <section id="fane-oversigt">
       <!-- DASHBOARDET (klar-til-live 2.10, omgang 1, 12/10). Alt hentes fra
@@ -1729,6 +1734,13 @@
       </div>
       <span class="status" id="kt-status" role="status"></span>
       <div id="kt-indhold"></div>
+    </section>
+
+    <!-- ---------- IKKE BYGGET ENDNU (Funnels-menuens tomme punkter) ---------- -->
+    <section id="fane-ikke" hidden>
+      <h2 id="ikke-titel"></h2>
+      <p class="under"><span class="cf-ikke">Ikke bygget endnu</span></p>
+      <p id="ikke-tekst"></p>
     </section>
 
     <!-- ---------- KUNDER ---------- -->
@@ -2539,14 +2551,63 @@
   // Fanerne
   // -------------------------------------------------------------
   /* DE FEM RUM (15/10). Rummet -> sektionen. Indhold har underfaner. */
-  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', ordrer:'fane-ordrer', drift:'fane-sikkerhed' };
+  var RUM = { oversigt:'fane-oversigt', salg:'fane-salg', kunder:'fane-kunder', indhold:'fane-indhold', sider:'fane-sider', produkter:'fane-produkter', kontakter:'fane-kontakter', ordrer:'fane-ordrer', ikke:'fane-ikke', drift:'fane-sikkerhed' };
+  /* Funnels-menuen: [gruppe, [[nøgle, navn, rum, forklaring hvis ikke bygget]]]. */
+  var CF_MENU = [
+    ['Byg', [['sider', 'Funnels & sider', 'sider']]],
+    ['Butik', [['produkter', 'Produkter', 'produkter'], ['ordrer', 'Ordrer', 'ordrer']]],
+    ['Kontakter', [['kontakter', 'Kontakter & formularer', 'kontakter'],
+      ['segmenter', 'Segmenter', 'ikke', 'Navngivne målgrupper (fx "Pasform – venteliste") ud fra tags, køb og formularer - bruges i kampagner og automatiseringer.']]],
+    ['Marketing', [['automatiseringer', 'Automatiseringer', 'ikke', 'Forløb: en udløser (fx en formular eller et køb), så vent, mail, tag og betingelser - som pasformsbeskeden og velkomstmailen, der i dag kører i ClickFunnels.'],
+      ['kampagner', 'Mail & kampagner', 'ikke', 'Kampagnemails til et segment: emne, tekst, testmail, planlagt afsendelse, statistik og afmelding pr. emne. Systemmails (ordre, kvittering) findes allerede under Indhold → Arytmi mails.']]],
+    ['Indhold', [['kurser', 'Kurser', 'ikke', 'Kurser med moduler og lektioner, som et køb kan give adgang til.'],
+      ['community', 'Community', 'ikke', 'Et lukket fællesskab med grupper, opslag og kommentarer for kunder.'],
+      ['blog', 'Blog', 'ikke', 'Blogindlæg med kategorier, SEO og udgivelse på jeres domæne.']]],
+    ['Salg', [['pipeline', 'Pipeline', 'ikke', 'Salgsmuligheder i faser (fx tilbud sendt → vundet) knyttet til kontakter.'],
+      ['aftaler', 'Aftaler', 'ikke', 'Booking af møder med kalender, tidspunkter og påmindelser.']]]
+  ];
+  var FUNNELS_RUM = { sider:1, produkter:1, ordrer:1, kontakter:1, ikke:1 };
+  var valgtFunnels = 'sider', valgtIkke = 'automatiseringer';
+  function tegnCfMenu(navn){
+    var nav = $('cf-menu');
+    if(!nav.firstChild){
+      CF_MENU.forEach(function(g){
+        var h = document.createElement('div'); h.className = 'cf-gruppe'; h.textContent = g[0]; nav.appendChild(h);
+        g[1].forEach(function(x){
+          var b = document.createElement('button'); b.type = 'button';
+          b.setAttribute('data-cf', x[0]); b.setAttribute('data-rum', x[2]);
+          b.textContent = x[1];
+          if(x[3]){ var m = document.createElement('span'); m.className = 'cf-ikke'; m.textContent = 'Ikke bygget'; b.appendChild(m); }
+          nav.appendChild(b);
+        });
+      });
+      nav.addEventListener('click', function(e){
+        var b = e.target.closest('button[data-cf]');
+        if(!b) return;
+        var rum = b.getAttribute('data-rum');
+        skiftFane(rum, rum === 'ikke' ? b.getAttribute('data-cf') : undefined);
+      });
+    }
+    var nøgle = navn === 'ikke' ? valgtIkke : navn;
+    nav.querySelectorAll('button[data-cf]').forEach(function(b){
+      if(b.getAttribute('data-cf') === nøgle) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+  function visIkke(nøgle){
+    var punkt = null;
+    CF_MENU.forEach(function(g){ g[1].forEach(function(x){ if(x[0] === nøgle && x[3]) punkt = x; }); });
+    if(!punkt){ nøgle = 'automatiseringer'; return visIkke(nøgle); }
+    valgtIkke = nøgle;
+    $('ikke-titel').textContent = punkt[1];
+    $('ikke-tekst').textContent = punkt[3];
+  }
   var UNDER = ['tekster', 'ture', 'mails', 'udgivelser'];
   var valgtUnder = 'tekster';
 
   /* Kun et rum og en underfane i adressen - aldrig persondata. replaceState,
      så tilbage-knappen ikke skal igennem hver fane, man har kigget i. */
   function skrivAdresse(navn){
-    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '')
+    var h = '#' + navn + (navn === 'indhold' ? '/' + valgtUnder : '') + (navn === 'ikke' ? '/' + valgtIkke : '')
           + (navn === 'salg' && valgtSalg !== 'tal' ? '/' + valgtSalg : '');
     if(location.hash !== h){ try { history.replaceState(null, '', h); } catch(e){} }
   }
@@ -2585,10 +2646,17 @@
   }
 
   function skiftFane(navn, under){
+    if(navn === 'funnels') navn = valgtFunnels;
     if(!RUM[navn]) navn = 'oversigt';
+    var iFunnels = !!FUNNELS_RUM[navn];
+    if(iFunnels) valgtFunnels = navn;
+    if(navn === 'ikke') visIkke(under || valgtIkke);
+    $('cf-menu').hidden = !iFunnels;
+    if(iFunnels){ document.body.setAttribute('data-funnels', ''); tegnCfMenu(navn); }
+    else document.body.removeAttribute('data-funnels');
     var knapper = $('faner').querySelectorAll('button[data-fane]');
     for(var i=0;i<knapper.length;i++){
-      if(knapper[i].getAttribute('data-fane') === navn) knapper[i].setAttribute('aria-current','page');
+      if(knapper[i].getAttribute('data-fane') === navn || (iFunnels && knapper[i].getAttribute('data-fane') === 'funnels')) knapper[i].setAttribute('aria-current','page');
       else knapper[i].removeAttribute('aria-current');
     }
     Object.keys(RUM).forEach(function(r){ $(RUM[r]).hidden = r !== navn; });
