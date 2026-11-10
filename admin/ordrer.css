@@ -27,3 +27,7 @@
 .kt-post.or-h-annullering::before{ background:#7a2a1c; }
 .kt-post.or-h-forsendelse::before{ background:#de854a; }
 .kt-post.or-h-status::before{ background:#2f6b3a; }
+
+.or-linje{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
+.or-linje select{ min-width:280px; }
+.or-linje .or-antal{ width:70px; }

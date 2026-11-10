@@ -84,6 +84,7 @@
 
   function tegn(){
     var rod = $('or-indhold'); tøm(rod);
+    if(visning.ny) return tegnNy(rod);
     if(visning.åben) return tegnOrdre(rod, visning.åben);
     tegnListe(rod);
   }
@@ -170,7 +171,8 @@
 
     var sum = el('p', { klasse:'or-sum', role:'status' });
     var eksport = knap('Eksportér CSV', 'knap lille rolig', function(){ csv(data.ordrer.filter(function(o){ return passer(o, f); })); });
-    rod.appendChild(el('div', { klasse:'or-top' }, [sum, eksport]));
+    var nyKnap = knap('+ Ekstern ordre', 'knap lille', function(){ visning.ny = true; tegn(); window.scrollTo(0, 0); });
+    rod.appendChild(el('div', { klasse:'or-top' }, [sum, el('span', {}, [nyKnap, ' ', eksport])]));
     var tbody = el('tbody');
     rod.appendChild(el('div', { klasse:'rulle' }, [el('table', { klasse:'kt-tabel or-tabel' }, [
       el('thead', {}, [el('tr', {}, ['Ordre', 'Kunde', 'Varer', 'Total', 'Status', 'Dato'].map(function(t){ return el('th', { tekst:t }); }))]), tbody])]));
@@ -185,6 +187,7 @@
         var varer = (o.linjer || []).map(function(l){ return (l.antal > 1 ? l.antal + ' × ' : '') + l.produkt + (l.variant ? ' · ' + l.variant : ''); }).join(', ');
         var mærker = [el('span', { klasse:'or-mærke or-' + o.status, tekst:STATUS[o.status] || o.status })];
         if(o.tilstand === 'test') mærker.push(el('span', { klasse:'kt-tag', tekst:'test' }));
+        if(o.kilde === 'ekstern') mærker.push(el('span', { klasse:'kt-tag', tekst:'ekstern · ' + (VIA[o.betalt_via] || o.betalt_via) }));
         if(o.abonnement_status && o.abonnement_status !== 'aktiv') mærker.push(el('span', { klasse:'kt-tag', tekst:o.abonnement_status === 'opsagt' ? 'opsagt' : 'ophørt' }));
         if(fysisk(o) && ['betalt', 'delvist_refunderet'].indexOf(o.status) >= 0) mærker.push(el('span', { klasse:'kt-tag' + (o.sendt_kl ? '' : ' or-skal'), tekst:o.sendt_kl ? 'sendt' : 'skal sendes' }));
         (o.tags || []).forEach(function(t){ mærker.push(el('span', { klasse:'kt-tag', tekst:t })); });
@@ -222,7 +225,8 @@
     rod.appendChild(el('p', {}, [knap('← Alle ordrer', 'knap lille rolig', function(){ visning.åben = null; tegn(); })]));
     rod.appendChild(el('h3', { klasse:'kt-navn' }, [o.nummer + ' · ' + kr(o.total_oere) + ' ',
       el('span', { klasse:'or-mærke or-' + o.status, tekst:STATUS[o.status] || o.status }),
-      o.tilstand === 'test' ? el('span', { klasse:'kt-tag', tekst:'test' }) : null]));
+      o.tilstand === 'test' ? el('span', { klasse:'kt-tag', tekst:'test' }) : null,
+      o.kilde === 'ekstern' ? el('span', { klasse:'kt-tag', tekst:'ekstern · ' + (VIA[o.betalt_via] || o.betalt_via) }) : null]));
 
     /* Kunde + kilde */
     var a = o.adresse || {};
@@ -281,6 +285,27 @@
         stopOgså ? stopOgså.el : null, el('div', { klasse:'kt-handlinger' }, [rk])]));
     } else if(betalt){
       handlinger.appendChild(kort('Refundér', [el('p', { klasse:'hint', tekst:'Der er ingen betaling at refundere endnu (fx en prøveperiode). Stop abonnementet i stedet.' })]));
+    }
+
+    if(o.kilde === 'ekstern' && betalt){
+      var restE = o.total_oere - (o.refunderet_oere || 0);
+      var beløbE = el('input', { inputmode:'decimal' }); beløbE.value = (restE / 100).toFixed(2).replace('.', ',');
+      var årsagE = el('input', { maxlength:'500', placeholder:'fx returneret' });
+      var rkE = knap('Registrér refusion', 'knap lille fare', function(){
+        var n = tilOere(beløbE.value);
+        if(!(n > 0) || n > restE){ status('Beløbet skal være mellem 0,01 og ' + kr(restE) + '.', 'fejl'); return; }
+        if(!confirm('Registrér at ' + kr(n) + ' er betalt tilbage til ' + o.email + '?\n\nPengene skal sendes tilbage uden for systemet (' + (VIA[o.betalt_via] || o.betalt_via) + ').')) return;
+        kør(rkE, { handling:'refunder', id:o.id, beloeb_oere:n, aarsag:årsagE.value }, 'Refusionen er registreret.');
+      });
+      var årsagX = el('input', { maxlength:'500', placeholder:'fx fejlregistrering' });
+      var akE = knap('Annullér ordren', 'knap lille fare', function(){
+        if(!årsagX.value.trim()){ status('Skriv en årsag.', 'fejl'); årsagX.focus(); return; }
+        if(!confirm('Annullér ' + o.nummer + '? Den tæller så ikke længere med i omsætningen.')) return;
+        kør(akE, { handling:'annuller', id:o.id, aarsag:årsagX.value }, 'Ordren er annulleret.');
+      });
+      handlinger.appendChild(kort('Refundér (ekstern)', [el('p', { klasse:'hint', tekst:'Ordren er betalt uden om Stripe. Refusionen registreres her; pengene sendes tilbage på samme måde, som der blev betalt.' }),
+        el('div', { klasse:'kt-grid' }, [felt('Beløb i kr. (højst ' + kr(restE) + ')', beløbE), felt('Årsag', årsagE)]), el('div', { klasse:'kt-handlinger' }, [rkE])]));
+      handlinger.appendChild(kort('Annullér (ekstern)', [felt('Årsag', årsagX), el('div', { klasse:'kt-handlinger' }, [akE])]));
     }
 
     if(o.status === 'afventer' || o.status === 'fejlet'){
@@ -374,6 +399,84 @@
       }).catch(fejl);
     }
     tidslinje();
+  }
+
+  /* ---------- Ny ekstern ordre (0092) ---------- */
+  var VIA = { kontant:'Kontant', mobilepay:'MobilePay', bankoverfoersel:'Bankoverførsel', faktura:'Faktura', andet:'Andet' };
+  var allePriserLøfte = null;
+  function hentAllePriser(){
+    if(!allePriserLøfte) allePriserLøfte = rest('produkt_pris?select=id,navn,slags,beloeb_oere,opstart_oere,produkt_variant(navn,er_standard,giver_app_adgang,produkt(navn))&arkiveret=eq.false&order=beloeb_oere.asc')
+      .catch(function(e){ allePriserLøfte = null; throw e; });
+    return allePriserLøfte;
+  }
+  function tegnNy(rod){
+    rod.appendChild(el('p', {}, [knap('← Alle ordrer', 'knap lille rolig', function(){ visning.ny = false; tegn(); })]));
+    rod.appendChild(el('h3', { klasse:'kt-navn', tekst:'Ekstern ordre' }));
+    rod.appendChild(el('p', { klasse:'hint', tekst:'Et salg uden om ordreformularen (kontant, MobilePay, faktura, på et marked …). Ordren får et nummer i samme række, tæller med i omsætningen og kan give app-adgang som et køb.' }));
+    var mail = el('input', { type:'email', autocomplete:'off' }), fornavn = el('input', {}), efternavn = el('input', {}), tlf = el('input', { type:'tel' });
+    var linjeBoks = el('div', { klasse:'or-linjer' });
+    var priser = [];
+    var betalt = el('input', { inputmode:'decimal', placeholder:'tom = summen af varerne' });
+    var via = el('select', {}); Object.keys(VIA).forEach(function(k){ via.appendChild(new Option(VIA[k], k)); });
+    var dag = el('input', { type:'date' }); dag.value = new Date().toISOString().slice(0, 10);
+    var adgang = afkryds('Giv adgang til Arytmi-appen (som ved et køb)', false);
+    var velkomst = afkryds('Send velkomstmailen', true);
+    var note = el('textarea', { rows:'2', maxlength:'1000' });
+    var sumTekst = el('p', { klasse:'hint' });
+    function prisNavn(p){ var v = p.produkt_variant || {}; return ((v.produkt || {}).navn || '') + (v.er_standard ? '' : ' · ' + v.navn) + ' — ' + (p.navn || kr(p.slags === 'engang' ? p.beloeb_oere : (p.opstart_oere || p.beloeb_oere))); }
+    function prisOere(p){ return p.slags === 'engang' ? p.beloeb_oere : (p.opstart_oere || p.beloeb_oere); }
+    var rækker = [];
+    function nyLinje(){
+      var v = el('select', {}); v.appendChild(new Option('— vælg vare —', ''));
+      priser.forEach(function(p){ v.appendChild(new Option(prisNavn(p), p.id)); });
+      v.appendChild(new Option('Andet (skriv selv)', 'fri'));
+      var antal = el('input', { type:'number', min:'1', max:'100', value:'1', klasse:'or-antal' });
+      var tekst = el('input', { placeholder:'Hvad er solgt', hidden:true }), beløb = el('input', { inputmode:'decimal', placeholder:'Pris i kr.', hidden:true });
+      var r = { v:v, antal:antal, tekst:tekst, beløb:beløb };
+      var fjern = knap('Fjern', 'knap lille rolig', function(){ rækker.splice(rækker.indexOf(r), 1); linjeBoks.removeChild(r.el); regn(); });
+      r.el = el('div', { klasse:'or-linje' }, [v, tekst, beløb, el('label', {}, ['Antal ', antal]), fjern]);
+      v.addEventListener('change', function(){
+        var fri = v.value === 'fri'; tekst.hidden = !fri; beløb.hidden = !fri;
+        var p = priser.filter(function(x){ return x.id === v.value; })[0];
+        if(p && (p.produkt_variant || {}).giver_app_adgang) adgang.boks.checked = true;
+        regn();
+      });
+      [antal, beløb].forEach(function(i){ i.addEventListener('input', regn); });
+      rækker.push(r); linjeBoks.appendChild(r.el);
+    }
+    function linjer(){
+      return rækker.filter(function(r){ return r.v.value; }).map(function(r){
+        var n = parseInt(r.antal.value, 10) || 1;
+        return r.v.value === 'fri' ? { tekst:r.tekst.value, beloeb_oere:tilOere(r.beløb.value), antal:n } : { pris_id:r.v.value, antal:n };
+      });
+    }
+    function regn(){
+      var i_alt = 0;
+      linjer().forEach(function(l){
+        var p = l.pris_id ? priser.filter(function(x){ return x.id === l.pris_id; })[0] : null;
+        i_alt += (p ? prisOere(p) : (l.beloeb_oere || 0)) * l.antal;
+      });
+      sumTekst.textContent = 'Varerne i alt: ' + kr(i_alt);
+    }
+    var gem = knap('Registrér ordren', 'knap', function(){
+      var l = linjer();
+      if(!l.length){ status('Vælg mindst én vare.', 'fejl'); return; }
+      var total = betalt.value.trim() ? tilOere(betalt.value) : null;
+      if(total !== null && !(total >= 0)){ status('Det betalte beløb ser forkert ud.', 'fejl'); betalt.focus(); return; }
+      gem.disabled = true; status('Gemmer …');
+      handling({ handling:'opret_ekstern', kunde:{ email:mail.value, fornavn:fornavn.value, efternavn:efternavn.value, telefon:tlf.value },
+        linjer:l, total_oere:total, betalt_via:via.value, betalt_kl:dag.value ? dag.value + 'T12:00:00Z' : null,
+        giver_app_adgang:adgang.boks.checked, send_velkomst:velkomst.boks.checked, note:note.value })
+        .then(function(r){ data.ordrer.unshift(r.ordre); visning.ny = false; visning.åben = r.ordre.id; status('Ordren ' + r.ordre.nummer + ' er registreret.'); tegn(); })
+        .catch(function(e){ gem.disabled = false; fejl(e); });
+    });
+    rod.appendChild(kort('Kunde', [el('div', { klasse:'kt-grid' }, [felt('Mail', mail), felt('Telefon (valgfri)', tlf), felt('Fornavn', fornavn), felt('Efternavn', efternavn)])]));
+    rod.appendChild(kort('Varer', [linjeBoks, el('p', {}, [knap('+ Tilføj vare', 'knap lille rolig', nyLinje)]), sumTekst]));
+    rod.appendChild(kort('Betaling', [el('div', { klasse:'kt-grid' }, [felt('Betalt i alt i kr.', betalt), felt('Betalt med', via), felt('Dato', dag)]),
+      adgang.el, velkomst.el, felt('Note (står på tidslinjen)', note), el('div', { klasse:'kt-handlinger' }, [gem])]));
+    linjeBoks.appendChild(el('p', { klasse:'hint', tekst:'Henter varer …' }));
+    hentAllePriser().then(function(p){ priser = p || []; tøm(linjeBoks); nyLinje(); regn(); }).catch(fejl);
+    mail.focus();
   }
 
   var priserLøfte = null;
