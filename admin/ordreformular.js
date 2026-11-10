@@ -206,14 +206,26 @@
       valg.produkt = produkter[i]; k.radio.checked = true;
       valg.variant = k.vælger ? k.varianter.filter(function(v){ return v.id === k.vælger.value; })[0] : (k.varianter[0] || null);
       kortListe.forEach(function(x, j){ x.kort.classList.toggle('ao-valgt', j === i); });
+      visAntal();
+    }
+    /* Antal giver kun mening for engangskøb - et abonnement købes én gang pr. ordre. */
+    var antalLinje = null, antalFelt = null;
+    function visAntal(){
+      if(!antalLinje) return;
+      var pr = valg.variant && valg.variant.priser[0];
+      var kan = !!pr && pr.slags === 'engang';
+      antalLinje.hidden = !kan;
+      if(!kan){ valg.antal = 1; antalFelt.value = 1; }
     }
     vælgProdukt(0);
     if(opt.antal){
-      var antalFelt = el('input', { type:'number', min:'1', max:'20', value:'1', id:id + '-antal', inputmode:'numeric', klasse:'ao-antal' });
+      antalFelt = el('input', { type:'number', min:'1', max:'20', value:'1', id:id + '-antal', inputmode:'numeric', klasse:'ao-antal' });
       antalFelt.addEventListener('change', function(){
         var n = Math.max(1, Math.min(20, parseInt(antalFelt.value, 10) || 1)); antalFelt.value = n; valg.antal = n; beregn();
       });
-      form.appendChild(el('div', { klasse:'ao-antal-linje' }, [el('label', { for:antalFelt.id, tekst:'Antal' }), antalFelt]));
+      antalLinje = el('div', { klasse:'ao-antal-linje' }, [el('label', { for:antalFelt.id, tekst:'Antal' }), antalFelt]);
+      form.appendChild(antalLinje);
+      visAntal();
     }
 
     /* 2. Leveringsadresse og kunden */
