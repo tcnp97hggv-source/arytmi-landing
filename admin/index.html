@@ -507,18 +507,18 @@
 
   /* ---------- SIDEN ---------- */
   main{ flex:1 1 auto; max-width:1200px; width:100%; padding:36px 44px 110px; }
-  /* Funnels: venstremenu + indhold (K 9/11) */
-  body[data-funnels] main{ max-width:1440px; display:grid; grid-template-columns:210px minmax(0, 1fr); column-gap:32px; align-items:start; }
-  body[data-funnels] main > section{ grid-column:2; grid-row:1; min-width:0; }
-  .cf-menu{ grid-column:1; grid-row:1; position:sticky; top:20px; display:flex; flex-direction:column; gap:2px; }
-  .cf-menu[hidden]{ display:none; }
-  .cf-menu .cf-gruppe{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.6; margin:14px 10px 4px; }
-  .cf-menu .cf-gruppe:first-child{ margin-top:0; }
-  .cf-menu button{ display:flex; align-items:center; justify-content:space-between; gap:6px; text-align:left; background:none; border:0; border-radius:8px; padding:8px 10px; font:inherit; font-size:14px; color:inherit; cursor:pointer; }
-  .cf-menu button:hover{ background:rgba(142,67,51,.08); }
-  .cf-menu button[aria-current]{ background:rgba(142,67,51,.14); font-weight:600; }
+  /* Funnels: undermenu i sidebjælken (K 10/11) */
+  .cf-under{ display:flex; flex-direction:column; gap:1px; margin:2px 0 6px 22px; padding-left:10px; border-left:1px solid rgba(255,255,255,.14); }
+  .cf-under[hidden]{ display:none; }
+  .cf-under .cf-gruppe{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#ead9c9; opacity:.55; margin:10px 8px 3px; }
+  .cf-under .cf-gruppe:first-child{ margin-top:4px; }
+  nav.faner .cf-under button{ justify-content:space-between; gap:8px; padding:6px 8px; font-size:13.5px; font-weight:500; box-shadow:none; }
+  nav.faner .cf-under button[aria-current=page]{ background:rgba(255,255,255,.14); color:#fff; font-weight:600; box-shadow:none; }
+  nav.faner button .cf-pil{ margin-left:auto; width:16px; height:16px; transition:transform .15s; }
+  nav.faner button[aria-expanded=true] .cf-pil{ transform:rotate(180deg); }
+  .cf-under .cf-ikke{ background:rgba(243,227,195,.16); color:#f3e3c3; }
   .cf-ikke{ display:inline-block; padding:1px 6px; border-radius:8px; font-size:10.5px; font-weight:600; background:#f3e3c3; color:#6b4a12; white-space:nowrap; }
-  @media (max-width:860px){ body[data-funnels] main{ display:block; } .cf-menu{ position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:16px; } .cf-menu .cf-gruppe{ display:none; } }
+  @media (max-width:860px){ .cf-under{ display:none !important; } }
   h2{ font-size:30px; line-height:1.15; letter-spacing:-.012em; margin-bottom:6px; }
   .under{ color:var(--tekst-2); font-size:14px; margin-bottom:24px; max-width:68ch; line-height:1.55; }
   .afsnit{ margin-top:24px; margin-bottom:4px; }
@@ -1275,10 +1275,14 @@
       <!-- Kun på store skærme (sider.css): editoren kan ikke bruges på en
            telefon. ÉN knap "Funnels" (K 9/11) - alt fra ClickFunnels ligger i
            venstremenuen #cf-menu: sider, produkter, ordrer, kontakter … -->
-      <button type="button" data-fane="funnels" class="kun-stor">
+      <button type="button" data-fane="funnels" class="kun-stor" aria-expanded="false" aria-controls="cf-menu">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.5V19l-4 1.5v-8Z"/></svg>
         <span class="n-lang">Funnels</span>
+        <svg class="ik cf-pil" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4"/></svg>
       </button>
+      <!-- Funnels' undermenu (K 10/11: "dropdown under Funnels"). Foldes ud i
+           alle Funnels-rum; punkter uden virkning står som "Ikke bygget". -->
+      <div class="cf-under" id="cf-menu" role="group" aria-label="Funnels" hidden></div>
       <button type="button" data-fane="drift">
         <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
         <span class="n-lang">Drift &amp; sikkerhed</span><span class="n-kort">Drift</span>
@@ -1328,10 +1332,6 @@
     <div class="venter-liste" id="venter-liste" hidden></div>
 
   <main>
-    <!-- ---------- FUNNELS: venstremenuen (K 9/11) ----------
-         Vises i alle Funnels-rum (body[data-funnels]). Punkter uden virkning
-         endnu står som "Ikke bygget endnu" og åbner #fane-ikke. -->
-    <nav class="cf-menu" id="cf-menu" aria-label="Funnels" hidden></nav>
     <!-- ---------- OVERSIGT ---------- -->
     <section id="fane-oversigt">
       <!-- DASHBOARDET (klar-til-live 2.10, omgang 1, 12/10). Alt hentes fra
@@ -2646,12 +2646,20 @@
   }
 
   function skiftFane(navn, under){
-    if(navn === 'funnels') navn = valgtFunnels;
+    if(navn === 'funnels'){
+      if(FUNNELS_RUM[document.body.getAttribute('data-rum')]){
+        var m = $('cf-menu'); m.hidden = !m.hidden;
+        document.querySelector('#faner [data-fane=funnels]').setAttribute('aria-expanded', String(!m.hidden));
+        return;
+      }
+      navn = valgtFunnels;
+    }
     if(!RUM[navn]) navn = 'oversigt';
     var iFunnels = !!FUNNELS_RUM[navn];
     if(iFunnels) valgtFunnels = navn;
     if(navn === 'ikke') visIkke(under || valgtIkke);
     $('cf-menu').hidden = !iFunnels;
+    document.querySelector('#faner [data-fane=funnels]').setAttribute('aria-expanded', String(iFunnels));
     if(iFunnels){ document.body.setAttribute('data-funnels', ''); tegnCfMenu(navn); }
     else document.body.removeAttribute('data-funnels');
     var knapper = $('faner').querySelectorAll('button[data-fane]');
