@@ -336,6 +336,7 @@
       isComponent: function(el){ return el.tagName === 'FORM' && el.hasAttribute('data-arytmi-formular'); },
       model: { defaults: { name:'Formular', tagName:'form', traits:[
         { type:'text', name:'data-arytmi-formular', label:'Formularens navn (til kontakter, fx tilmelding)' },
+        { type:'formularvalg', name:'a-formularvalg', label:'Når formularen sendes' },
         { type:'text', name:'data-a-efter', label:'Efter afsendelse: gå til (en adresse eller "næste"; tom = vis takken)', adresse:'link,naeste' },
         { type:'text', name:'data-a-tak', label:'Takken, der vises i stedet for formularen' }
       ] } }

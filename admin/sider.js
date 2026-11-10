@@ -1813,6 +1813,50 @@
       else boks.appendChild(el('p', { klasse:'sf-hint', tekst:'Kunden vælger mellem dem i den rækkefølge. Bilmodel og pris hentes fra produktet.' }));
       return boks;
     }
+    if(type === 'formularvalg'){
+      /* Formularens indstillinger (K 10/11: "hvorfor ikke på selve siden i
+         editoren?"). De gemmes IKKE i siden, men i tabellen formular (0089)
+         - samme række som Kontakter → Formularer - så en side aldrig selv
+         kan bestemme, hvem der får mail. Feltet sætter ingen attribut. */
+      var komp = tr.target || editor.getSelected();
+      var fboks = el('div', { klasse:'sf-produktliste' }, [ el('span', { klasse:'sf-produktliste-titel', tekst:label }) ]);
+      var indhold = el('div'); fboks.appendChild(indhold);
+      var hentFormular = function(){
+        if(!fboks.isConnected && fboks._set){ komp.off('change:attributes:data-arytmi-formular', hentFormular); return; }
+        fboks._set = true;
+        var nøgle = String((komp.getAttributes() || {})['data-arytmi-formular'] || '').trim();
+        while(indhold.firstChild) indhold.removeChild(indhold.firstChild);
+        if(!/^[a-z0-9_-]{1,60}$/.test(nøgle)){
+          indhold.appendChild(el('p', { klasse:'sf-hint', tekst:'Giv først formularen et navn med små bogstaver, tal og bindestreg (fx tilmelding). Uden det bliver indsendelser afvist.' }));
+          return;
+        }
+        indhold.appendChild(el('p', { klasse:'sf-hint', tekst:'Henter …' }));
+        api.json('/rest/v1/formular?select=*&noegle=eq.' + encodeURIComponent(nøgle)).then(function(r){
+          if(String((komp.getAttributes() || {})['data-arytmi-formular'] || '').trim() !== nøgle) return;
+          var fm = (r || [])[0] || { noegle:nøgle, navn:'', besked_til:[], tags:[], aktiv:true }, ny = !(r || []).length;
+          var felt = function(l, v, ph){ var i = el('input', { type:'text', placeholder:ph }); i.value = v; return [el('label', { klasse:'sf-r lodret' }, [ el('span', { tekst:l }), i ]), i]; };
+          var n = felt('Navn i bagrummet', fm.navn || '', 'fx Tilmelding til nyheder');
+          var til = felt('Send besked til (mail, komma imellem)', (fm.besked_til || []).join(', '), 'fx oliivia@arytmi.com');
+          var tg = felt('Tags til kontakten (komma imellem)', (fm.tags || []).join(', '), 'fx pasform');
+          var aktiv = !!fm.aktiv;
+          var besked = el('p', { klasse:'sf-hint', role:'status', tekst: ny ? 'Formularen er ny. Uden modtagere får ingen besked - kontakten gemmes stadig.' : 'Gemmes med det samme (ikke med siden) og gælder alle sider, der bruger navnet "' + nøgle + '".' });
+          var del = function(v){ return String(v || '').split(/[,\n]/).map(function(x){ return x.trim(); }).filter(Boolean); };
+          while(indhold.firstChild) indhold.removeChild(indhold.firstChild);
+          [n[0], til[0], tg[0], afkryds('Tager imod indsendelser', aktiv, function(ja){ aktiv = ja; }),
+            el('button', { type:'button', klasse:'knap lille', tekst:'Gem formularens indstillinger', klik:function(){
+              var mails = del(til[1].value);
+              if(mails.some(function(m){ return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m); })){ besked.textContent = 'En af modtagerne ligner ikke en mailadresse.'; besked.className = 'sf-hint fejl'; return; }
+              api.json('/rest/v1/formular?on_conflict=noegle', { method:'POST', headers:{ Prefer:'resolution=merge-duplicates,return=representation' },
+                body:{ noegle:nøgle, navn:n[1].value.trim() || nøgle, besked_til:mails, tags:del(tg[1].value), aktiv:aktiv } })
+                .then(function(x){ if(!x || !x.length) throw new Error('Intet blev gemt.'); besked.textContent = 'Gemt. Gælder med det samme på de udgivne sider.'; besked.className = 'sf-hint'; })
+                .catch(function(f){ besked.textContent = api.forklar(f); besked.className = 'sf-hint fejl'; });
+            } }), besked].forEach(function(x){ indhold.appendChild(x); });
+        }).catch(function(f){ while(indhold.firstChild) indhold.removeChild(indhold.firstChild); indhold.appendChild(el('p', { klasse:'sf-hint fejl', tekst:api.forklar(f) })); });
+      };
+      komp.on('change:attributes:data-arytmi-formular', hentFormular);
+      hentFormular();
+      return fboks;
+    }
     if(type === 'select'){
       var s = el('select', { klasse:'sf-vælg' });
       (tr.get('options') || []).forEach(function(o){

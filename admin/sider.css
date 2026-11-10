@@ -314,3 +314,6 @@ body.sf-redigerer{ overflow:hidden; }
 .sf-produktliste-titel{ font-weight:600; font-size:13px; }
 .sf-produkt{ display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--kant, #D9CFC2); border-radius:8px; font-size:13px; }
 .sf-produkt span{ flex:1; min-width:0; overflow-wrap:anywhere; }
+
+/* Formularens indstillinger i editoren (10/11) */
+.sf-hint.fejl{ color:var(--fejl); }

@@ -557,7 +557,7 @@
 
   /* ---------- Formularer ---------- */
   function tegnFormularer(rod){
-    rod.appendChild(el('p', { klasse:'hint', tekst:'Hver formular på siderne har en nøgle (feltet "Formularens navn" i editoren). Den oprettes her første gang, nogen sender den. Modtagerne får en mail med det, kunden skrev - kun adresser, der står her, kan få besked.' }));
+    rod.appendChild(el('p', { klasse:'hint', tekst:'Hver formular på siderne har en nøgle (feltet "Formularens navn" i editoren). Den oprettes her første gang, nogen sender den - eller når du gemmer dens indstillinger på selve formularen i sideeditoren ("Når formularen sendes"). Modtagerne får en mail med det, kunden skrev - kun adresser, der står her, kan få besked.' }));
     if(!data.formularer.length) rod.appendChild(el('p', { klasse:'hint', tekst:'Ingen formularer endnu.' }));
     data.formularer.forEach(function(fm){
       var n = el('input', { 'aria-label':'Navn' }); n.value = fm.navn || '';
