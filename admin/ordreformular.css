@@ -128,3 +128,6 @@
 .ao-antal-linje{ display:flex; align-items:center; gap:10px; margin:8px 0 4px; }
 .ao-antal-linje input{ width:80px; }
 .ao-videre{ margin-top:12px; }
+
+.ao-udsalg{ color:#a3361f; font-weight:700; }
+.ao-udsalg-maerke{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:8px; font-size:11px; background:#a3361f; color:#fff; vertical-align:middle; }

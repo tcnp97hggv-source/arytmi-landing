@@ -165,6 +165,24 @@
   function byg(rod, status, tilstand, produkter, tilvalgListe, knapTekst, efter, Stripe, opt){
     rod.removeChild(status);
     var valg = { produkt: produkter[0], variant: null, tilvalg: {}, antal: 1 };
+    /* Udsalg: checkout regner den nedsatte pris for hver vist pris (vis_priser). */
+    var prisFelter = [];
+    function prisHolder(e, p, kort){ if(p) prisFelter.push({ e:e, p:p, kort:kort }); return e; }
+    var udsalgVist = false;
+    function tegnUdsalg(udsalg){
+      if(udsalgVist || !udsalg) return;
+      udsalgVist = true;
+      prisFelter.forEach(function(x){
+        var ny = udsalg[x.p.id];
+        if(ny == null) return;
+        while(x.e.firstChild) x.e.removeChild(x.e.firstChild);
+        var nu = x.p.slags === 'engang' ? x.p.beloeb_oere : (x.p.opstart_oere || x.p.beloeb_oere);
+        x.e.appendChild(el('s', { klasse:'ao-foer', tekst:kr(Math.max(nu, x.p.foer_oere || 0)) }));
+        x.e.appendChild(el('span', { tekst:' ' }));
+        x.e.appendChild(el('span', { klasse:'ao-udsalg', tekst:kr(ny) }));
+        x.e.appendChild(el('span', { klasse:'ao-udsalg-maerke', tekst:'Udsalg' }));
+      });
+    }
     var form = el('form', { klasse:'ao-form', novalidate:true });
     var id = 'ao' + Math.random().toString(36).slice(2, 7);
     var flere = produkter.length > 1;
@@ -192,7 +210,7 @@
           el('label', { klasse:'ao-radio', for:r.id }, [r]),
           billede ? el('img', { klasse:'ao-kort-billede', src:billede, alt:'', loading:'lazy' }) : null,
           el('div', { klasse:'ao-kort-tekst' }, [el('h3', { klasse:'ao-kort-titel', tekst:p.navn }), renHtml(p.beskrivelse)]),
-          el('div', { klasse:'ao-kort-pris' }, medFoer(pris, prisLinje(pris).split(' · ')[0]))
+          prisHolder(el('div', { klasse:'ao-kort-pris' }, medFoer(pris, prisLinje(pris).split(' · ')[0])), pris, true)
         ]),
         s
       ]);
@@ -322,7 +340,7 @@
         var bump = el('div', { klasse:'ao-bump' }, [
           tb ? el('img', { klasse:'ao-bump-billede', src:tb, alt:'', loading:'lazy' }) : null,
           el('div', { klasse:'ao-bump-tekst' }, [
-            el('div', { klasse:'ao-bump-hoved' }, [el('strong', { klasse:'ao-bump-titel', tekst:tilvalg.navn }), el('span', { klasse:'ao-bump-pris' }, medFoer(tilvalgPris, prisLinje(tilvalgPris)))]),
+            el('div', { klasse:'ao-bump-hoved' }, [el('strong', { klasse:'ao-bump-titel', tekst:tilvalg.navn }), prisHolder(el('span', { klasse:'ao-bump-pris' }, medFoer(tilvalgPris, prisLinje(tilvalgPris))), tilvalgPris, false)]),
             renHtml(tilvalg.beskrivelse)]),
           el('div', { klasse:'ao-bump-knap' }, [tilføj])
         ]);
@@ -376,7 +394,9 @@
     function beregn(){
       var nr = ++tæller;
       sum.classList.add('ao-venter');
-      return checkout({ handling:'beregn', tilstand:tilstand, kurv:kurv(), rabatkode:brugtKode || null, land:felter.land.value }).then(function(b){
+      return checkout({ handling:'beregn', tilstand:tilstand, kurv:kurv(), rabatkode:brugtKode || null, land:felter.land.value,
+        vis_priser: udsalgVist ? [] : prisFelter.map(function(x){ return x.p.id; }) }).then(function(b){
+        tegnUdsalg(b.udsalg);
         if(nr !== tæller) return;
         sidste = b; kodeBesked.textContent = brugtKode ? (b.rabatkode ? 'Rabatkoden er brugt.' : '') : '';
         tegnSum(b); klargørBetaling(b);
